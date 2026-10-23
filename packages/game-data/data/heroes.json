@@ -1,0 +1,42 @@
+[
+  {
+    "id": "guerreiro",
+    "nome": "Guerreiro",
+    "descricao": "Chega perto e bate sem parar.",
+    "color": "#4ea1ff",
+    "hp": 140,
+    "speed": 4.4,
+    "radius": 0.48,
+    "startingAbility": "golpe_rapido"
+  },
+  {
+    "id": "mago",
+    "nome": "Mago",
+    "descricao": "Raio que pula de um bicho pro outro.",
+    "color": "#b07cff",
+    "hp": 90,
+    "speed": 4.2,
+    "radius": 0.44,
+    "startingAbility": "raio_encadeado"
+  },
+  {
+    "id": "arqueiro",
+    "nome": "Arqueiro",
+    "descricao": "Atira de longe e se afasta.",
+    "color": "#7dce6a",
+    "hp": 100,
+    "speed": 4.8,
+    "radius": 0.44,
+    "startingAbility": "flecha"
+  },
+  {
+    "id": "piromante",
+    "nome": "Piromante",
+    "descricao": "Explode quem se amontoa.",
+    "color": "#e07a3d",
+    "hp": 105,
+    "speed": 4.1,
+    "radius": 0.46,
+    "startingAbility": "explosao"
+  }
+]

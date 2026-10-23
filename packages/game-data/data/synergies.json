@@ -1,0 +1,26 @@
+[
+  {
+    "id": "tempestade",
+    "nome": "Tempestade",
+    "descricao": "3 cartas de raio: +20% de dano.",
+    "tag": "raio",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.2 }]
+  },
+  {
+    "id": "inferno",
+    "nome": "Inferno",
+    "descricao": "3 cartas de fogo: +15% de dano.",
+    "tag": "fogo",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.15 }]
+  },
+  {
+    "id": "redemoinho",
+    "nome": "Redemoinho",
+    "descricao": "3 cartas de área: +25% de área.",
+    "tag": "area",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "areaPct", "value": 0.25 }]
+  }
+]

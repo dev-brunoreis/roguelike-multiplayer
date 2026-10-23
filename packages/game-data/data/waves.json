@@ -1,0 +1,7 @@
+[
+  { "round": 1, "spawns": [{ "creepId": "slime", "count": 6, "interval": 0.7 }] },
+  { "round": 2, "spawns": [{ "creepId": "slime", "count": 8, "interval": 0.5 }, { "creepId": "corredor", "count": 3, "interval": 0.8 }] },
+  { "round": 3, "spawns": [{ "creepId": "slime", "count": 8, "interval": 0.45 }, { "creepId": "bruto", "count": 2, "interval": 1.4 }] },
+  { "round": 5, "spawns": [{ "creepId": "bruto", "count": 3, "interval": 1.1 }, { "creepId": "corredor", "count": 6, "interval": 0.4 }, { "creepId": "slime", "count": 6, "interval": 0.4 }] },
+  { "round": 7, "spawns": [{ "creepId": "bruto", "count": 5, "interval": 0.8 }, { "creepId": "corredor", "count": 8, "interval": 0.35 }] }
+]

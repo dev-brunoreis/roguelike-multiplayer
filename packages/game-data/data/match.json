@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "minPlayers": 2,
+  "maxPlayers": 8,
+  "lives": 3,
+  "cardsPerLevelUp": 5,
+  "cardPickSeconds": 8,
+  "pveSeconds": 60,
+  "duelStartRound": 2,
+  "duelSeconds": 22,
+  "bettingSeconds": 8,
+  "shopSeconds": 14,
+  "shopSlots": 3,
+  "bossEveryRounds": 3,
+  "arenaSize": 16,
+  "arenaGap": 8,
+  "tickRate": 20,
+  "xpBase": 12,
+  "xpPower": 1.35,
+  "levelCap": 15,
+  "respawnSeconds": 2.5,
+  "invulnSeconds": 1.2
+}
