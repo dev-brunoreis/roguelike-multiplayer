@@ -4,14 +4,14 @@ Partida curta, por volta de 30 minutos, com rodadas de até 60 segundos. O últi
 
 ## Controle
 
-WASD move. As habilidades disparam sozinhas quando o cooldown acaba e existe alvo. Não há botão de skill.
+WASD move relativo à câmera (W sobe na tela). Botão direito ou a borda da tela arrasta o olhar. As habilidades disparam sozinhas quando o cooldown acaba e existe alvo. Não há botão de skill.
 
 Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `projectile`, `cone`.
 
 ## Rodada
 
 1. PvE. Cada jogador tem uma arena. A onda é a mesma, os bichos são cópias. Limpar a onda paga ouro. Estourar o tempo só segue em frente.
-2. Subir de nível abre `cardsPerLevelUp` cartas (padrão 5) por alguns segundos. Só aquele jogador para. Se o tempo acaba, uma carta sai sozinha. Enquanto escolhe, não toma dano.
+2. Subir de nível abre `cardsPerLevelUp` cartas (padrão 5) por alguns segundos. O herói continua andando e lutando. Se o tempo acaba, uma carta sai sozinha.
 3. Morrer custa uma vida e respawna na mesma onda. Sem vidas, vira espectador.
 4. A partir da rodada `duelStartRound`, quem está vivo é pareado. Os outros apostam ouro. O perdedor do duelo perde uma vida. Empate devolve a aposta.
 5. Loja: comprar carta, subir nível de habilidade, trocar a vitrine, ou seguir. O ouro não volta no próximo login.

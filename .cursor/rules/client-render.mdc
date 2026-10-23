@@ -6,14 +6,10 @@ alwaysApply: false
 
 # Cliente
 
-React + React Three Fiber. A câmera é ortográfica, deslocada em X e Z, olhando o herói: visão de cima inclinada.
+React + React Three Fiber. A câmera é ortográfica, deslocada em +X+Z. O 3D lê `snapRef` no `useFrame` e não re-renderiza a cada snapshot.
 
-`src/game/views.tsx` escolhe o visual por `entity.view`. Sem registro, cai na esfera.
+`registerEntityView` guarda o visual por id. Hoje o default é `EntityPuppet` (esfera + barra que olha a câmera).
 
-```tsx
-registerEntityView("guerreiro", GuerreiroModel);
-```
+WASD é relativo à câmera: W sobe na tela, D vai pra direita. Converte antes de mandar `{ x, y }` no mundo. Botão direito arrasta a câmera; encostar o mouse na borda também. Só desenha arena perto do olhar.
 
-O componente lê posição, raio e cor. Não invente regra de jogo aqui. Estado chega no snapshot; o mesh interpola no `useFrame`.
-
-WASD manda `{ x, y }` normalizado. Carta, loja, aposta e desistir são mensagens. Textos de UI em português.
+Carta não pausa o herói. Loja, aposta e desistir são mensagens. Textos em português.
