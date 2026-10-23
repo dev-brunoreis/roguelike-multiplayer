@@ -1,0 +1,16 @@
+---
+description: Mapa do jogo Caos e regras que valem em qualquer arquivo
+alwaysApply: true
+---
+
+# Caos
+
+Roguelike multiplayer autoritativo. Servidor simula, cliente só renderiza. Conteúdo de gameplay fica em `packages/game-data/data/*.json`.
+
+- `packages/sim` não importa Colyseus, Express, React ou Three.
+- Dano, carta, ouro e vitória só mudam em `packages/sim`.
+- Número de jogo (dano, cooldown, vida, preço) vai no JSON, não espalhado no TS.
+- Plugin novo entra por registro: behavior, targeting, effect, creep, bot ou `registerEntityView`.
+- Partida não continua no próximo login. Desconectar por 8s elimina.
+
+Ao mudar arquitetura, atualize `docs/ARCHITECTURE.md` e a rule da pasta afetada.

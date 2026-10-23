@@ -1,0 +1,43 @@
+# Arquitetura
+
+Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servidor. O cliente só mostra o estado e manda intenção (mover, escolher carta, comprar, apostar, desistir).
+
+## Pacotes
+
+- `packages/shared`: schemas Zod, tipos de snapshot e mensagens.
+- `packages/game-data`: JSON de heróis, habilidades, cartas, creeps, ondas, bosses, economia, partida e sinergias. `loadGameData()` valida e checa referências.
+- `packages/sim`: simulação pura, tick fixo (`match.json` → `tickRate`, padrão 20). Não importa Colyseus nem React.
+- `apps/server`: Express (login, estáticos, `/api/matches`) e Colyseus (`lobby`, `match`).
+- `apps/client`: React + React Three Fiber. Câmera ortográfica inclinada. Esferas hoje, modelos `.glb` depois pelo registro de visuais.
+
+## Fluxo
+
+1. Login JWT (HMAC). O token vai no join do Colyseus.
+2. Lobby único. O host define vagas, vidas, cartas por nível e bots, e dá start.
+3. O servidor cria uma `MatchRoom` com `createMatch()`. Humanos e bots entram na mesma simulação.
+4. Cada tick chama `tick()`. O snapshot sai a 10 Hz, filtrado por jogador (cartas e loja só para quem escolhe).
+5. Fechar a aba espera 8 segundos. Sem voltar, conta como desistência. Sem persistir a partida no próximo login.
+6. Eventos importantes vão para SQLite (`users`, `matches`, `match_players`, `events`), uma linha por acontecimento.
+
+## Plugins
+
+Registros em `packages/sim/src/registry.ts`:
+
+- `registerAbilityBehavior`
+- `registerTargeting`
+- `registerEffect`
+- `registerCreepBehavior`
+- `registerBot`
+- `registerBeforeDamage`, `registerAfterDamage`, `registerOnKill`
+
+No cliente, `registerEntityView` em `apps/client/src/game/views.tsx`.
+
+A simulação chama o nome que está no JSON. Nome sem registro quebra na criação da partida com erro explícito.
+
+## O que não fazer
+
+- Não calcular dano no cliente.
+- Não importar `apps/server` ou `react` dentro de `packages/sim`.
+- Não espalhar número mágico de gameplay no TypeScript se ele já existe no JSON.
+
+Se a arquitetura mudar, atualize este arquivo e `.cursor/rules`.

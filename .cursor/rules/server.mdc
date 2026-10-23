@@ -1,0 +1,15 @@
+---
+description: Colyseus, login e gravação de eventos
+globs: apps/server/**/*
+alwaysApply: false
+---
+
+# Servidor
+
+`src/index.ts` sobe Express e Colyseus na mesma porta. `LobbyRoom` cria a partida com `matchMaker.createRoom`. `MatchRoom` chama `tick` e manda `snapshot`.
+
+- Auth é JWT no body HTTP e de novo em `onAuth` da room. Não confie em nome vindo do cliente.
+- Input, pick, shop, bet e surrender passam pelas funções de `packages/sim`.
+- `StatsWriter` grava eventos persistentes. Não grave cada número de dano solto; o resumo vai em `damage_summary`.
+- Banco em `data/game.sqlite` via Drizzle e `node:sqlite`.
+- Em produção o Express serve `apps/client/dist`.

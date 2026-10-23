@@ -1,0 +1,17 @@
+---
+description: Como editar o JSON de heróis, habilidades, cartas e ondas
+globs: packages/game-data/**/*
+alwaysApply: false
+---
+
+# Game data
+
+`loadGameData()` em `src/load.ts` valida com Zod (`packages/shared/src/schemas.ts`) e confere ids citados.
+
+- Habilidade nova precisa de `behavior` e `targeting` já registrados na sim.
+- Carta cita `abilityId` que exista. `requires` também.
+- Onda e boss citam `creepId` que exista.
+- `match.json` manda vidas, `cardsPerLevelUp`, tempos e `version`.
+- Não duplique esses números no servidor ou no cliente.
+
+Exemplo de nível de raio: `targets` cresce e `falloff` tem um fator por salto, o primeiro sempre `1`.

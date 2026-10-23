@@ -1,0 +1,19 @@
+---
+description: Cena 3D, câmera e troca de esfera por modelo
+globs: apps/client/**/*
+alwaysApply: false
+---
+
+# Cliente
+
+React + React Three Fiber. A câmera é ortográfica, deslocada em X e Z, olhando o herói: visão de cima inclinada.
+
+`src/game/views.tsx` escolhe o visual por `entity.view`. Sem registro, cai na esfera.
+
+```tsx
+registerEntityView("guerreiro", GuerreiroModel);
+```
+
+O componente lê posição, raio e cor. Não invente regra de jogo aqui. Estado chega no snapshot; o mesh interpola no `useFrame`.
+
+WASD manda `{ x, y }` normalizado. Carta, loja, aposta e desistir são mensagens. Textos de UI em português.
