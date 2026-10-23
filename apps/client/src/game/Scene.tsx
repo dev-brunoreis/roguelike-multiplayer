@@ -1,39 +1,153 @@
-import type { ArenaSnap, Snapshot } from "@game/shared/protocol";
+import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { resolveView } from "./views.js";
+import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { EntityPuppet } from "./views.js";
 
-export function Scene({ snap, watchId, shake }: { snap: Snapshot; watchId: string | null; shake: number }) {
+const VIEW_RANGE = 36;
+
+export const Scene = memo(function Scene({
+  snapRef,
+  watchId,
+  shakeRef,
+}: {
+  snapRef: MutableRefObject<Snapshot | null>;
+  watchId: string | null;
+  shakeRef: MutableRefObject<number>;
+}) {
   return (
-    <Canvas className="scene" dpr={[1, 1.75]}>
+    <Canvas className="scene" dpr={1} gl={{ antialias: true, powerPreference: "high-performance" }}>
       <color attach="background" args={["#12100d"]} />
-      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={26} near={-80} far={240} />
-      <ambientLight intensity={0.7} />
+      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={280} />
+      <ambientLight intensity={0.75} />
       <directionalLight position={[10, 22, 8]} intensity={1.05} />
-      <Rig snap={snap} watchId={watchId} shake={shake} />
-      {snap.arenas.map((arena) => <ArenaPad key={arena.id} arena={arena} />)}
-      {snap.entities.map((entity) => {
-        const View = resolveView(entity);
-        return <View key={entity.id} entity={entity} />;
-      })}
-      {snap.projectiles.map((shot) => (
-        <mesh key={shot.id} position={[shot.x, 0.35, shot.y]}>
-          <sphereGeometry args={[0.14, 10, 8]} />
-          <meshBasicMaterial color={shot.color} />
-        </mesh>
-      ))}
-      {snap.floats.map((item) => (
-        <mesh key={item.id} position={[item.x, 1.2, item.y]}>
-          <sphereGeometry args={[item.crit ? 0.16 : 0.1, 8, 8]} />
-          <meshBasicMaterial color={item.crit ? "#ffcf70" : "#f4efe4"} />
-        </mesh>
-      ))}
+      <World snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
+  );
+});
+
+function World({
+  snapRef,
+  watchId,
+  shakeRef,
+}: {
+  snapRef: MutableRefObject<Snapshot | null>;
+  watchId: string | null;
+  shakeRef: MutableRefObject<number>;
+}) {
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+  const follow = useRef({ x: 0, z: 0, ready: false });
+  const pan = useRef({ x: 0, z: 0 });
+  const mouse = useRef({ x: 0.5, y: 0.5, drag: false, lx: 0, ly: 0 });
+  const [visible, setVisible] = useState<{ arenas: string[]; entities: number[] }>({ arenas: [], entities: [] });
+  const idsKey = useRef("");
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const onMove = (event: PointerEvent) => {
+      const rect = el.getBoundingClientRect();
+      mouse.current.x = (event.clientX - rect.left) / Math.max(1, rect.width);
+      mouse.current.y = (event.clientY - rect.top) / Math.max(1, rect.height);
+      if (!mouse.current.drag) return;
+      const dx = event.clientX - mouse.current.lx;
+      const dy = event.clientY - mouse.current.ly;
+      mouse.current.lx = event.clientX;
+      mouse.current.ly = event.clientY;
+      pan.current.x += (-dx - dy) * 0.045;
+      pan.current.z += (dx - dy) * 0.045;
+    };
+    const onDown = (event: PointerEvent) => {
+      if (event.button !== 1 && event.button !== 2) return;
+      mouse.current.drag = true;
+      mouse.current.lx = event.clientX;
+      mouse.current.ly = event.clientY;
+      el.setPointerCapture(event.pointerId);
+    };
+    const onUp = () => {
+      mouse.current.drag = false;
+    };
+    const onMenu = (event: Event) => event.preventDefault();
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointerleave", onUp);
+    el.addEventListener("contextmenu", onMenu);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointerleave", onUp);
+      el.removeEventListener("contextmenu", onMenu);
+    };
+  }, [gl]);
+
+  useFrame((_, delta) => {
+    const snap = snapRef.current;
+    if (!snap) return;
+    const focus = focusOf(snap, watchId);
+    const edge = 0.07;
+    const speed = 28 * delta;
+    if (mouse.current.x < edge) {
+      pan.current.x -= speed * Math.SQRT1_2;
+      pan.current.z += speed * Math.SQRT1_2;
+    } else if (mouse.current.x > 1 - edge) {
+      pan.current.x += speed * Math.SQRT1_2;
+      pan.current.z -= speed * Math.SQRT1_2;
+    }
+    if (mouse.current.y < edge) {
+      pan.current.x -= speed * Math.SQRT1_2;
+      pan.current.z -= speed * Math.SQRT1_2;
+    } else if (mouse.current.y > 1 - edge) {
+      pan.current.x += speed * Math.SQRT1_2;
+      pan.current.z += speed * Math.SQRT1_2;
+    }
+    const lookX = focus[0] + pan.current.x;
+    const lookZ = focus[1] + pan.current.z;
+    if (!follow.current.ready) {
+      follow.current = { x: lookX, z: lookZ, ready: true };
+    }
+    const smear = Math.min(1, delta * 8);
+    follow.current.x += (lookX - follow.current.x) * smear;
+    follow.current.z += (lookZ - follow.current.z) * smear;
+    shakeRef.current *= 0.86;
+    const j = shakeRef.current;
+    const jx = (Math.random() - 0.5) * j * 0.28;
+    const jz = (Math.random() - 0.5) * j * 0.28;
+    camera.position.set(follow.current.x + 16 + jx, 20, follow.current.z + 16 + jz);
+    camera.lookAt(follow.current.x, 0, follow.current.z);
+
+    const arenas = snap.arenas.filter((arena) => {
+      const cx = arena.x + arena.size / 2;
+      const cz = arena.y + arena.size / 2;
+      return Math.hypot(cx - follow.current.x, cz - follow.current.z) < VIEW_RANGE + arena.size * 0.35;
+    });
+    const arenaIds = new Set(arenas.map((arena) => arena.id));
+    const entities = snap.entities.filter((entity) => arenaIds.has(entity.arenaId));
+    const key = `${arenas.map((arena) => arena.id).join(",")}|${entities.map((entity) => entity.id).join(",")}`;
+    if (key !== idsKey.current) {
+      idsKey.current = key;
+      setVisible({
+        arenas: arenas.map((arena) => arena.id),
+        entities: entities.map((entity) => entity.id),
+      });
+    }
+  });
+
+  const snap = snapRef.current;
+  return (
+    <>
+      {visible.arenas.map((id) => {
+        const arena = snap?.arenas.find((item) => item.id === id);
+        return arena ? <ArenaPad key={id} arena={arena} /> : null;
+      })}
+      {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} />)}
+      <Shots snapRef={snapRef} follow={follow} />
+    </>
   );
 }
 
-function ArenaPad({ arena }: { arena: ArenaSnap }) {
+function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: number; kind: string } }) {
   const cx = arena.x + arena.size / 2;
   const cz = arena.y + arena.size / 2;
   const s = arena.size / 2;
@@ -59,34 +173,58 @@ function ArenaPad({ arena }: { arena: ArenaSnap }) {
   );
 }
 
-function Rig({ snap, watchId, shake }: { snap: Snapshot; watchId: string | null; shake: number }) {
-  const camera = useThree((state) => state.camera);
-  const focus = focusOf(snap, watchId);
-  const shakeLeft = useRef(0);
-  useEffect(() => {
-    if (shake > 0) shakeLeft.current = 1;
-  }, [shake]);
+function Shots({
+  snapRef,
+  follow,
+}: {
+  snapRef: MutableRefObject<Snapshot | null>;
+  follow: MutableRefObject<{ x: number; z: number; ready: boolean }>;
+}) {
+  const [ids, setIds] = useState<number[]>([]);
+  const key = useRef("");
   useFrame(() => {
-    shakeLeft.current *= 0.86;
-    const jx = (Math.random() - 0.5) * shakeLeft.current * 0.35;
-    const jz = (Math.random() - 0.5) * shakeLeft.current * 0.35;
-    const desiredX = focus[0] + 14 + jx;
-    const desiredZ = focus[1] + 14 + jz;
-    camera.position.x += (desiredX - camera.position.x) * 0.1;
-    camera.position.y += (18 - camera.position.y) * 0.1;
-    camera.position.z += (desiredZ - camera.position.z) * 0.1;
-    camera.lookAt(focus[0], 0, focus[1]);
+    const snap = snapRef.current;
+    if (!snap) return;
+    const near = snap.projectiles.filter((shot) => Math.hypot(shot.x - follow.current.x, shot.y - follow.current.z) < VIEW_RANGE);
+    const next = near.map((shot) => shot.id).join(",");
+    if (next !== key.current) {
+      key.current = next;
+      setIds(near.map((shot) => shot.id));
+    }
   });
-  return null;
+  return (
+    <>
+      {ids.map((id) => <Shot key={id} id={id} snapRef={snapRef} />)}
+    </>
+  );
+}
+
+function Shot({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
+  const mesh = useRef<import("three").Mesh>(null);
+  useFrame(() => {
+    const shot = snapRef.current?.projectiles.find((item) => item.id === id);
+    if (!mesh.current) return;
+    if (!shot) {
+      mesh.current.visible = false;
+      return;
+    }
+    mesh.current.visible = true;
+    mesh.current.position.set(shot.x, 0.35, shot.y);
+  });
+  return (
+    <mesh ref={mesh}>
+      <sphereGeometry args={[0.14, 8, 6]} />
+      <meshBasicMaterial color="#f4efe4" />
+    </mesh>
+  );
 }
 
 function focusOf(snap: Snapshot, watchId: string | null): [number, number] {
   const you = snap.players.find((player) => player.id === snap.youId);
   const watch = snap.players.find((player) => player.id === (watchId ?? you?.id)) ?? you;
-  const entity = snap.entities.find((item) => item.playerId && item.playerId === watch?.id);
+  const entity = snap.entities.find((item) => item.playerId === watch?.id);
   if (entity) return [entity.x, entity.y];
   const arena = snap.arenas.find((item) => item.id === watch?.arenaId) ?? snap.arenas[0];
   if (!arena) return [0, 0];
   return [arena.x + arena.size / 2, arena.y + arena.size / 2];
 }
-

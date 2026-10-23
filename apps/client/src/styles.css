@@ -100,6 +100,12 @@ input[type="text"], input[type="password"], input[type="number"] {
   background: #16130fcc; border: 1px solid #6a573f; padding: 18px;
   display: grid; gap: 12px;
 }
+.overlay.pick {
+  top: auto; bottom: 86px; transform: translate(-50%, 0);
+  pointer-events: none;
+  background: #16130fe8;
+}
+.overlay.pick button { pointer-events: auto; }
 .cards { display: flex; gap: 10px; flex-wrap: wrap; }
 .card {
   width: 160px; min-height: 140px; text-align: left; padding: 10px;
@@ -113,10 +119,11 @@ input[type="text"], input[type="password"], input[type="number"] {
 .rarity-lendario { border-color: #f0a202; }
 .end table { width: 100%; border-collapse: collapse; }
 .end td, .end th { text-align: left; padding: 6px 4px; border-bottom: 1px solid #3a3228; }
-.spectate {
+.spectate, .hint {
   position: absolute; z-index: 3; bottom: 16px; left: 50%; transform: translateX(-50%);
   background: #1c1914; padding: 8px 12px; border: 1px solid #3a3228;
 }
+.hint { opacity: 0.7; font-size: 13px; pointer-events: none; }
 
 @media (max-width: 800px) {
   .settings { grid-template-columns: 1fr; }

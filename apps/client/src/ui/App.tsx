@@ -2,6 +2,7 @@ import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { LobbyState, Snapshot } from "@game/shared/protocol";
 import { Scene } from "../game/Scene.js";
+import { cameraMove, isTypingTarget } from "../game/input.js";
 import { api, wsBase } from "../net.js";
 import { blip, unlockAudio } from "../audio.js";
 
@@ -169,9 +170,11 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [watchId, setWatchId] = useState<string | null>(null);
   const [betAmount, setBetAmount] = useState(5);
-  const [shake, setShake] = useState(0);
   const roomRef = useRef<Room | null>(null);
   const hpRef = useRef<number | null>(null);
+  const snapRef = useRef<Snapshot | null>(null);
+  const shakeRef = useRef(0);
+  snapRef.current = snap;
 
   useEffect(() => {
     const client = new Client(wsBase());
@@ -203,12 +206,12 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.code.startsWith("Arrow")) event.preventDefault();
-      if (event.target instanceof HTMLInputElement) return;
-      roomRef.current?.send("input", direction());
+      if (isTypingTarget(event.target)) return;
+      roomRef.current?.send("input", cameraMove());
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
-    const pulse = setInterval(() => roomRef.current?.send("input", direction()), 100);
+    const pulse = setInterval(() => roomRef.current?.send("input", cameraMove()), 50);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKey);
@@ -222,7 +225,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
     if (!me) return;
     if (hpRef.current !== null && me.hp < hpRef.current) {
       blip(140, 0.08, "sawtooth", 0.04);
-      setShake((value) => value + 1);
+      shakeRef.current = 1;
     }
     if (snap.floats.some((item) => item.crit)) blip(620, 0.05, "square", 0.025);
     hpRef.current = me.hp;
@@ -234,7 +237,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
 
   return (
     <main className="match" onPointerDown={unlockAudio}>
-      <Scene snap={snap} watchId={watchId} shake={shake} />
+      <Scene snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
       <header className="hud top">
         <div>
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
@@ -277,7 +280,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         {snap.log.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
       </div>
       {me && me.pending.length > 0 ? (
-        <section className="overlay">
+        <section className="overlay pick">
           <h2>Escolhe uma carta <small>{Math.ceil(me.cardTimer)}s</small></h2>
           <div className="cards">
             {me.pending.map((card) => (
@@ -348,20 +351,10 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           <button className="btn primary" onClick={onLeave}>Voltar ao lobby</button>
         </section>
       ) : null}
-      {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : null}
+      {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
+        <p className="hint">W sobe na tela. Botão direito ou borda do mouse pra olhar outra arena.</p>
+      )}
     </main>
   );
 }
 
-function direction() {
-  const down = (code: string) => keys.has(code);
-  const x = (down("KeyD") || down("ArrowRight") ? 1 : 0) - (down("KeyA") || down("ArrowLeft") ? 1 : 0);
-  const y = (down("KeyS") || down("ArrowDown") ? 1 : 0) - (down("KeyW") || down("ArrowUp") ? 1 : 0);
-  return { x, y };
-}
-
-const keys = new Set<string>();
-if (typeof window !== "undefined") {
-  window.addEventListener("keydown", (event) => keys.add(event.code));
-  window.addEventListener("keyup", (event) => keys.delete(event.code));
-}
