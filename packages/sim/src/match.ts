@@ -203,7 +203,6 @@ export function tick(match: Match) {
       if (player.respawnIn <= 0) respawnHero(match, player);
     }
     if (player.pendingCards.length > 0) {
-      player.paused = true;
       player.cardTimer -= dt;
       if (player.cardTimer <= 0) {
         const cardId = match.rng.pick(player.pendingCards);

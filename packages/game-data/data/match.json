@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minPlayers": 2,
   "maxPlayers": 8,
   "lives": 3,
@@ -12,8 +12,8 @@
   "shopSeconds": 14,
   "shopSlots": 3,
   "bossEveryRounds": 3,
-  "arenaSize": 16,
-  "arenaGap": 8,
+  "arenaSize": 32,
+  "arenaGap": 72,
   "tickRate": 20,
   "xpBase": 12,
   "xpPower": 1.35,

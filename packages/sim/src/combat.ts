@@ -27,7 +27,7 @@ export function simulateCombat(match: Match, dt: number) {
 function moveHeroes(match: Match, dt: number) {
   for (const player of alivePlayers(match)) {
     const entity = heroEntity(match, player);
-    if (!entity?.alive || player.paused) continue;
+    if (!entity?.alive) continue;
     let x = player.inputX;
     let y = player.inputY;
     const len = Math.hypot(x, y);
@@ -96,7 +96,6 @@ function separate(match: Match) {
 
 function castAbilities(match: Match) {
   for (const player of alivePlayers(match)) {
-    if (player.paused) continue;
     const caster = heroEntity(match, player);
     if (!caster?.alive) continue;
     for (const slot of player.abilities) {

@@ -15,7 +15,7 @@ export function dealDamage(match: Match, hit: HitInput): number {
   const target = hit.target;
   if (!target.alive || target.invuln > 0) return 0;
   const targetPlayer = target.playerId ? playerById(match, target.playerId) : undefined;
-  if (targetPlayer?.paused || targetPlayer?.eliminated) return 0;
+  if (targetPlayer?.eliminated) return 0;
 
   const ctx: DamageContext = {
     match,
@@ -160,7 +160,6 @@ export function offerCards(match: Match, player: PlayerState) {
   if (picked.length === 0) return;
   player.pendingCards = picked;
   player.cardTimer = match.config.cardPickSeconds;
-  player.paused = true;
   match.events.push({ type: "card_offer", round: match.round, playerId: player.id, cards: picked });
 }
 

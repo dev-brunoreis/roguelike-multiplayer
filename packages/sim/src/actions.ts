@@ -8,7 +8,7 @@ import { abilityById, cardById, clamp, emit, playerById } from "./world.js";
 export function setInput(match: Match, playerId: string, x: number, y: number) {
   const player = playerById(match, playerId);
   if (!player || player.eliminated || player.isBot) return;
-  if (player.paused || match.phase === "ended") {
+  if (match.phase === "ended") {
     player.inputX = 0;
     player.inputY = 0;
     return;
@@ -23,7 +23,6 @@ export function pickCard(match: Match, playerId: string, cardId: string, auto = 
   if (!player.pendingCards.includes(cardId)) return;
   player.pendingCards = [];
   player.cardTimer = 0;
-  player.paused = false;
   applyCard(match, player, cardId);
   emit(match, { type: "card_pick", round: match.round, playerId, cardId, auto });
 }

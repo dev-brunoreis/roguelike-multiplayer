@@ -87,6 +87,24 @@ describe("simulação", () => {
     expect(new Set(player.pendingCards).size).toBe(5);
   });
 
+  it("continua andando enquanto escolhe carta", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 2,
+      data,
+    });
+    quietMatch(match);
+    const player = match.players[0]!;
+    match.spawns.push({ arenaId: player.arenaId, creepId: "slime", left: 4, interval: 9, acc: 0 });
+    grantXp(match, player, match.config.xpBase);
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const before = hero.x;
+    player.inputX = 1;
+    tick(match);
+    expect(hero.x).toBeGreaterThan(before);
+    expect(player.pendingCards.length).toBeGreaterThan(0);
+  });
+
   it("armadura reduz o dano do creep", () => {
     const hit = (armor: number) => {
       const match = createMatch({
