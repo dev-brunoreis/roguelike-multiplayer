@@ -1,0 +1,10 @@
+services:
+  caos:
+    build: .
+    ports:
+      - "2567:2567"
+    environment:
+      PORT: "2567"
+      DATABASE_PATH: /app/data/game.sqlite
+    volumes:
+      - ./data:/app/data
