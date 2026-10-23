@@ -1,0 +1,25 @@
+{
+  "name": "roguelike-multiplayer",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @game/server --filter @game/client dev",
+    "build": "pnpm --filter @game/client build",
+    "start": "pnpm build && pnpm --filter @game/server start",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit && eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^24.6.0",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.45.0",
+    "vitest": "^3.2.4"
+  }
+}
