@@ -30,6 +30,7 @@ Registros em `packages/sim/src/registry.ts`:
 - `registerTargeting`
 - `registerEffect`
 - `registerCreepBehavior`
+- `registerCreepSkill` (`charge`, `burst`, `summon`, `mend`, `bolt` no `skill` do creep)
 - `registerBot`
 - `registerBeforeDamage`, `registerAfterDamage`, `registerOnKill`
 

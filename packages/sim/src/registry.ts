@@ -1,9 +1,10 @@
-import type { AbilityBehavior, BotFn, CreepBehavior, DamageHook, EffectHandler, TargetingFn } from "./types.js";
+import type { AbilityBehavior, BotFn, CreepBehavior, CreepSkill, DamageHook, EffectHandler, TargetingFn } from "./types.js";
 
 const behaviors = new Map<string, AbilityBehavior>();
 const targeting = new Map<string, TargetingFn>();
 const effects = new Map<string, EffectHandler>();
 const creepBehaviors = new Map<string, CreepBehavior>();
+const creepSkills = new Map<string, CreepSkill>();
 const bots = new Map<string, BotFn>();
 const beforeDamage: DamageHook[] = [];
 const afterDamage: DamageHook[] = [];
@@ -20,6 +21,9 @@ export function registerEffect(id: string, fn: EffectHandler) {
 }
 export function registerCreepBehavior(id: string, fn: CreepBehavior) {
   creepBehaviors.set(id, fn);
+}
+export function registerCreepSkill(id: string, fn: CreepSkill) {
+  creepSkills.set(id, fn);
 }
 export function registerBot(id: string, fn: BotFn) {
   bots.set(id, fn);
@@ -38,6 +42,7 @@ export const getBehavior = (id: string) => behaviors.get(id);
 export const getTargeting = (id: string) => targeting.get(id);
 export const getEffect = (id: string) => effects.get(id);
 export const getCreepBehavior = (id: string) => creepBehaviors.get(id);
+export const getCreepSkill = (id: string) => creepSkills.get(id);
 export const getBot = (id: string) => bots.get(id);
 export const damagePipeline = { beforeDamage, afterDamage, onKill };
 
@@ -52,4 +57,7 @@ export function hasEffect(id: string) {
 }
 export function hasCreepBehavior(id: string) {
   return creepBehaviors.has(id);
+}
+export function hasCreepSkill(id: string) {
+  return creepSkills.has(id);
 }

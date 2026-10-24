@@ -96,6 +96,11 @@ function checkRefs(data: GameData) {
   for (const boss of data.bosses) {
     if (!creeps.has(boss.creepId)) throw new Error(`Boss ${boss.id} cita creep inexistente: ${boss.creepId}`);
   }
+  for (const creep of data.creeps) {
+    if (creep.skill?.creepId && !creeps.has(creep.skill.creepId)) {
+      throw new Error(`Creep ${creep.id} invoca creep inexistente: ${creep.skill.creepId}`);
+    }
+  }
 }
 
 let cached: GameData | null = null;

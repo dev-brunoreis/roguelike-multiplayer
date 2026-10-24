@@ -28,6 +28,8 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira). No corpo a corpo, `attackWindup` é o tempo da bolinha: o bicho para, a bolinha cresce, e o dano sai no fim se o alvo ainda está no alcance.
 
+Skill opcional no creep, campo `skill`. O golpe normal continua. A skill gasta `cooldown` e lê o resto do objeto: `charge` (investida: `damage`, `range`, `speed`), `burst` (estouro no `radius` depois do `attackWindup`, se o herói está em `range`), `summon` (`creepId`, `count` vivos daquele conjurador), `mend` (`amount`, `range` no aliado mais ferido), `bolt` (`damage`, `range`). Dano e cura escalam com a rodada, como a vida do bicho. Skill nova: `registerCreepSkill` num arquivo importado por `content.ts`.
+
 ## Visual
 
 O snapshot manda `view` = id do herói ou do creep. O visual padrão é um sprite de pixel em `apps/client/src/game/sprites.ts`, com idle, corrida, ataque e hit. A folha CC0 fica em `apps/client/public/sprites/0x72/`.

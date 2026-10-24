@@ -38,6 +38,10 @@ export function spawnCreep(match: Match, arenaId: string, creepId: string) {
     swing: 0,
     facing: 0,
     behavior: def.behavior,
+    skillTimer: def.skill ? def.skill.cooldown * 0.45 : 0,
+    skillLeft: 0,
+    skillStep: "",
+    chargeHit: false,
   });
 }
 

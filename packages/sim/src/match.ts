@@ -6,6 +6,7 @@ import "./content.js";
 import { eliminate, grantXp } from "./damage.js";
 import { beginPve, checkWinner, respawnHero, updateBetting, updateDuel, updateHub, updatePve, updateShop } from "./phases.js";
 import { simulateCombat, simulateMove } from "./combat.js";
+import { assertCreepSkills } from "./creepSkills.js";
 import { hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
@@ -198,6 +199,7 @@ function assertContent(data: GameData) {
   for (const creep of data.creeps) {
     if (!hasCreepBehavior(creep.behavior)) throw new Error(`IA desconhecida em ${creep.id}: ${creep.behavior}`);
   }
+  assertCreepSkills(data.creeps);
   for (const card of data.cards) {
     for (const effect of card.effects) {
       if (!hasEffect(effect.type)) throw new Error(`Efeito desconhecido na carta ${card.id}: ${effect.type}`);

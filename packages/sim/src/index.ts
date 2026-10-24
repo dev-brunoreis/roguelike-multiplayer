@@ -10,6 +10,7 @@ export {
   registerBeforeDamage,
   registerBot,
   registerCreepBehavior,
+  registerCreepSkill,
   registerEffect,
   registerOnKill,
   registerTargeting,

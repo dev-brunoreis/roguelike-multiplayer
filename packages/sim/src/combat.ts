@@ -1,3 +1,4 @@
+import { creepSkillBusy } from "./creepSkills.js";
 import { getBehavior, getCreepBehavior } from "./registry.js";
 import type { Entity, Match } from "./types.js";
 import { dealDamage } from "./damage.js";
@@ -78,6 +79,7 @@ function nearestEnemy(match: Match, entity: Entity) {
 function moveCreeps(match: Match, dt: number) {
   for (const entity of match.entities) {
     if (!entity.alive || entity.kind === "hero") continue;
+    if (creepSkillBusy(match, entity, dt)) continue;
     const behavior = getCreepBehavior(entity.behavior);
     behavior?.(match, entity, dt);
   }

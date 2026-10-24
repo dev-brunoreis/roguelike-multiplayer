@@ -10,7 +10,7 @@ Roguelike multiplayer autoritativo. Servidor simula, cliente só renderiza. Cont
 - `packages/sim` não importa Colyseus, Express, React ou Three.
 - Dano, carta, ouro e vitória só mudam em `packages/sim`.
 - Número de jogo (dano, cooldown, vida, preço) vai no JSON, não espalhado no TS.
-- Plugin novo entra por registro: behavior, targeting, effect, creep, bot ou `registerEntityView`.
+- Plugin novo entra por registro: behavior, targeting, effect, creep, skill de creep, bot ou `registerEntityView`.
 - Partida não continua no próximo login. Desconectar por 8s elimina.
 - Onda no quadrado de cada um; espera o último. Cartas, loja e aposta no salão central, sem dano.
 - Um duelo por vez. Banner no topo anuncia o par (10s), o vencedor, morte e desistência. Espaço confirma Seguir. Esc abre o menu. A partida pausa quando todo humano vivo pede.

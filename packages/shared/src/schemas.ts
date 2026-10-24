@@ -77,6 +77,18 @@ export const heroSchema = z.object({
   startingAbility: z.string().min(1),
 });
 
+export const creepSkillSchema = z.object({
+  kind: z.string().min(1),
+  cooldown: z.number().positive(),
+  damage: z.number().nonnegative().optional(),
+  range: z.number().positive().optional(),
+  radius: z.number().positive().optional(),
+  speed: z.number().positive().optional(),
+  amount: z.number().positive().optional(),
+  creepId: z.string().min(1).optional(),
+  count: z.number().int().positive().optional(),
+});
+
 export const creepSchema = z.object({
   id: z.string().min(1),
   nome: z.string().min(1),
@@ -93,6 +105,7 @@ export const creepSchema = z.object({
   armor: z.number().nonnegative().default(0),
   behavior: z.string().min(1),
   kind: z.enum(["creep", "boss"]).default("creep"),
+  skill: creepSkillSchema.optional(),
 });
 
 export const waveSchema = z.object({
@@ -166,6 +179,7 @@ export type AbilityDef = z.infer<typeof abilitySchema>;
 export type EffectDef = z.infer<typeof effectSchema>;
 export type CardDef = z.infer<typeof cardSchema>;
 export type HeroDef = z.infer<typeof heroSchema>;
+export type CreepSkillDef = z.infer<typeof creepSkillSchema>;
 export type CreepDef = z.infer<typeof creepSchema>;
 export type WaveDef = z.infer<typeof waveSchema>;
 export type BossDef = z.infer<typeof bossSchema>;

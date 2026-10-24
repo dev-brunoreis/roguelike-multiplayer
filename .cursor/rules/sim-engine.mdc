@@ -14,6 +14,8 @@ Ordem: se a pausa estiver fechada (todo humano vivo pediu), o tick volta sem ava
 
 `chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. O snapshot manda `strike` de 0 a 1 nesse intervalo.
 
+Creep com `skill` no JSON dispara isso antes do `behavior`, quando o `cooldown` zera. `charge` e `burst` tomam o tick (a investida anda, o estouro usa o `attackWindup` como a bolinha). `summon`, `mend` e `bolt` não travam o golpe normal. Número da skill não entra no TypeScript.
+
 Registro novo:
 
 ```ts

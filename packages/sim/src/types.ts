@@ -11,6 +11,7 @@ import type {
 } from "@game/shared";
 import type { Rng } from "@game/shared";
 import type { GameData } from "@game/game-data";
+import type { CreepSkillDef } from "@game/shared";
 
 export interface Stats {
   damagePct: number;
@@ -67,6 +68,13 @@ export interface Entity {
   swing?: number;
   facing: number;
   behavior: string;
+  skillTimer?: number;
+  skillLeft?: number;
+  skillStep?: string;
+  chargeVx?: number;
+  chargeVy?: number;
+  chargeHit?: boolean;
+  summonedBy?: number;
 }
 
 export interface Projectile {
@@ -210,6 +218,7 @@ export type AbilityBehavior = (ctx: AbilityContext) => boolean;
 export type TargetingFn = (match: Match, origin: Entity, range: number, ignore: Set<number>) => Entity | null;
 export type EffectHandler = (match: Match, player: PlayerState, effect: EffectDef) => void;
 export type CreepBehavior = (match: Match, creep: Entity, dt: number) => void;
+export type CreepSkill = (match: Match, creep: Entity, skill: CreepSkillDef) => boolean;
 export type DamageHook = (ctx: DamageContext) => void;
 export type BotFn = (match: Match, player: PlayerState) => void;
 
