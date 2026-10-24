@@ -1,10 +1,11 @@
 import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { memo, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { forgetMotion, motionAt, trackMotion } from "./motion.js";
+import { memo, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { ArenaDressing, floorTexture, moteSpec, voidTexture } from "./atmosphere.js";
+import { forgetMotion, motionAt, resetMotion, trackMotion } from "./motion.js";
 import { shotTexture } from "./sprites.js";
-import { DeathLayer, EntityPuppet, FloatLayer, HpLayer } from "./views.js";
+import { DeathLayer, EntityPuppet, FloatLayer, HpLayer, resetPoses } from "./views.js";
 
 const VIEW_RANGE = 92;
 
@@ -19,7 +20,8 @@ export const Scene = memo(function Scene({
 }) {
   return (
     <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
-      <color attach="background" args={["#12100d"]} />
+      <color attach="background" args={["#0e0c0a"]} />
+      <fog attach="fog" args={["#0e0c0a", 72, 168]} />
       <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={420} />
       <World snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
@@ -40,6 +42,15 @@ function World({
   const focusMem = useRef({ x: 0, z: 0, ready: false });
   const [visible, setVisible] = useState<{ arenas: string[]; entities: number[] }>({ arenas: [], entities: [] });
   const idsKey = useRef("");
+
+  useLayoutEffect(() => {
+    resetMotion();
+    resetPoses();
+    return () => {
+      resetMotion();
+      resetPoses();
+    };
+  }, []);
 
   useFrame((state, delta) => {
     const snap = snapRef.current;
@@ -97,10 +108,11 @@ function World({
   const snap = snapRef.current;
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
         <planeGeometry args={[420, 420]} />
-        <meshBasicMaterial color="#0d0c0a" />
+        <meshBasicMaterial map={voidTexture()} color="#141210" dispose={null} />
       </mesh>
+      <Drift follow={follow} />
       {visible.arenas.map((id) => {
         const arena = snap?.arenas.find((item) => item.id === id);
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
@@ -118,47 +130,53 @@ function World({
 function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: number; kind: string } }) {
   const cx = arena.x + arena.size / 2;
   const cz = arena.y + arena.size / 2;
-  const s = arena.size / 2;
-  const inner = s - 0.45;
-  const fill = arena.kind === "hub" ? "#3f4d3c" : arena.kind === "duel" ? "#6e3f28" : "#4d4336";
-  const rim = arena.kind === "hub" ? "#6f8a62" : arena.kind === "duel" ? "#c46a3a" : "#8a6f4c";
-  const points = useMemo(() => {
-    const tiles: number[] = [];
-    const step = arena.size / 6;
-    for (let i = 1; i < 6; i += 1) {
-      const p = -s + i * step;
-      tiles.push(-inner, 0.05, p, inner, 0.05, p, p, 0.05, -inner, p, 0.05, inner);
-    }
-    tiles.push(
-      -s, 0.06, -s, s, 0.06, -s,
-      s, 0.06, -s, s, 0.06, s,
-      s, 0.06, s, -s, 0.06, s,
-      -s, 0.06, s, -s, 0.06, -s,
-    );
-    return new Float32Array(tiles);
-  }, [arena.size, inner, s]);
+  const skirt = arena.kind === "hub" ? "#1c2218" : arena.kind === "duel" ? "#1a100e" : "#1a1612";
+  const map = floorTexture(arena.kind);
   return (
     <group position={[cx, 0, cz]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[arena.size + 1.4, arena.size + 1.4]} />
-        <meshBasicMaterial color="#1a1612" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <planeGeometry args={[arena.size + 2.2, arena.size + 2.2]} />
+        <meshBasicMaterial color={skirt} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[arena.size, arena.size]} />
-        <meshBasicMaterial color={fill} />
+        <meshBasicMaterial map={map} dispose={null} />
       </mesh>
       {arena.kind === "hub" ? (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-          <circleGeometry args={[4.2, 24]} />
-          <meshBasicMaterial color="#4d5c48" />
+          <ringGeometry args={[3.2, 4.4, 28]} />
+          <meshBasicMaterial color="#6f8a62" transparent opacity={0.55} />
         </mesh>
       ) : null}
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[points, 3]} />
-        </bufferGeometry>
-        <lineBasicMaterial color={rim} transparent opacity={0.55} />
-      </lineSegments>
+      <ArenaDressing id={arena.id} size={arena.size} kind={arena.kind} />
+    </group>
+  );
+}
+
+function Drift({ follow }: { follow: MutableRefObject<{ x: number; z: number; ready: boolean }> }) {
+  const spec = useMemo(() => moteSpec(), []);
+  const group = useRef<import("three").Group>(null);
+  useFrame((state) => {
+    const root = group.current;
+    if (!root || !follow.current.ready) return;
+    const t = state.clock.elapsedTime;
+    root.children.forEach((child, index) => {
+      const mote = spec[index];
+      if (!mote) return;
+      child.position.set(
+        follow.current.x + Math.sin(t * mote.speed + mote.phase) * mote.radius,
+        0.6 + (Math.sin(t * 0.45 + mote.phase) * 0.5 + 0.5) * 2.4,
+        follow.current.z + Math.cos(t * mote.speed * 0.75 + mote.phase) * mote.radius,
+      );
+    });
+  });
+  return (
+    <group ref={group}>
+      {spec.map((mote, index) => (
+        <sprite key={index} scale={[mote.size, mote.size, 1]} renderOrder={3}>
+          <spriteMaterial color={mote.color} transparent opacity={0.38} depthWrite={false} />
+        </sprite>
+      ))}
     </group>
   );
 }

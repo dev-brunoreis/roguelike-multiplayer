@@ -38,6 +38,10 @@ interface Death {
 
 const poses = new Map<number, Pose>();
 
+export function resetPoses() {
+  poses.clear();
+}
+
 export function takeDeaths(alive: Set<number>, now: number): Death[] {
   const born: Death[] = [];
   for (const [id, pose] of poses) {

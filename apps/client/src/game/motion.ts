@@ -9,10 +9,14 @@ interface Knot {
 
 const knots = new Map<number, { a: Knot; b: Knot }>();
 
+export function resetMotion() {
+  knots.clear();
+}
+
 export function trackMotion(id: number, x: number, y: number, now: number) {
   const knot = knots.get(id);
   const sample = { x, y, t: now };
-  if (!knot) {
+  if (!knot || now - knot.b.t > 0.5) {
     knots.set(id, { a: sample, b: sample });
     return;
   }
