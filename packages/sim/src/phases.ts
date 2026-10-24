@@ -204,7 +204,7 @@ export function beginHub(match: Match) {
   match.duelPending = false;
   match.duelAnnounce = 0;
   const fighters = alivePlayers(match);
-  if (match.waveDone && match.round >= match.config.duelStartRound && fighters.length >= 2) {
+  if (match.duelsEnabled && match.waveDone && match.round >= match.config.duelStartRound && fighters.length >= 2) {
     match.duel = pairPlayers(match);
     match.duelPending = match.duel.length > 0;
   }
@@ -318,6 +318,66 @@ function placeDuelArena(match: Match, arenaId: string, slot: number) {
     kind: "duel",
     label: "Duelo",
   });
+}
+
+function duelLive(match: Match) {
+  const pending = (match.phase === "hub" || match.phase === "shop") && match.duelPending && match.duel.length > 0;
+  const fighting = match.phase === "duel" || match.phase === "betting";
+  return { pending, fighting };
+}
+
+function dropDuel(match: Match) {
+  for (const player of match.players) {
+    if (!player.bet) continue;
+    player.gold += player.bet.amount;
+    player.bet = null;
+  }
+  match.duel = [];
+  match.duelPending = false;
+  match.duelAnnounce = 0;
+  match.projectiles = [];
+  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
+}
+
+export function setDuels(match: Match, on?: boolean): boolean | null {
+  if (match.phase === "ended") return null;
+  match.duelsEnabled = on ?? !match.duelsEnabled;
+  if (!match.duelsEnabled) {
+    const { pending, fighting } = duelLive(match);
+    if (pending || fighting) {
+      dropDuel(match);
+      addLog(match, "Duelos desligados");
+      if (fighting) {
+        if (match.waveDone) match.round += 1;
+        beginPve(match);
+      } else {
+        pushBanner(match, { kind: "info", title: "Duelos desligados", detail: "A onda segue sem duelo", life: 3.2 });
+      }
+    }
+  }
+  return match.duelsEnabled;
+}
+
+export function jumpWave(match: Match, round: number): number | null {
+  if (match.phase === "ended" || !Number.isInteger(round) || round < 1 || round > 99) return null;
+  match.round = round;
+  beginPve(match);
+  pushBanner(match, { kind: "info", title: `Onda ${round}`, detail: "Começou agora", life: 3.2 });
+  return round;
+}
+
+export function skipDuel(match: Match) {
+  if (match.phase === "ended") return false;
+  const { pending, fighting } = duelLive(match);
+  if (!pending && !fighting) return false;
+  dropDuel(match);
+  addLog(match, "Duelo pulado");
+  pushBanner(match, { kind: "info", title: "Duelo pulado", detail: "Ninguém perde vida", life: 3.2 });
+  if (fighting) {
+    if (match.waveDone) match.round += 1;
+    beginPve(match);
+  }
+  return true;
 }
 
 export function beginDuel(match: Match) {

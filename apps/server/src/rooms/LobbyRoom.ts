@@ -3,7 +3,7 @@ import type { LobbyConfig, LobbyState } from "@game/shared";
 import { matchOptionsSchema } from "@game/shared";
 import { Client, matchMaker, Room } from "colyseus";
 import { verifyToken } from "../auth.js";
-import { RoomChat } from "../chat.js";
+import { chatCommand, chatText, RoomChat } from "../chat.js";
 
 const BOT_NAMES = ["Bram", "Lira", "Kas", "Nox", "Vesper", "Ivo", "Sena"];
 
@@ -76,6 +76,12 @@ export class LobbyRoom extends Room {
     this.onMessage("chat", (client, raw: unknown) => {
       const seat = this.sessions.get(client.sessionId);
       if (!seat) return;
+      const text = chatText(raw);
+      if (text && chatCommand(text)) {
+        if (!this.chat.admit(seat.id)) return;
+        this.broadcast("chat", this.chat.post(seat.id, seat.name, seat.shadowColor ?? "#f3ecdf", "esse comando só vale na partida"));
+        return;
+      }
       const line = this.chat.push(seat.id, seat.name, seat.shadowColor ?? "#f3ecdf", raw);
       if (line) this.broadcast("chat", line);
     });

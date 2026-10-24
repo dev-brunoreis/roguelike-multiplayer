@@ -1,6 +1,6 @@
 import "./content.js";
 
-export { pickCard, placeBet, setInput, setPauseWant, shopAct, surrender } from "./actions.js";
+export { pickCard, placeBet, setBotsGodmode, setGodmode, setInput, setPauseWant, shopAct, surrender } from "./actions.js";
 export { runBots } from "./bots.js";
 export { dealDamage } from "./damage.js";
 export { createMatch, grantXp, quietMatch, runTicks, tick } from "./match.js";
@@ -15,6 +15,7 @@ export {
   registerOnKill,
   registerTargeting,
 } from "./registry.js";
+export { jumpWave, setDuels, skipDuel } from "./phases.js";
 export { buildSnapshot } from "./snapshot.js";
 export { spawnCreep } from "./spawn.js";
 export type { Entity, Match, PlayerState } from "./types.js";

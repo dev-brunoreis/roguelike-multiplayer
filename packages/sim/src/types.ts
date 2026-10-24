@@ -159,6 +159,7 @@ export interface PlayerState {
   bet: { targetId: string; amount: number } | null;
   shopOffers: string[];
   ready: boolean;
+  godmode: boolean;
   wander: number;
   botActed: boolean;
   eliminatedAt: number | null;
@@ -183,6 +184,7 @@ export interface Match {
   spawns: SpawnJob[];
   duel: DuelPair[];
   waveDone: boolean;
+  duelsEnabled: boolean;
   duelPending: boolean;
   duelAnnounce: number;
   banner: { id: number; kind: AnnounceKind; title: string; detail: string; left: number } | null;

@@ -18,7 +18,7 @@ export function dealDamage(match: Match, hit: HitInput, nested = false): number 
   const arena = arenaById(match, target.arenaId);
   if (arena?.kind === "hub") return 0;
   const targetPlayer = target.playerId ? playerById(match, target.playerId) : undefined;
-  if (targetPlayer?.eliminated) return 0;
+  if (targetPlayer?.eliminated || targetPlayer?.godmode) return 0;
 
   const ctx: DamageContext = {
     match,

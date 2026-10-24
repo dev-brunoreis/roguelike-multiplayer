@@ -71,6 +71,22 @@ export function setPauseWant(match: Match, playerId: string, want: boolean) {
   syncPause(match);
 }
 
+export function setGodmode(match: Match, playerId: string, on?: boolean): boolean | null {
+  const player = playerById(match, playerId);
+  if (!player || player.isBot || player.eliminated || match.phase === "ended") return null;
+  player.godmode = on ?? !player.godmode;
+  return player.godmode;
+}
+
+export function setBotsGodmode(match: Match, on?: boolean): boolean | null {
+  if (match.phase === "ended") return null;
+  const bots = match.players.filter((player) => player.isBot && !player.eliminated);
+  if (bots.length === 0) return null;
+  const next = on ?? !bots.every((player) => player.godmode);
+  for (const bot of bots) bot.godmode = next;
+  return next;
+}
+
 export function surrender(match: Match, playerId: string) {
   const player = playerById(match, playerId);
   if (!player || player.eliminated || match.phase === "ended") return;

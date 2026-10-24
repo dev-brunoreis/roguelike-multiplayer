@@ -87,6 +87,7 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     damageDealt: Math.round(player.damageDealt),
     ready: player.ready,
     pauseWant: player.pauseWant,
+    godmode: player.godmode,
     bet: null,
     inDuel: isFighter(match, player.id),
     arenaId: entity?.arenaId ?? player.arenaId,

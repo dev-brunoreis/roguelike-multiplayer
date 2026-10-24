@@ -14,7 +14,8 @@ import {
 import { Client, Room } from "colyseus";
 import { randomUUID } from "node:crypto";
 import { verifyToken } from "../auth.js";
-import { RoomChat } from "../chat.js";
+import { chatCommand, chatText, RoomChat } from "../chat.js";
+import { runMatchCommand } from "../matchCommands.js";
 import { StatsWriter } from "../stats.js";
 
 interface Seat {
@@ -108,6 +109,14 @@ export class MatchRoom extends Room {
       const id = this.users.get(client.sessionId);
       const player = id ? this.match.players.find((item) => item.id === id) : undefined;
       if (!player || player.isBot) return;
+      const text = chatText(raw);
+      const command = text ? chatCommand(text) : null;
+      if (command) {
+        if (!this.chat.admit(player.id)) return;
+        const reply = runMatchCommand(this.match, player.id, command);
+        this.broadcast("chat", this.chat.post(player.id, player.name, player.color, reply));
+        return;
+      }
       const line = this.chat.push(player.id, player.name, player.color, raw);
       if (line) this.broadcast("chat", line);
     });

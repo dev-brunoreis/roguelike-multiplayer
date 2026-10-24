@@ -797,7 +797,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
               <span className="life" title={`${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`}>
                 <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / Math.max(1, player.maxHp)) * 100))}%` }} />
               </span>
-              <small>{"♥".repeat(Math.max(0, player.lives))}{player.respawnIn > 0 && player.lives > 0 ? ` · ${Math.ceil(player.respawnIn)}s` : ""}{player.eliminated ? " fora" : ""}{player.inDuel ? " · duelo" : ""}{player.pauseWant ? " · pausa" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
+              <small>{"♥".repeat(Math.max(0, player.lives))}{player.respawnIn > 0 && player.lives > 0 ? ` · ${Math.ceil(player.respawnIn)}s` : ""}{player.eliminated ? " fora" : ""}{player.inDuel ? " · duelo" : ""}{player.godmode ? " · godmode" : ""}{player.pauseWant ? " · pausa" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}</small>
               <span className="pips">
                 {player.abilities.map((ability) => {
                   const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;

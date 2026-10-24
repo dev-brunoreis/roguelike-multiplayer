@@ -76,6 +76,7 @@ export interface PlayerSnap {
   damageDealt: number;
   ready: boolean;
   pauseWant: boolean;
+  godmode: boolean;
   bet: { targetId: string; amount: number } | null;
   inDuel: boolean;
   arenaId: string;

@@ -1,7 +1,7 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { dealDamage } from "./damage.js";
-import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, setPauseWant, surrender, tick } from "./index.js";
+import { buildSnapshot, createMatch, grantXp, jumpWave, pickCard, quietMatch, runTicks, setBotsGodmode, setDuels, setGodmode, setPauseWant, skipDuel, surrender, tick } from "./index.js";
 import type { Match } from "./types.js";
 import { arenaCenter } from "./world.js";
 
@@ -467,6 +467,144 @@ describe("simulação", () => {
     expect(match.duelAnnounce).toBeGreaterThan(9);
     expect(match.banner?.kind).toBe("duel");
     expect(match.banner?.title).toMatch(/ vs /);
+  });
+
+  it("pular o duelo anunciado não tira vida e segue para a onda", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+      ],
+      seed: 11,
+      config: { duelStartRound: 1, duelAnnounceSeconds: 10 },
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    const lives = match.players.map((player) => player.lives);
+    expect(skipDuel(match)).toBe(true);
+    expect(match.phase).toBe("hub");
+    expect(match.duelPending).toBe(false);
+    expect(match.players.map((player) => player.lives)).toEqual(lives);
+    for (const player of match.players) player.ready = true;
+    tick(match);
+    expect(match.phase).toBe("pve");
+    expect(skipDuel(match)).toBe(false);
+  });
+
+  it("pular o duelo em curso não escolhe vencedor", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+      ],
+      seed: 11,
+      config: { duelStartRound: 1, duelAnnounceSeconds: 0.05 },
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    for (const player of match.players) player.ready = true;
+    runTicks(match, 5);
+    expect(match.phase).toBe("duel");
+    const round = match.round;
+    const lives = match.players.map((player) => player.lives);
+    expect(skipDuel(match)).toBe(true);
+    expect(match.phase).toBe("pve");
+    expect(match.round).toBe(round + 1);
+    expect(match.players.map((player) => player.lives)).toEqual(lives);
+    expect(match.events.some((event) => event.type === "duel_result")).toBe(false);
+  });
+
+  it("desligar duelos tira o par anunciado e a próxima ida não marca outro", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: true, heroId: "mago" },
+      ],
+      seed: 11,
+      config: { duelStartRound: 1, duelAnnounceSeconds: 10 },
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    expect(match.duelPending).toBe(true);
+    expect(setDuels(match, false)).toBe(false);
+    expect(match.duel).toHaveLength(0);
+    for (const player of match.players) player.ready = true;
+    tick(match);
+    expect(match.phase).toBe("pve");
+    quietMatch(match);
+    tick(match);
+    expect(match.phase).toBe("hub");
+    expect(match.duelPending).toBe(false);
+    expect(setDuels(match)).toBe(true);
+  });
+
+  it("onda pedida começa na hora nessa rodada", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 3,
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    expect(match.phase).toBe("hub");
+    expect(jumpWave(match, 12)).toBe(12);
+    expect(match.phase).toBe("pve");
+    expect(match.round).toBe(12);
+    expect(match.spawns.length).toBeGreaterThan(0);
+    expect(match.spawns.every((job) => job.left > 0)).toBe(true);
+    expect(jumpWave(match, 0)).toBeNull();
+    expect(match.round).toBe(12);
+  });
+
+  it("bot imortal não perde vida", () => {
+    const match = createMatch({
+      players: [
+        { id: "p", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "bot", name: "Bot", isBot: true, heroId: "mago" },
+      ],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const bot = match.players.find((player) => player.isBot)!;
+    const hero = match.entities.find((entity) => entity.kind === "hero" && entity.playerId === bot.id)!;
+    const hp = hero.hp;
+    const lives = bot.lives;
+    expect(setBotsGodmode(match)).toBe(true);
+    expect(dealDamage(match, { target: hero, amount: hero.hp + 40 })).toBe(0);
+    expect(hero.hp).toBe(hp);
+    expect(bot.lives).toBe(lives);
+    expect(setBotsGodmode(match, false)).toBe(false);
+    dealDamage(match, { target: hero, amount: 15 });
+    expect(hero.hp).toBeLessThan(hp);
+  });
+
+  it("godmode segura o dano e desliga de novo", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 8,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const hp = hero.hp;
+    const lives = player.lives;
+    expect(setGodmode(match, "p")).toBe(true);
+    expect(dealDamage(match, { target: hero, amount: hero.hp + 50 })).toBe(0);
+    expect(hero.hp).toBe(hp);
+    expect(player.lives).toBe(lives);
+    expect(buildSnapshot(match, "p").players[0]?.godmode).toBe(true);
+    expect(setGodmode(match, "p", false)).toBe(false);
+    dealDamage(match, { target: hero, amount: 20 });
+    expect(hero.hp).toBeLessThan(hp);
+    player.eliminated = true;
+    expect(setGodmode(match, "p")).toBeNull();
   });
 
   it("morte na onda conta segundos até renascer enquanto sobra vida", () => {

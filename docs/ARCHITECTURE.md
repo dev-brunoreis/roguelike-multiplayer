@@ -20,7 +20,7 @@ Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servido
 6. Pausa é um pedido. A simulação congela quando todo humano ainda vivo pediu (`pause`). Bots não votam. O relógio, o combate e os cooldowns ficam parados até alguém cancelar.
 7. Fechar a aba espera 8 segundos. Sem voltar, conta como desistência. Sem persistir a partida no próximo login.
 8. Eventos importantes vão para SQLite (`users`, `matches`, `match_players`, `events`), uma linha por acontecimento.
-9. O chat fica na sala (`lobby` e `match`), fora do tick. O servidor corta o texto, ignora vazio e rajada curta, e manda a linha para quem está conectado. Quem entra recebe o histórico recente. Não vai para o snapshot nem para o banco.
+9. O chat fica na sala (`lobby` e `match`), fora do tick. O servidor corta o texto, ignora vazio e rajada curta, e manda a linha para quem está conectado. Quem entra recebe o histórico recente. Não vai para o snapshot nem para o banco. O texto de comando é reconhecido em `chat.ts` e, na partida, `runMatchCommand` aplica na simulação. `/godmode` alterna a invulnerabilidade de quem escreveu e o snapshot marca `godmode`. `/skipduelo` cancela o duelo anunciado ou em curso, sem tirar vida. `/duelos` liga ou desliga o agendamento (`duelsEnabled`). `/onda N` chama `jumpWave` e essa onda começa na hora. `/bots` liga ou desliga `godmode` em todo bot vivo. Na sala de espera o comando só avisa que vale na partida.
 
 ## Plugins
 

@@ -18,7 +18,7 @@ Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `pr
 
 Um herói cabe até `maxAbilities` skills (padrão 6). Skill nova vem de carta `grantAbility`. Se a barra estiver cheia, a nova troca a mais fraca. Upgrade vem de carta `upgradeAbility`. Matar bicho dá experiência e não abre carta extra.
 
-No lobby e na partida, Enter abre o chat. A mensagem sai com o nome da conta, para todo mundo na sala. Esc solta o campo antes de abrir o menu. Enquanto escreve, o herói fica parado.
+No lobby e na partida, Enter abre o chat. A mensagem sai com o nome da conta, para todo mundo na sala. Esc solta o campo antes de abrir o menu. Enquanto escreve, o herói fica parado. Na partida, o chat reconhece comando e responde no lugar da fala. `/godmode` liga ou desliga a invulnerabilidade de quem escreveu (`ligar` e `desligar` fixam o estado); a lista marca quem está assim. `/skipduelo` (ou `pular duelo`) cancela o duelo anunciado ou o que já começou: ninguém perde vida por isso, e a onda seguinte segue. `/duelos` liga ou desliga o agendamento; desligado, um par já marcado some e a partida segue só de onda. `/onda 12` (1 a 99) troca a rodada e começa essa onda na hora. `/bots` liga ou desliga a invulnerabilidade de todo bot vivo, para a partida não acabar enquanto se testa onda. Na sala de espera esses comandos só avisam que valem na partida.
 
 Boss entra nas rodadas múltiplas de `everyRounds` do `bosses.json`. O de intervalo maior ganha a rodada quando os dois coincidem.
 
