@@ -1,9 +1,9 @@
 import type { Match } from "./types.js";
 import { addLog, alivePlayers, heroEntity, playerById, pushBanner } from "./world.js";
-import { beginPve } from "./phases/pve.js";
-import { beginHub } from "./phases/hub.js";
-import { dropDuel, duelLive } from "./phases/duel.js";
-import { arenaQuiet, respawnHero, sendHome, sendToHub } from "./phases/move.js";
+import { beginPve } from "./modes/arena/phases/pve.js";
+import { beginHub } from "./modes/arena/phases/hub.js";
+import { dropDuel, duelLive } from "./modes/arena/phases/duel.js";
+import { arenaQuiet, respawnHero, sendHome, sendToHub } from "./modes/arena/phases/move.js";
 
 export function setGodmode(match: Match, playerId: string, on?: boolean): boolean | null {
   const player = playerById(match, playerId);
@@ -72,6 +72,26 @@ export function revivePlayer(
     ? match.players.find((player) => player.name.toLowerCase() === named)
     : playerById(match, playerId);
   if (!target) return { status: "missing" };
+  if (target.downed) {
+    target.downed = false;
+    target.reviveProgress = 0;
+    target.respawnIn = 0;
+    const body = heroEntity(match, target);
+    if (body) {
+      body.alive = true;
+      body.hp = Math.max(1, body.maxHp * (match.data.dungeon?.reviveHpPct ?? 1));
+      body.invuln = match.config.invulnSeconds;
+    }
+    if (target.isBot && match.botsGodmode) target.godmode = true;
+    if (match.phase === "ended" && match.mode === "masmorra") {
+      match.phase = "dungeon";
+      match.winnerId = null;
+      if (match.dungeon) match.dungeon.result = null;
+    }
+    addLog(match, `${target.name} reviveu`);
+    pushBanner(match, { kind: "info", title: `${target.name} reviveu`, life: 3.2 });
+    return { status: "revived", name: target.name };
+  }
   const entity = heroEntity(match, target);
   const down = target.eliminated || target.lives <= 0 || target.respawnIn > 0 || !entity?.alive;
   if (!down) return { status: "alive" };

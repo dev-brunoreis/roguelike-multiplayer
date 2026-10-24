@@ -52,7 +52,7 @@ export function floatText(
 }
 
 export function emptySkill(): SkillState {
-  return { timer: 0, step: "", left: 0, vx: 0, vy: 0, hit: false };
+  return { timer: 0, step: "", left: 0, vx: 0, vy: 0, hit: false, homeX: null, homeY: null, returning: false };
 }
 
 export function skillOf(match: Match, id: number) {

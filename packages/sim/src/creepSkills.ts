@@ -79,6 +79,12 @@ registerCreepSkill("summon", (match, creep, skill) => {
   spawned.x = creep.x + Math.cos(angle) * (creep.radius + spawned.radius + 0.35);
   spawned.y = creep.y + Math.sin(angle) * (creep.radius + spawned.radius + 0.35);
   spawned.summonedBy = creep.id;
+  const parent = skillOf(match, creep.id);
+  if (parent.homeX != null && parent.homeY != null) {
+    const child = skillOf(match, spawned.id);
+    child.homeX = spawned.x;
+    child.homeY = spawned.y;
+  }
   emitFx(match, {
     kind: "flash",
     x: spawned.x,

@@ -106,6 +106,10 @@ export const creepSchema = z.object({
   behavior: z.string().min(1),
   kind: z.enum(["creep", "boss"]).default("creep"),
   skill: creepSkillSchema.optional(),
+  aggro: z.object({
+    radius: z.number().positive(),
+    leash: z.number().positive(),
+  }).optional(),
 });
 
 export const waveSchema = z.object({
@@ -126,6 +130,36 @@ export const bossSchema = z.object({
   creepId: z.string().min(1),
   nome: z.string(),
   everyRounds: z.number().int().positive(),
+});
+
+export const dungeonSpawnSchema = z.object({
+  creepId: z.string().min(1),
+  count: z.number().int().positive(),
+});
+
+export const dungeonSchema = z.object({
+  roomsMin: z.number().int().min(3),
+  roomsMax: z.number().int().min(3),
+  roomSizes: z.array(z.number().positive()).min(1),
+  cellSize: z.number().positive(),
+  extraLinks: z.number().int().nonnegative(),
+  restRooms: z.number().int().nonnegative(),
+  eliteRooms: z.number().int().nonnegative(),
+  aggroRadius: z.number().positive(),
+  leashRadius: z.number().positive(),
+  portalRadius: z.number().positive(),
+  portalCooldown: z.number().nonnegative(),
+  reviveSeconds: z.number().positive(),
+  reviveRadius: z.number().positive(),
+  reviveHpPct: z.number().positive().max(1),
+  depthHp: z.number().nonnegative(),
+  depthDamage: z.number().nonnegative(),
+  encounters: z.array(z.object({
+    depth: z.number().int().nonnegative(),
+    spawns: z.array(dungeonSpawnSchema).min(1),
+  })).min(1),
+  elites: z.array(dungeonSpawnSchema).min(1),
+  bosses: z.array(z.object({ creepId: z.string().min(1) })).min(1),
 });
 
 export const synergySchema = z.object({
@@ -207,6 +241,7 @@ export const matchOptionsSchema = z.object({
   fillWithBots: z.boolean().optional(),
   lives: z.number().int().min(1).max(9).optional(),
   cardsPerLevelUp: z.number().int().min(2).max(8).optional(),
+  mode: z.enum(["arena", "masmorra"]).optional(),
 });
 
 export type AbilityLevel = z.infer<typeof abilityLevelSchema>;
@@ -218,6 +253,7 @@ export type CreepSkillDef = z.infer<typeof creepSkillSchema>;
 export type CreepDef = z.infer<typeof creepSchema>;
 export type WaveDef = z.infer<typeof waveSchema>;
 export type BossDef = z.infer<typeof bossSchema>;
+export type DungeonDef = z.infer<typeof dungeonSchema>;
 export type SynergyDef = z.infer<typeof synergySchema>;
 export type MatchConfig = z.infer<typeof matchConfigSchema>;
 export type MatchOptions = z.infer<typeof matchOptionsSchema>;

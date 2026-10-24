@@ -78,6 +78,9 @@ export interface SkillState {
   vx: number;
   vy: number;
   hit: boolean;
+  homeX: number | null;
+  homeY: number | null;
+  returning: boolean;
 }
 
 export interface Projectile {
@@ -104,7 +107,8 @@ export interface Arena {
   y: number;
   size: number;
   ownerId: string | null;
-  kind: "pve" | "duel" | "hub";
+  kind: "pve" | "duel" | "hub" | "room";
+  role?: "entrance" | "fight" | "rest" | "elite" | "boss";
   label: string;
 }
 
@@ -166,6 +170,35 @@ export interface PlayerState {
   wander: number;
   botActed: boolean;
   eliminatedAt: number | null;
+  downed: boolean;
+  reviveProgress: number;
+  portalCd: number;
+}
+
+export interface DungeonPortal {
+  id: string;
+  arenaId: string;
+  x: number;
+  y: number;
+  toArenaId: string;
+  toX: number;
+  toY: number;
+}
+
+export interface DungeonRoom {
+  id: string;
+  col: number;
+  row: number;
+  depth: number;
+  role: "entrance" | "fight" | "rest" | "elite" | "boss";
+  armed: boolean;
+}
+
+export interface DungeonState {
+  rooms: DungeonRoom[];
+  portals: DungeonPortal[];
+  revealed: Set<string>;
+  result: "win" | "lose" | null;
 }
 
 export interface Match {
@@ -173,6 +206,7 @@ export interface Match {
   config: MatchConfig;
   rng: Rng;
   seed: number;
+  mode: string;
   tick: number;
   time: number;
   round: number;
@@ -203,6 +237,7 @@ export interface Match {
   fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number }[];
   bossAnnounced: boolean;
   paused: boolean;
+  dungeon: DungeonState | null;
 }
 
 export interface AbilityContext {
@@ -232,6 +267,17 @@ export type CreepSkill = (match: Match, creep: Entity, skill: CreepSkillDef) => 
 export type DamageHook = (ctx: DamageContext) => void;
 export type HitHook = (ctx: DamageContext, value: number, info: { final: number; nested: boolean }) => void;
 export type BotFn = (match: Match, player: PlayerState) => void;
+
+export interface GameMode {
+  id: string;
+  bot: string;
+  setup(match: Match): void;
+  update(match: Match, dt: number): void;
+  checkEnd(match: Match): void;
+  onHeroKilled(match: Match, player: PlayerState): void;
+  offerOnLevel(match: Match): boolean;
+  interest(match: Match, watchId: string): Set<string>;
+}
 
 export function emptyStats(): Stats {
   return {

@@ -1,5 +1,6 @@
 import type { AbilityView, CardView, MatchMeta, PlayerSnap, Snapshot, WirePlayer, WireSnapshot } from "@game/shared";
 import { isFighter } from "./queries.js";
+import { getMode } from "./registry.js";
 import type { Entity, Match, PlayerState } from "./types.js";
 import { abilityById, cardById, heroEntity, playerById, xpToNext } from "./world.js";
 
@@ -93,6 +94,8 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     arenaId: entity?.arenaId ?? player.arenaId,
     waveClear: player.waveClear,
     placement: placementOf(match, player),
+    downed: player.downed,
+    revive: player.reviveProgress,
   };
 }
 
@@ -114,10 +117,11 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       size: arena.size,
       ownerId: arena.ownerId,
       kind: arena.kind,
+      role: arena.role,
       label: arena.label,
     })),
     players: match.players.map((player) => playerSnap(match, player, youId)),
-    entities: match.entities.filter((entity) => entity.alive).map((entity) => ({
+    entities: match.entities.filter((entity) => visibleBody(match, entity)).map((entity) => ({
       id: entity.id,
       kind: entity.kind,
       defId: entity.defId,
@@ -170,6 +174,42 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
     duel: match.duel.map((pair) => ({ ...pair })),
     duelAnnounce: Math.max(0, match.duelAnnounce),
     announce: match.banner && match.banner.left > 0 ? { ...match.banner } : null,
+    mode: match.mode === "masmorra" ? "masmorra" : "arena",
+    portals: (match.dungeon?.portals ?? []).map((portal) => ({
+      id: portal.id,
+      arenaId: portal.arenaId,
+      x: portal.x,
+      y: portal.y,
+      to: portal.toArenaId,
+    })),
+    dungeon: dungeonSnap(match),
+  };
+}
+
+function visibleBody(match: Match, entity: Entity) {
+  if (entity.alive) return true;
+  if (entity.kind !== "hero" || !entity.playerId) return false;
+  return playerById(match, entity.playerId)?.downed === true;
+}
+
+function dungeonSnap(match: Match) {
+  const state = match.dungeon;
+  if (!state) return null;
+  const sealed = state.rooms
+    .filter((room) => match.entities.some((entity) => entity.alive && entity.kind !== "hero" && entity.arenaId === room.id))
+    .map((room) => room.id);
+  let objective = "Procure o chefe";
+  if (state.result === "win") objective = "Chefe derrotado";
+  else if (state.result === "lose") objective = "O grupo caiu";
+  else {
+    const boss = state.rooms.find((room) => room.role === "boss");
+    if (boss && state.revealed.has(boss.id)) objective = "Derrote o chefe";
+  }
+  return {
+    sealed,
+    revealed: [...state.revealed],
+    objective,
+    result: state.result,
   };
 }
 
@@ -180,15 +220,7 @@ function playerByName(match: Match, id?: string) {
 const q = (value: number) => Math.round(value * 100) / 100;
 
 export function interestArenaIds(match: Match, watchId: string) {
-  const ids = new Set<string>();
-  for (const arena of match.arenas) {
-    if (arena.kind === "hub" || arena.kind === "duel") ids.add(arena.id);
-  }
-  const player = playerById(match, watchId);
-  const hero = player ? heroEntity(match, player) : undefined;
-  if (hero?.arenaId) ids.add(hero.arenaId);
-  else if (player) ids.add(player.arenaId);
-  return ids;
+  return getMode(match.mode).interest(match, watchId);
 }
 
 export function buildMeta(match: Match, seq = 1): MatchMeta {
@@ -196,6 +228,14 @@ export function buildMeta(match: Match, seq = 1): MatchMeta {
     seq,
     dataVersion: match.data.version,
     tickRate: match.config.tickRate,
+    mode: match.mode === "masmorra" ? "masmorra" : "arena",
+    portals: (match.dungeon?.portals ?? []).map((portal) => ({
+      id: portal.id,
+      arenaId: portal.arenaId,
+      x: q(portal.x),
+      y: q(portal.y),
+      to: portal.toArenaId,
+    })),
     arenas: match.arenas.map((arena) => ({
       id: arena.id,
       x: q(arena.x),
@@ -203,6 +243,7 @@ export function buildMeta(match: Match, seq = 1): MatchMeta {
       size: q(arena.size),
       ownerId: arena.ownerId,
       kind: arena.kind,
+      role: arena.role,
       label: arena.label,
     })),
     creeps: match.data.creeps.map((creep) => ({ id: creep.id, nome: creep.nome })),
@@ -267,6 +308,8 @@ function wirePlayer(match: Match, player: PlayerState, youId: string, arenas: Ma
     arena: arenas.get(entity?.arenaId ?? player.arenaId) ?? 0,
     waveClear: player.waveClear,
     placement: placementOf(match, player),
+    downed: player.downed,
+    revive: q(player.reviveProgress),
   };
 }
 
@@ -283,7 +326,7 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
     youId: "",
     log: match.log.slice(-8),
     players: match.players.map((player) => wirePlayer(match, player, "", arenas)),
-    entities: match.entities.filter((entity) => entity.alive && seen.has(entity.arenaId)).map((entity) => ({
+    entities: match.entities.filter((entity) => visibleBody(match, entity) && seen.has(entity.arenaId)).map((entity) => ({
       id: entity.id,
       kind: entity.kind,
       defId: entity.defId,
@@ -344,6 +387,19 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
     })),
     duelAnnounce: q(Math.max(0, match.duelAnnounce)),
     announce: match.banner && match.banner.left > 0 ? { ...match.banner, left: q(match.banner.left) } : null,
+    dungeon: wireDungeon(match, arenas),
+  };
+}
+
+function wireDungeon(match: Match, arenas: Map<string, number>) {
+  const snap = dungeonSnap(match);
+  if (!snap) return null;
+  const index = (id: string) => arenas.get(id) ?? 0;
+  return {
+    sealed: snap.sealed.map(index),
+    revealed: snap.revealed.map(index),
+    objective: snap.objective,
+    result: snap.result,
   };
 }
 

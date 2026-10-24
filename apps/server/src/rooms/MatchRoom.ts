@@ -76,7 +76,7 @@ export class MatchRoom extends Room {
     humans: Seat[];
     bots: Seat[];
     hostId?: string;
-    config?: { lives?: number; cardsPerLevelUp?: number };
+    config?: { lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" };
     seed?: number;
   }) {
     this.autoDispose = false;
@@ -86,7 +86,11 @@ export class MatchRoom extends Room {
     for (const human of humans) this.roster.add(human.id);
     this.match = createMatch({
       seed: options.seed,
-      config: options.config,
+      mode: options.config?.mode ?? "arena",
+      config: {
+        ...(options.config?.lives != null ? { lives: options.config.lives } : {}),
+        ...(options.config?.cardsPerLevelUp != null ? { cardsPerLevelUp: options.config.cardsPerLevelUp } : {}),
+      },
       players: [
         ...humans.map((seat) => ({ id: seat.id, name: seat.name, isBot: false, heroId: seat.heroId, shadowColor: seat.shadowColor })),
         ...bots.map((seat) => ({ id: seat.id, name: seat.name, isBot: true })),

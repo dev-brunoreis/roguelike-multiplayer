@@ -1,7 +1,7 @@
 import { applyCard } from "./effects.js";
 import { eliminate } from "./elimination.js";
 import { offerCards } from "./progression.js";
-import { checkWinner } from "./victory.js";
+import { getMode } from "./registry.js";
 import type { Match } from "./types.js";
 import { clamp, emit, playerById } from "./world.js";
 
@@ -30,7 +30,7 @@ export function pickCard(match: Match, playerId: string, cardId: string, auto = 
   player.unspentPicks = Math.max(0, player.unspentPicks - 1);
   applyCard(match, player, cardId);
   emit(match, { type: "card_pick", round: match.round, playerId, cardId, auto });
-  if (player.unspentPicks > 0 && match.phase === "hub" && player.pendingCards.length === 0) {
+  if (player.unspentPicks > 0 && getMode(match.mode).offerOnLevel(match) && player.pendingCards.length === 0) {
     offerCards(match, player);
   }
 }
@@ -73,5 +73,5 @@ export function surrender(match: Match, playerId: string) {
   if (!player || player.eliminated || match.phase === "ended") return;
   player.surrendered = true;
   eliminate(match, player, "desistiu");
-  checkWinner(match);
+  getMode(match.mode).checkEnd(match);
 }

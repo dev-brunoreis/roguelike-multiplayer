@@ -1,6 +1,5 @@
-import { damagePipeline, getHitHook } from "./registry.js";
+import { damagePipeline, getHitHook, getMode } from "./registry.js";
 import type { DamageContext, Entity, Match, PlayerState } from "./types.js";
-import { loseLife } from "./elimination.js";
 import { grantXp } from "./progression.js";
 import { arenaById, floatText, playerById } from "./world.js";
 
@@ -88,7 +87,7 @@ export function killEntity(match: Match, entity: Entity, killer?: PlayerState) {
     const player = playerById(match, entity.playerId);
     if (!player || player.eliminated) return;
     if (killer && killer.id !== player.id) killer.kills += 1;
-    loseLife(match, player);
+    getMode(match.mode).onHeroKilled(match, player);
     return;
   }
   if (killer && !killer.eliminated) {

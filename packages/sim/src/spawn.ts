@@ -2,14 +2,19 @@ import type { Match } from "./types.js";
 import { emit } from "./world.js";
 import { arenaById, creepById, emptySkill, roundScale } from "./world.js";
 
-export function spawnCreep(match: Match, arenaId: string, creepId: string) {
+export function spawnCreep(
+  match: Match,
+  arenaId: string,
+  creepId: string,
+  at?: { x: number; y: number; scale?: { hp: number; damage: number }; home?: boolean },
+) {
   const def = creepById(match, creepId);
   const arena = arenaById(match, arenaId);
   if (!def || !arena) return;
-  const scale = roundScale(match);
+  const scale = at?.scale ?? roundScale(match);
   const pad = 2;
-  const x = arena.x + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
-  const y = arena.y + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
+  const x = at?.x ?? arena.x + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
+  const y = at?.y ?? arena.y + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
   match.entities.push({
     id: match.nextId++,
     kind: def.kind,
@@ -41,6 +46,10 @@ export function spawnCreep(match: Match, arenaId: string, creepId: string) {
   });
   const skill = emptySkill();
   if (def.skill) skill.timer = def.skill.cooldown * 0.45;
+  if (at?.home) {
+    skill.homeX = x;
+    skill.homeY = y;
+  }
   match.skillState.set(match.entities[match.entities.length - 1]!.id, skill);
   match.entitiesById.set(match.entities[match.entities.length - 1]!.id, match.entities[match.entities.length - 1]!);
 }

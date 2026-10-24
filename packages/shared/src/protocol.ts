@@ -1,4 +1,5 @@
-export type Phase = "hub" | "pve" | "betting" | "duel" | "shop" | "ended";
+export type Phase = "hub" | "pve" | "betting" | "duel" | "shop" | "dungeon" | "ended";
+export type GameModeId = "arena" | "masmorra";
 
 export interface FloatEvent {
   id: number;
@@ -66,6 +67,8 @@ export interface PlayerSnap {
   arenaId: string;
   waveClear: boolean;
   placement: number | null;
+  downed: boolean;
+  revive: number;
 }
 
 export interface EntitySnap {
@@ -120,8 +123,24 @@ export interface ArenaSnap {
   y: number;
   size: number;
   ownerId: string | null;
-  kind: "pve" | "duel" | "hub";
+  kind: "pve" | "duel" | "hub" | "room";
+  role?: "entrance" | "fight" | "rest" | "elite" | "boss";
   label: string;
+}
+
+export interface PortalSnap {
+  id: string;
+  arenaId: string;
+  x: number;
+  y: number;
+  to: string;
+}
+
+export interface DungeonSnap {
+  sealed: string[];
+  revealed: string[];
+  objective: string;
+  result: "win" | "lose" | null;
 }
 
 export interface DuelPairSnap {
@@ -160,6 +179,9 @@ export interface Snapshot {
   duel: DuelPairSnap[];
   duelAnnounce: number;
   announce: AnnounceSnap | null;
+  mode: GameModeId;
+  portals: PortalSnap[];
+  dungeon: DungeonSnap | null;
 }
 
 export interface ChatLine {
@@ -204,6 +226,7 @@ export interface LobbyConfig {
   fillWithBots: boolean;
   lives: number;
   cardsPerLevelUp: number;
+  mode: GameModeId;
 }
 
 export interface LobbyState {
@@ -247,7 +270,9 @@ export interface MatchMeta {
   seq: number;
   dataVersion: string;
   tickRate: number;
+  mode: GameModeId;
   arenas: ArenaSnap[];
+  portals: PortalSnap[];
   creeps: MetaCreep[];
   abilities: MetaAbility[];
   cards: MetaCard[];
@@ -287,6 +312,8 @@ export interface WirePlayer {
   arena: number;
   waveClear: boolean;
   placement: number | null;
+  downed: boolean;
+  revive: number;
 }
 
 export interface WireEntity {
@@ -351,6 +378,13 @@ export interface WireDuel {
   resolved: boolean;
 }
 
+export interface WireDungeon {
+  sealed: number[];
+  revealed: number[];
+  objective: string;
+  result: "win" | "lose" | null;
+}
+
 export interface WireSnapshot {
   tick: number;
   round: number;
@@ -368,4 +402,5 @@ export interface WireSnapshot {
   duel: WireDuel[];
   duelAnnounce: number;
   announce: AnnounceSnap | null;
+  dungeon: WireDungeon | null;
 }

@@ -1,8 +1,8 @@
-import { applyCard } from "../effects.js";
-import { offerCards } from "../progression.js";
-import { flushDamage } from "../spawn.js";
-import type { Match, PlayerState } from "../types.js";
-import { addLog, alivePlayers, emit, pushBanner, syncWorld } from "../world.js";
+import { applyCard } from "../../../effects.js";
+import { offerCards } from "../../../progression.js";
+import { flushDamage } from "../../../spawn.js";
+import type { Match, PlayerState } from "../../../types.js";
+import { addLog, alivePlayers, emit, pushBanner, syncWorld } from "../../../world.js";
 import { sendToHub } from "./move.js";
 import { beginPve } from "./pve.js";
 import { beginDuel } from "./duel.js";

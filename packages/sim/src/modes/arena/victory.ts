@@ -1,6 +1,6 @@
-import { flushDamage } from "./spawn.js";
-import type { Match } from "./types.js";
-import { addLog, alivePlayers, emit } from "./world.js";
+import { flushDamage } from "../../spawn.js";
+import type { Match } from "../../types.js";
+import { addLog, alivePlayers, emit } from "../../world.js";
 
 export function checkWinner(match: Match) {
   if (match.phase === "ended") return;

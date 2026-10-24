@@ -1,3 +1,5 @@
+import "./modes/arena/index.js";
+import "./modes/dungeon/index.js";
 import "./abilities.js";
 import "./bots.js";
 import "./creeps.js";

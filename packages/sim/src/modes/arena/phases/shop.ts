@@ -1,5 +1,5 @@
-import { eligible } from "../progression.js";
-import type { Match, PlayerState } from "../types.js";
+import { eligible } from "../../../progression.js";
+import type { Match, PlayerState } from "../../../types.js";
 import { beginHub, updateHub } from "./hub.js";
 
 export function beginShop(match: Match) {

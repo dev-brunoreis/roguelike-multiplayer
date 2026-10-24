@@ -25,7 +25,10 @@ function godmodeReply(on: boolean | null) {
 
 export function runMatchCommand(match: Match, playerId: string, command: ChatCommand): string {
   if (command.name === "godmode") return godmodeReply(setGodmode(match, playerId, command.on));
-  if (command.name === "skipduel") return skipDuel(match) ? "duelo pulado" : "não tem duelo para pular";
+  if (command.name === "skipduel") {
+    if (match.mode !== "arena") return "esse comando só vale na arena";
+    return skipDuel(match) ? "duelo pulado" : "não tem duelo para pular";
+  }
   if (command.name === "revive") return reviveReply(match, playerId, command.target);
   if (command.name === "bots") {
     const on = setBotsGodmode(match, command.on);
@@ -34,11 +37,13 @@ export function runMatchCommand(match: Match, playerId: string, command: ChatCom
   }
   if (match.phase === "ended") return "a partida já acabou";
   if (command.name === "duels") {
+    if (match.mode !== "arena") return "esse comando só vale na arena";
     const on = setDuels(match, command.on);
     if (on == null) return "a partida já acabou";
     return on ? "duelos ligados" : "duelos desligados";
   }
   if (command.name === "wave") {
+    if (match.mode !== "arena") return "esse comando só vale na arena";
     const round = jumpWave(match, command.round);
     return round == null ? "onda inválida (1 a 99)" : `onda ${round}`;
   }

@@ -1,4 +1,5 @@
 import type { CardDef } from "@game/shared";
+import { getMode } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { abilityById, addLog, emit } from "./world.js";
 
@@ -18,7 +19,7 @@ export function tryLevel(match: Match, player: PlayerState) {
   player.unspentPicks += 1;
   emit(match, { type: "level", round: match.round, playerId: player.id, level: player.level });
   addLog(match, `${player.name} subiu para o nível ${player.level}`);
-  if (match.phase === "hub") offerCards(match, player);
+  if (getMode(match.mode).offerOnLevel(match)) offerCards(match, player);
   else tryLevel(match, player);
 }
 

@@ -1,6 +1,6 @@
-import { flushDamage, spawnCreep } from "../spawn.js";
-import type { Match } from "../types.js";
-import { addLog, alivePlayers, emit, syncWorld } from "../world.js";
+import { flushDamage, spawnCreep } from "../../../spawn.js";
+import type { Match } from "../../../types.js";
+import { addLog, alivePlayers, emit, syncWorld } from "../../../world.js";
 import { arenaQuiet, revive, sendHome } from "./move.js";
 import { checkWinner } from "../victory.js";
 import { beginHub } from "./hub.js";

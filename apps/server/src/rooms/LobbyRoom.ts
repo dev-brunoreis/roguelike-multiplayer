@@ -33,6 +33,7 @@ export class LobbyRoom extends Room {
       fillWithBots: true,
       lives: data.match.lives,
       cardsPerLevelUp: data.match.cardsPerLevelUp,
+      mode: "arena",
     };
   }
 
@@ -154,8 +155,9 @@ export class LobbyRoom extends Room {
     if (!this.config.fillWithBots) slots = humans.length;
     slots = Math.max(slots, humans.length);
     slots = Math.min(8, slots);
-    if (slots < 2) {
-      this.error = "Precisa de 2 lutadores. Chama alguém ou liga os bots.";
+    const min = this.config.mode === "masmorra" ? 1 : 2;
+    if (slots < min) {
+      this.error = min === 1 ? "Precisa de alguém na sala." : "Precisa de 2 lutadores. Chama alguém ou liga os bots.";
       this.push();
       return;
     }
@@ -168,7 +170,7 @@ export class LobbyRoom extends Room {
         humans: humans.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId, shadowColor: seat.shadowColor })),
         bots,
         hostId: humans[0]?.id ?? "",
-        config: { lives: this.config.lives, cardsPerLevelUp: this.config.cardsPerLevelUp },
+        config: { lives: this.config.lives, cardsPerLevelUp: this.config.cardsPerLevelUp, mode: this.config.mode },
         seed: Math.floor(Math.random() * 1_000_000_000),
       });
       this.error = null;
@@ -197,11 +199,12 @@ export function forgetSession<T extends { id: string }>(sessions: Map<string, T>
   return seats.filter((seat) => seat.id !== auth.id);
 }
 
-function strip(input: { slots?: number; fillWithBots?: boolean; lives?: number; cardsPerLevelUp?: number }): Partial<LobbyConfig> {
+function strip(input: { slots?: number; fillWithBots?: boolean; lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" }): Partial<LobbyConfig> {
   return {
     ...(input.slots !== undefined ? { slots: input.slots } : {}),
     ...(input.fillWithBots !== undefined ? { fillWithBots: input.fillWithBots } : {}),
     ...(input.lives !== undefined ? { lives: input.lives } : {}),
     ...(input.cardsPerLevelUp !== undefined ? { cardsPerLevelUp: input.cardsPerLevelUp } : {}),
+    ...(input.mode !== undefined ? { mode: input.mode } : {}),
   };
 }

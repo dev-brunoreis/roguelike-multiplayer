@@ -79,6 +79,8 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
       arenaId: arena?.id ?? "",
       waveClear: player.waveClear,
       placement: player.placement,
+      downed: player.downed,
+      revive: player.revive,
     };
   });
   const entities: EntitySnap[] = wire.entities.flatMap((entity) => {
@@ -174,5 +176,21 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
     }),
     duelAnnounce: wire.duelAnnounce,
     announce: wire.announce,
+    mode: meta.mode,
+    portals: meta.portals,
+    dungeon: wire.dungeon
+      ? {
+        sealed: wire.dungeon.sealed.flatMap((index) => {
+          const arena = meta.arenas[index];
+          return arena ? [arena.id] : [];
+        }),
+        revealed: wire.dungeon.revealed.flatMap((index) => {
+          const arena = meta.arenas[index];
+          return arena ? [arena.id] : [];
+        }),
+        objective: wire.dungeon.objective,
+        result: wire.dungeon.result,
+      }
+      : null,
   };
 }

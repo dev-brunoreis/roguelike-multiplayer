@@ -4,19 +4,12 @@ import { pickCard, syncPause } from "./actions.js";
 import { runBots } from "./bots.js";
 import "./content.js";
 import { isPersist, type PersistEvent } from "./events.js";
-import { beginPve, updatePve } from "./phases/pve.js";
-import { updateHub } from "./phases/hub.js";
-import { updateDuel } from "./phases/duel.js";
-import { updateBetting } from "./phases/betting.js";
-import { updateShop } from "./phases/shop.js";
-import { respawnHero } from "./phases/move.js";
-import { checkWinner } from "./victory.js";
-import { simulateCombat, simulateMove } from "./combat.js";
+import { respawnHero } from "./modes/arena/phases/move.js";
 import { assertCreepSkills } from "./creepSkills.js";
-import { hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
+import { getMode, hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
-import { addLog, arenaCenter, dtOf, emit, heroEntity, syncWorld, updateBanner } from "./world.js";
+import { addLog, dtOf, emit, heroEntity, syncWorld, updateBanner } from "./world.js";
 
 export interface CreatePlayer {
   id: string;
@@ -31,11 +24,13 @@ export function createMatch(options: {
   seed?: number;
   config?: Partial<MatchConfig>;
   data?: GameData;
+  mode?: string;
 }): Match {
   const data = options.data ?? getGameData();
   assertContent(data);
   const config = { ...data.match, ...options.config };
   const seed = options.seed ?? 1;
+  const mode = options.mode ?? "arena";
   const rng = makeRng(seed);
   const heroes = [...data.heroes];
   for (let i = heroes.length - 1; i > 0; i -= 1) {
@@ -44,12 +39,12 @@ export function createMatch(options: {
     heroes[i] = heroes[j]!;
     heroes[j] = swap;
   }
-  const hubSize = config.hubSize;
   const match: Match = {
     data,
     config,
     rng,
     seed,
+    mode,
     tick: 0,
     time: 0,
     round: 1,
@@ -76,42 +71,17 @@ export function createMatch(options: {
     fx: [],
     bossAnnounced: false,
     paused: false,
+    dungeon: null,
     skillState: new Map(),
     entitiesById: new Map(),
     playersById: new Map(),
     arenasById: new Map(),
   };
 
-  match.arenas.push({
-    id: "hub",
-    x: -hubSize / 2,
-    y: -hubSize / 2,
-    size: hubSize,
-    ownerId: null,
-    kind: "hub",
-    label: "Salão",
-  });
-  const ring = hubSize / 2 + config.arenaGap + config.arenaSize / 2;
-  const roster = options.players.length;
-
   options.players.forEach((input, index) => {
     const hero = (input.heroId && data.heroes.find((item) => item.id === input.heroId))
       || heroes[index % heroes.length]
       || data.heroes[0]!;
-    const angle = (index / Math.max(1, roster)) * Math.PI * 2 - Math.PI / 2;
-    const cx = Math.cos(angle) * ring;
-    const cy = Math.sin(angle) * ring;
-    const arena = {
-      id: `arena-${input.id}`,
-      x: cx - config.arenaSize / 2,
-      y: cy - config.arenaSize / 2,
-      size: config.arenaSize,
-      ownerId: input.id,
-      kind: "pve" as const,
-      label: input.name,
-    };
-    match.arenas.push(arena);
-    const center = arenaCenter(arena);
     const entityId = match.nextId++;
     const player: PlayerState = {
       id: input.id,
@@ -121,7 +91,7 @@ export function createMatch(options: {
       color: hero.color,
       shadowColor: listedColor(data.match.shadowColors, input.shadowColor) ?? hero.color,
       entityId,
-      arenaId: arena.id,
+      arenaId: "",
       lives: config.lives,
       level: 1,
       xp: 0,
@@ -156,6 +126,9 @@ export function createMatch(options: {
       wander: rng.next() * Math.PI * 2,
       botActed: false,
       eliminatedAt: null,
+      downed: false,
+      reviveProgress: 0,
+      portalCd: 0,
     };
     match.players.push(player);
     match.entities.push({
@@ -163,9 +136,9 @@ export function createMatch(options: {
       kind: "hero",
       defId: hero.id,
       playerId: player.id,
-      arenaId: arena.id,
-      x: center.x,
-      y: center.y,
+      arenaId: "",
+      x: 0,
+      y: 0,
       radius: hero.radius,
       hp: hero.hp,
       maxHp: hero.hp,
@@ -201,7 +174,7 @@ export function createMatch(options: {
     })),
   });
   addLog(match, "A partida começou");
-  beginPve(match);
+  getMode(match.mode).setup(match);
   return match;
 }
 
@@ -255,25 +228,9 @@ export function tick(match: Match): PersistEvent[] {
       }
     }
   }
-  if (match.phase === "pve") {
-    simulateCombat(match, dt);
-    checkWinner(match);
-    if (match.phase === "pve") updatePve(match, dt);
-  } else if (match.phase === "hub") {
-    simulateMove(match, dt);
-    updateHub(match, dt);
-  } else if (match.phase === "betting") {
-    simulateMove(match, dt);
-    updateBetting(match, dt);
-  } else if (match.phase === "duel") {
-    simulateCombat(match, dt);
-    checkWinner(match);
-    if (match.phase === "duel") updateDuel(match, dt);
-  } else if (match.phase === "shop") {
-    simulateMove(match, dt);
-    updateShop(match, dt);
-  }
-  checkWinner(match);
+  const mode = getMode(match.mode);
+  mode.update(match, dt);
+  mode.checkEnd(match);
   updateBanner(match, dt);
   if (match.floats.length > 80) match.floats.splice(0, match.floats.length - 80);
   match.fx = match.fx.filter((fx) => match.time - fx.born < fx.life);

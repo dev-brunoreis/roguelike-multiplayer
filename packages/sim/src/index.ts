@@ -17,6 +17,7 @@ export {
   registerEffect,
   registerHitHook,
   registerOnKill,
+  registerMode,
   registerTargeting,
 } from "./registry.js";
 export { buildCommon, buildMeta, buildSnapshot, buildWire, interestArenaIds, withYou } from "./snapshot.js";

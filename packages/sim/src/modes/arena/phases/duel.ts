@@ -1,5 +1,5 @@
-import type { DuelPair, Match } from "../types.js";
-import { addLog, arenaById, emit, heroEntity, pushBanner, syncWorld } from "../world.js";
+import type { DuelPair, Match } from "../../../types.js";
+import { addLog, arenaById, emit, heroEntity, pushBanner, syncWorld } from "../../../world.js";
 import { checkWinner } from "../victory.js";
 import { beginPve } from "./pve.js";
 

@@ -1,0 +1,35 @@
+{
+  "roomsMin": 8,
+  "roomsMax": 12,
+  "roomSizes": [18, 22, 26],
+  "cellSize": 40,
+  "extraLinks": 2,
+  "restRooms": 1,
+  "eliteRooms": 1,
+  "aggroRadius": 5.5,
+  "leashRadius": 8,
+  "portalRadius": 1.35,
+  "portalCooldown": 0.55,
+  "reviveSeconds": 2.4,
+  "reviveRadius": 1.7,
+  "reviveHpPct": 0.45,
+  "depthHp": 0.14,
+  "depthDamage": 0.08,
+  "encounters": [
+    { "depth": 1, "spawns": [{ "creepId": "slime", "count": 4 }] },
+    { "depth": 2, "spawns": [{ "creepId": "slime", "count": 3 }, { "creepId": "corredor", "count": 2 }] },
+    { "depth": 3, "spawns": [{ "creepId": "esqueleto", "count": 3 }, { "creepId": "atirador", "count": 2 }] },
+    { "depth": 5, "spawns": [{ "creepId": "bruto", "count": 2 }, { "creepId": "guarda", "count": 2 }] }
+  ],
+  "elites": [
+    { "creepId": "necromante", "count": 1 },
+    { "creepId": "abobora", "count": 1 },
+    { "creepId": "medico", "count": 1 }
+  ],
+  "bosses": [
+    { "creepId": "boss_golem" },
+    { "creepId": "boss_olho" },
+    { "creepId": "boss_matriarca" },
+    { "creepId": "boss_wogol" }
+  ]
+}

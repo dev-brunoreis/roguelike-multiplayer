@@ -6,6 +6,7 @@ import {
   bossSchema,
   cardSchema,
   creepSchema,
+  dungeonSchema,
   heroSchema,
   matchConfigSchema,
   synergySchema,
@@ -14,6 +15,7 @@ import {
   type BossDef,
   type CardDef,
   type CreepDef,
+  type DungeonDef,
   type HeroDef,
   type MatchConfig,
   type SynergyDef,
@@ -30,6 +32,7 @@ export interface GameData {
   bosses: BossDef[];
   synergies: SynergyDef[];
   match: MatchConfig;
+  dungeon: DungeonDef;
   byId: {
     heroes: Map<string, HeroDef>;
     abilities: Map<string, AbilityDef>;
@@ -107,6 +110,17 @@ function checkRefs(data: GameData) {
       throw new Error(`Creep ${creep.id} invoca creep inexistente: ${creep.skill.creepId}`);
     }
   }
+  const cited = [
+    ...data.dungeon.encounters.flatMap((encounter) => encounter.spawns),
+    ...data.dungeon.elites,
+    ...data.dungeon.bosses,
+  ];
+  for (const spawn of cited) {
+    if (!creeps.has(spawn.creepId)) throw new Error(`Masmorra cita creep inexistente: ${spawn.creepId}`);
+  }
+  if (data.dungeon.roomsMax < data.dungeon.roomsMin) {
+    throw new Error("dungeon.json: roomsMax menor que roomsMin");
+  }
 }
 
 let cached: GameData | null = null;
@@ -123,6 +137,7 @@ export function loadGameData(dir = dataDir()): GameData {
     bosses: parseFile(dir, "bosses.json", bossSchema.array()),
     synergies: parseFile(dir, "synergies.json", synergySchema.array()),
     match,
+    dungeon: parseFile(dir, "dungeon.json", dungeonSchema),
     byId: { heroes: new Map(), abilities: new Map(), cards: new Map(), creeps: new Map() },
   };
   data.byId = {

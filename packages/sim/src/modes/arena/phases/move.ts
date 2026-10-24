@@ -1,5 +1,5 @@
-import type { Match, PlayerState } from "../types.js";
-import { arenaById, arenaCenter, heroEntity } from "../world.js";
+import type { Match, PlayerState } from "../../../types.js";
+import { arenaById, arenaCenter, heroEntity } from "../../../world.js";
 
 export function sendHome(match: Match, player: PlayerState) {
   const home = match.arenas.find((arena) => arena.ownerId === player.id && arena.kind === "pve");

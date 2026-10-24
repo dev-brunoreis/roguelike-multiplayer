@@ -1,14 +1,76 @@
 import { dealDamage } from "./damage.js";
 import { registerCreepBehavior } from "./registry.js";
-import { dist } from "./world.js";
+import type { Entity, Match } from "./types.js";
+import { creepById, dist, skillOf } from "./world.js";
 
-registerCreepBehavior("chase", (match, creep, dt) => {
-  const heroes = match.entities.filter(
+function heroesIn(match: Match, creep: Entity) {
+  return match.entities.filter(
     (entity) => entity.alive && entity.kind === "hero" && entity.arenaId === creep.arenaId && entity.team !== creep.team,
   );
-  if (heroes.length === 0) return;
-  heroes.sort((a, b) => dist(creep, a) - dist(creep, b));
-  const target = heroes[0]!;
+}
+
+function homeOf(match: Match, creep: Entity) {
+  const skill = match.skillState.get(creep.id);
+  if (!skill || skill.homeX == null || skill.homeY == null) return null;
+  const def = creepById(match, creep.defId);
+  return {
+    x: skill.homeX,
+    y: skill.homeY,
+    radius: def?.aggro?.radius ?? match.data.dungeon?.aggroRadius ?? 6,
+    reach: def?.aggro?.leash ?? match.data.dungeon?.leashRadius ?? 9,
+  };
+}
+
+function nearest(creep: Entity, heroes: Entity[]) {
+  const sorted = [...heroes].sort((a, b) => dist(creep, a) - dist(creep, b));
+  return sorted[0] ?? null;
+}
+
+function walkHome(match: Match, creep: Entity, dt: number, home: { x: number; y: number }) {
+  const gap = dist(creep, home);
+  if (gap <= 0.35) {
+    const skill = skillOf(match, creep.id);
+    skill.returning = false;
+    creep.hp = creep.maxHp;
+    creep.x = home.x;
+    creep.y = home.y;
+    return;
+  }
+  const step = Math.min(creep.speed * dt, gap);
+  creep.facing = Math.atan2(home.y - creep.y, home.x - creep.x);
+  creep.x += ((home.x - creep.x) / gap) * step;
+  creep.y += ((home.y - creep.y) / gap) * step;
+}
+
+function pickTarget(match: Match, creep: Entity) {
+  const home = homeOf(match, creep);
+  const heroes = heroesIn(match, creep);
+  if (!home) return nearest(creep, heroes);
+  const skill = skillOf(match, creep.id);
+  if (skill.returning || dist(creep, home) > home.reach) {
+    skill.returning = true;
+    return null;
+  }
+  const near = heroes.filter((hero) => dist(creep, hero) <= home.radius && dist(hero, home) <= home.reach);
+  return nearest(creep, near);
+}
+
+function holdOrHome(match: Match, creep: Entity, dt: number) {
+  const home = homeOf(match, creep);
+  const target = pickTarget(match, creep);
+  if (!target) {
+    if (home && dist(creep, home) > 0.05) {
+      skillOf(match, creep.id).returning = true;
+      walkHome(match, creep, dt, home);
+    }
+    return null;
+  }
+  return target;
+}
+
+registerCreepBehavior("chase", (match, creep, dt) => {
+  const target = holdOrHome(match, creep, dt);
+  if (!target) return;
   const gap = dist(creep, target);
   const reach = creep.attackRange + target.radius * 0.4;
   creep.facing = Math.atan2(target.y - creep.y, target.x - creep.x);
@@ -40,12 +102,8 @@ registerCreepBehavior("chase", (match, creep, dt) => {
 });
 
 registerCreepBehavior("kite", (match, creep, dt) => {
-  const heroes = match.entities.filter(
-    (entity) => entity.alive && entity.kind === "hero" && entity.arenaId === creep.arenaId && entity.team !== creep.team,
-  );
-  if (heroes.length === 0) return;
-  heroes.sort((a, b) => dist(creep, a) - dist(creep, b));
-  const target = heroes[0]!;
+  const target = holdOrHome(match, creep, dt);
+  if (!target) return;
   const gap = dist(creep, target);
   creep.facing = Math.atan2(target.y - creep.y, target.x - creep.x);
   const close = creep.attackRange * 0.55;

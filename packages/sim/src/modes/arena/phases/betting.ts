@@ -1,5 +1,5 @@
-import type { Match } from "../types.js";
-import { addLog } from "../world.js";
+import type { Match } from "../../../types.js";
+import { addLog } from "../../../world.js";
 import { beginDuel } from "./duel.js";
 
 export function beginBetting(match: Match) {

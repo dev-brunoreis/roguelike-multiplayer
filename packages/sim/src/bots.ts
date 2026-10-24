@@ -1,5 +1,5 @@
 import { pickCard, shopAct } from "./actions.js";
-import { getBot, registerBot } from "./registry.js";
+import { getBot, getMode, registerBot } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import type { Arena } from "./types.js";
 import { abilityById, arenaById, dist, heroEntity } from "./world.js";
@@ -41,7 +41,7 @@ function attackPlan(match: Match, player: PlayerState) {
   return { hold: Math.max(3.2, ranged * 0.72), kite: true };
 }
 
-function steer(match: Match, player: PlayerState) {
+export function steer(match: Match, player: PlayerState) {
   const entity = heroEntity(match, player);
   if (!entity?.alive || player.paused) {
     player.inputX = 0;
@@ -127,7 +127,7 @@ function setMove(
 }
 
 export function runBots(match: Match) {
-  const bot = getBot("simple");
+  const bot = getBot(getMode(match.mode).bot);
   if (!bot) return;
   for (const player of match.players) {
     if (!player.isBot || player.eliminated) continue;
