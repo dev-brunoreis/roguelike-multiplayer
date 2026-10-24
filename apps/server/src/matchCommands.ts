@@ -5,14 +5,16 @@ import {
   setDuels,
   setGodmode,
   skipDuel,
-  type Match,
-} from "@game/sim";
+} from "@game/sim/debug";
+import type { Match } from "@game/sim";
 import type { ChatCommand } from "./chat.js";
 
 function reviveReply(match: Match, playerId: string, target?: string) {
   const result = revivePlayer(match, playerId, target);
-  if (result.status === "missing") return "não achei esse jogador";
-  if (result.status === "alive") return target ? "já está vivo" : "você já está vivo";
+  if (result.status !== "revived") {
+    if (result.status === "missing") return "não achei esse jogador";
+    return target ? "já está vivo" : "você já está vivo";
+  }
   return target ? `${result.name} reviveu` : "você reviveu";
 }
 

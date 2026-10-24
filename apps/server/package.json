@@ -15,7 +15,6 @@
     "@game/sim": "workspace:*",
     "colyseus": "^0.16.5",
     "cors": "^2.8.5",
-    "drizzle-orm": "^0.44.6",
     "express": "^4.21.2"
   },
   "devDependencies": {

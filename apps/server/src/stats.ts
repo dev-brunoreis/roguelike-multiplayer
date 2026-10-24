@@ -1,26 +1,10 @@
-import type { PersistEvent } from "@game/shared";
-import type { Match } from "@game/sim";
-import { buildSnapshot } from "@game/sim";
-import { finishMatch, insertEvent, insertMatch, insertMatchPlayer, updateMatchPlayer } from "./db.js";
-
-const PERSIST = new Set([
-  "match_start",
-  "card_offer",
-  "card_pick",
-  "level",
-  "death",
-  "eliminate",
-  "wave_cleared",
-  "wave_failed",
-  "duel_result",
-  "bet",
-  "shop",
-  "damage_summary",
-  "win",
-  "synergy",
-]);
+import type { Match, PersistEvent } from "@game/sim";
+import { buildSnapshot, isPersist } from "@game/sim";
+import { finishMatch, insertEvents, insertMatch, insertMatchPlayer, updateMatchPlayer } from "./db.js";
 
 export class StatsWriter {
+  private rows = new Map<string, number>();
+
   constructor(private matchId: string) {}
 
   start(match: Match) {
@@ -35,7 +19,7 @@ export class StatsWriter {
       seed: match.seed,
     });
     for (const player of match.players) {
-      insertMatchPlayer({
+      const rowId = insertMatchPlayer({
         matchId: this.matchId,
         userId: player.isBot ? null : player.id,
         name: player.name,
@@ -48,22 +32,20 @@ export class StatsWriter {
         cardsJson: "[]",
         eliminated: 0,
       });
+      this.rows.set(player.id, rowId);
     }
   }
 
   write(list: PersistEvent[]) {
     const now = Date.now();
-    for (const event of list) {
-      if (!PERSIST.has(event.type)) continue;
-      insertEvent({
-        matchId: this.matchId,
-        round: event.round,
-        playerId: "playerId" in event ? (event.playerId ?? null) : null,
-        type: event.type,
-        payload: JSON.stringify(event),
-        createdAt: now,
-      });
-    }
+    insertEvents(list.filter(isPersist).map((event) => ({
+      matchId: this.matchId,
+      round: event.round,
+      playerId: "playerId" in event ? (event.playerId ?? null) : null,
+      type: event.type,
+      payload: JSON.stringify(event),
+      createdAt: now,
+    })));
   }
 
   finish(match: Match) {
@@ -71,7 +53,9 @@ export class StatsWriter {
     const winner = match.players.find((player) => player.id === match.winnerId);
     finishMatch(this.matchId, match.winnerId, winner?.name ?? null);
     for (const player of snap.players) {
-      updateMatchPlayer(this.matchId, player.name, {
+      const rowId = this.rows.get(player.id);
+      if (rowId == null) continue;
+      updateMatchPlayer(rowId, {
         placement: player.placement,
         damage: player.damageDealt,
         kills: player.kills,

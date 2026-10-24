@@ -167,6 +167,7 @@ export class LobbyRoom extends Room {
       const room = await matchMaker.createRoom("match", {
         humans: humans.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId, shadowColor: seat.shadowColor })),
         bots,
+        hostId: humans[0]?.id ?? "",
         config: { lives: this.config.lives, cardsPerLevelUp: this.config.cardsPerLevelUp },
         seed: Math.floor(Math.random() * 1_000_000_000),
       });

@@ -1,44 +1,47 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: integer("created_at").notNull(),
-});
-
-export const matches = sqliteTable("matches", {
-  id: text("id").primaryKey(),
-  createdAt: integer("created_at").notNull(),
-  endedAt: integer("ended_at"),
-  winnerId: text("winner_id"),
-  winnerName: text("winner_name"),
-  configJson: text("config_json").notNull(),
-  dataVersion: text("data_version").notNull(),
-  seed: integer("seed").notNull(),
-});
-
-export const matchPlayers = sqliteTable("match_players", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  matchId: text("match_id").notNull(),
-  userId: text("user_id"),
-  name: text("name").notNull(),
-  heroId: text("hero_id").notNull(),
-  isBot: integer("is_bot").notNull(),
-  placement: integer("placement"),
-  damage: integer("damage").notNull().default(0),
-  kills: integer("kills").notNull().default(0),
-  deaths: integer("deaths").notNull().default(0),
-  cardsJson: text("cards_json").notNull().default("[]"),
-  eliminated: integer("eliminated").notNull().default(0),
-});
-
-export const events = sqliteTable("events", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  matchId: text("match_id").notNull(),
-  round: integer("round").notNull(),
-  playerId: text("player_id"),
-  type: text("type").notNull(),
-  payload: text("payload").notNull(),
-  createdAt: integer("created_at").notNull(),
-});
+export const MIGRATIONS: { id: number; sql: string }[] = [
+  {
+    id: 1,
+    sql: `
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS matches (
+        id TEXT PRIMARY KEY,
+        created_at INTEGER NOT NULL,
+        ended_at INTEGER,
+        winner_id TEXT,
+        winner_name TEXT,
+        config_json TEXT NOT NULL,
+        data_version TEXT NOT NULL,
+        seed INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS match_players (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id TEXT NOT NULL,
+        user_id TEXT,
+        name TEXT NOT NULL,
+        hero_id TEXT NOT NULL,
+        is_bot INTEGER NOT NULL,
+        placement INTEGER,
+        damage INTEGER NOT NULL DEFAULT 0,
+        kills INTEGER NOT NULL DEFAULT 0,
+        deaths INTEGER NOT NULL DEFAULT 0,
+        cards_json TEXT NOT NULL DEFAULT '[]',
+        eliminated INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id TEXT NOT NULL,
+        round INTEGER NOT NULL,
+        player_id TEXT,
+        type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS events_match_idx ON events (match_id);
+    `,
+  },
+];
