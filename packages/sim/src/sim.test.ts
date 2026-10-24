@@ -1,7 +1,7 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { dealDamage } from "./damage.js";
-import { buildSnapshot, createMatch, grantXp, jumpWave, pickCard, quietMatch, runTicks, setBotsGodmode, setDuels, setGodmode, setPauseWant, skipDuel, surrender, tick } from "./index.js";
+import { buildSnapshot, createMatch, grantXp, jumpWave, pickCard, quietMatch, revivePlayer, runTicks, setBotsGodmode, setDuels, setGodmode, setPauseWant, skipDuel, surrender, tick } from "./index.js";
 import type { Match } from "./types.js";
 import { arenaCenter } from "./world.js";
 
@@ -583,6 +583,32 @@ describe("simulação", () => {
     expect(hero.hp).toBeLessThan(hp);
   });
 
+  it("bot revivido herda a invulnerabilidade dos bots", () => {
+    const match = createMatch({
+      players: [
+        { id: "p", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "bot", name: "Bot", isBot: true, heroId: "mago" },
+        { id: "bot2", name: "Bot Dois", isBot: true, heroId: "arqueiro" },
+      ],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const bot = match.players.find((player) => player.id === "bot")!;
+    const hero = match.entities.find((entity) => entity.playerId === "bot")!;
+    bot.eliminated = true;
+    bot.lives = 0;
+    hero.alive = false;
+    expect(setBotsGodmode(match)).toBe(true);
+    expect(bot.godmode).toBe(true);
+    expect(revivePlayer(match, "p", "Bot")).toEqual({ status: "revived", name: "Bot" });
+    expect(bot.godmode).toBe(true);
+    hero.invuln = 0;
+    expect(dealDamage(match, { target: hero, amount: hero.hp + 40 })).toBe(0);
+    expect(hero.hp).toBe(hero.maxHp);
+  });
+
   it("godmode segura o dano e desliga de novo", () => {
     const match = createMatch({
       players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
@@ -604,7 +630,79 @@ describe("simulação", () => {
     dealDamage(match, { target: hero, amount: 20 });
     expect(hero.hp).toBeLessThan(hp);
     player.eliminated = true;
-    expect(setGodmode(match, "p")).toBeNull();
+    hero.alive = false;
+    expect(setGodmode(match, "p")).toBe(true);
+    expect(revivePlayer(match, "p")).toEqual({ status: "revived", name: "Ana" });
+    expect(player.godmode).toBe(true);
+    hero.invuln = 0;
+    expect(dealDamage(match, { target: hero, amount: hero.hp + 50 })).toBe(0);
+    expect(hero.hp).toBe(hero.maxHp);
+  });
+
+  it("reviver pula a espera e devolve uma vida a quem foi eliminado", () => {
+    const match = createMatch({
+      players: [
+        { id: "p", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+        { id: "c", name: "Caio", isBot: false, heroId: "arqueiro" },
+      ],
+      seed: 8,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.playerId === "p")!;
+    const lives = player.lives;
+    dealDamage(match, { target: hero, amount: hero.hp + 50 });
+    expect(player.respawnIn).toBeGreaterThan(0);
+    expect(revivePlayer(match, "p")).toEqual({ status: "revived", name: "Ana" });
+    expect(player.respawnIn).toBe(0);
+    expect(player.lives).toBe(lives - 1);
+    expect(hero.alive).toBe(true);
+    expect(hero.hp).toBe(hero.maxHp);
+    expect(revivePlayer(match, "p")).toEqual({ status: "alive" });
+    while (player.lives > 0) {
+      hero.alive = true;
+      hero.hp = hero.maxHp;
+      hero.invuln = 0;
+      player.respawnIn = 0;
+      dealDamage(match, { target: hero, amount: hero.hp + 50 });
+    }
+    expect(player.eliminated).toBe(true);
+    expect(match.phase).toBe("pve");
+    expect(revivePlayer(match, "b", "Ana")).toEqual({ status: "revived", name: "Ana" });
+    expect(player.eliminated).toBe(false);
+    expect(player.lives).toBe(1);
+    expect(hero.alive).toBe(true);
+    expect(revivePlayer(match, "p", "ninguém")).toEqual({ status: "missing" });
+  });
+
+  it("reviver reabre a partida no salão depois do fim", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 8,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    while (player.lives > 0) {
+      hero.alive = true;
+      hero.hp = hero.maxHp;
+      hero.invuln = 0;
+      player.respawnIn = 0;
+      dealDamage(match, { target: hero, amount: hero.hp + 50 });
+    }
+    tick(match);
+    expect(player.eliminated).toBe(true);
+    expect(revivePlayer(match, "p")?.status).toBe("revived");
+    expect(match.phase).toBe("hub");
+    expect(match.winnerId).toBeNull();
+    expect(player.lives).toBe(1);
+    expect(player.eliminated).toBe(false);
+    expect(hero.alive).toBe(true);
   });
 
   it("morte na onda conta segundos até renascer enquanto sobra vida", () => {

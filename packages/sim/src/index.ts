@@ -15,7 +15,7 @@ export {
   registerOnKill,
   registerTargeting,
 } from "./registry.js";
-export { jumpWave, setDuels, skipDuel } from "./phases.js";
+export { jumpWave, revivePlayer, setDuels, skipDuel } from "./phases.js";
 export { buildSnapshot } from "./snapshot.js";
 export { spawnCreep } from "./spawn.js";
 export type { Entity, Match, PlayerState } from "./types.js";

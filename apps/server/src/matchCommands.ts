@@ -1,5 +1,6 @@
 import {
   jumpWave,
+  revivePlayer,
   setBotsGodmode,
   setDuels,
   setGodmode,
@@ -7,6 +8,13 @@ import {
   type Match,
 } from "@game/sim";
 import type { ChatCommand } from "./chat.js";
+
+function reviveReply(match: Match, playerId: string, target?: string) {
+  const result = revivePlayer(match, playerId, target);
+  if (result.status === "missing") return "não achei esse jogador";
+  if (result.status === "alive") return target ? "já está vivo" : "você já está vivo";
+  return target ? `${result.name} reviveu` : "você reviveu";
+}
 
 function godmodeReply(on: boolean | null) {
   if (on == null) return "godmode só vale enquanto você está na partida";
@@ -16,6 +24,12 @@ function godmodeReply(on: boolean | null) {
 export function runMatchCommand(match: Match, playerId: string, command: ChatCommand): string {
   if (command.name === "godmode") return godmodeReply(setGodmode(match, playerId, command.on));
   if (command.name === "skipduel") return skipDuel(match) ? "duelo pulado" : "não tem duelo para pular";
+  if (command.name === "revive") return reviveReply(match, playerId, command.target);
+  if (command.name === "bots") {
+    const on = setBotsGodmode(match, command.on);
+    if (on == null) return "não tem bot vivo na partida";
+    return on ? "bots imortais" : "bots normais";
+  }
   if (match.phase === "ended") return "a partida já acabou";
   if (command.name === "duels") {
     const on = setDuels(match, command.on);
@@ -26,7 +40,5 @@ export function runMatchCommand(match: Match, playerId: string, command: ChatCom
     const round = jumpWave(match, command.round);
     return round == null ? "onda inválida (1 a 99)" : `onda ${round}`;
   }
-  const on = setBotsGodmode(match, command.on);
-  if (on == null) return "não tem bot vivo na partida";
-  return on ? "bots imortais" : "bots normais";
+  return "comando desconhecido";
 }

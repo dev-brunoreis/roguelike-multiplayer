@@ -29,6 +29,8 @@ describe("chat", () => {
     expect(chatCommand("/onda 12")).toEqual({ name: "wave", round: 12 });
     expect(chatCommand("onda")).toBeNull();
     expect(chatCommand("/bots ligar")).toEqual({ name: "bots", on: true });
+    expect(chatCommand("/reviver")).toEqual({ name: "revive" });
+    expect(chatCommand("reviver Bot Azul")).toEqual({ name: "revive", target: "Bot Azul" });
     expect(chatCommand("oi")).toBeNull();
   });
 });

@@ -11,7 +11,8 @@ export type ChatCommand =
   | { name: "skipduel" }
   | { name: "duels"; on?: boolean }
   | { name: "wave"; round: number }
-  | { name: "bots"; on?: boolean };
+  | { name: "bots"; on?: boolean }
+  | { name: "revive"; target?: string };
 
 function flag(on: boolean | undefined): { on?: boolean } {
   return on == null ? {} : { on };
@@ -35,6 +36,8 @@ export function chatCommand(text: string): ChatCommand | null {
   if (wave) return { name: "wave", round: Number(wave[1]) };
   const bots = trimmed.match(new RegExp(`^/?bots${SWITCH}$`, "i"));
   if (bots) return { name: "bots", ...flag(switched(bots[1])) };
+  const revive = trimmed.match(/^\/?reviver(?:\s+(.+))?$/i);
+  if (revive) return { name: "revive", ...(revive[1] ? { target: revive[1].trim() } : {}) };
   return null;
 }
 

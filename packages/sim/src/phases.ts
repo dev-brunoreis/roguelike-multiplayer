@@ -2,7 +2,7 @@ import { eligible, offerCards } from "./damage.js";
 import { applyCard } from "./effects.js";
 import { flushDamage, spawnCreep } from "./spawn.js";
 import type { DuelPair, Match, PlayerState } from "./types.js";
-import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity, pushBanner } from "./world.js";
+import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity, playerById, pushBanner } from "./world.js";
 
 export function checkWinner(match: Match) {
   if (match.phase === "ended") return;
@@ -146,6 +146,49 @@ export function respawnHero(match: Match, player: PlayerState) {
   revive(match, player);
   const entity = heroEntity(match, player);
   if (entity) entity.invuln = match.config.invulnSeconds;
+}
+
+export function revivePlayer(
+  match: Match,
+  playerId: string,
+  targetName?: string,
+): { status: "revived"; name: string } | { status: "alive" | "missing" } {
+  const named = targetName?.trim().toLowerCase();
+  const target = named
+    ? match.players.find((player) => player.name.toLowerCase() === named)
+    : playerById(match, playerId);
+  if (!target) return { status: "missing" };
+  const entity = heroEntity(match, target);
+  const down = target.eliminated || target.lives <= 0 || target.respawnIn > 0 || !entity?.alive;
+  if (!down) return { status: "alive" };
+  const ended = match.phase === "ended";
+  if (target.eliminated || target.lives <= 0) {
+    target.eliminated = false;
+    target.surrendered = false;
+    target.eliminatedAt = null;
+    target.lives = 1;
+    target.ready = false;
+    target.waveClear = false;
+  }
+  target.respawnIn = 0;
+  if (target.isBot && match.botsGodmode) target.godmode = true;
+  if (ended) {
+    match.winnerId = null;
+    match.phase = "hub";
+    beginHub(match);
+  } else if (match.phase === "hub") {
+    const fighters = alivePlayers(match);
+    const index = Math.max(0, fighters.findIndex((player) => player.id === target.id));
+    sendToHub(match, target, index, Math.max(1, fighters.length));
+  } else {
+    const inDuel = match.phase === "duel" && match.duel.some((pair) => pair.a === target.id || pair.b === target.id);
+    if (!inDuel) sendHome(match, target);
+    respawnHero(match, target);
+    if (match.phase === "pve") target.waveClear = arenaQuiet(match, target.arenaId);
+  }
+  addLog(match, `${target.name} reviveu`);
+  pushBanner(match, { kind: "info", title: `${target.name} reviveu`, life: 3.2 });
+  return { status: "revived", name: target.name };
 }
 
 function endPve(match: Match, cleared: boolean) {

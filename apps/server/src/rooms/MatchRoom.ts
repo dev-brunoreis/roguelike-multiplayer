@@ -114,6 +114,7 @@ export class MatchRoom extends Room {
       if (command) {
         if (!this.chat.admit(player.id)) return;
         const reply = runMatchCommand(this.match, player.id, command);
+        if (this.finished && this.match.phase !== "ended") this.finished = false;
         this.broadcast("chat", this.chat.post(player.id, player.name, player.color, reply));
         return;
       }

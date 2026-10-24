@@ -185,6 +185,7 @@ export interface Match {
   duel: DuelPair[];
   waveDone: boolean;
   duelsEnabled: boolean;
+  botsGodmode: boolean;
   duelPending: boolean;
   duelAnnounce: number;
   banner: { id: number; kind: AnnounceKind; title: string; detail: string; left: number } | null;

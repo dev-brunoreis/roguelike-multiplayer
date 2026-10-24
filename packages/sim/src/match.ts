@@ -59,6 +59,7 @@ export function createMatch(options: {
     duel: [],
     waveDone: false,
     duelsEnabled: true,
+    botsGodmode: false,
     duelPending: false,
     duelAnnounce: 0,
     banner: null,
