@@ -106,10 +106,7 @@ export function App() {
     <Home
       token={token}
       notice={notice}
-      colors={shadowColors}
-      shadowColor={shadowColor}
       onPalette={rememberPalette}
-      onPick={pickShadow}
       onClearNotice={clearNotice}
       onLogout={() => { localStorage.removeItem(TOKEN); setToken(null); setUser(null); setNotice(""); }}
       onCreate={() => setSeat({})}
@@ -229,10 +226,7 @@ function ShadowPick({ colors, value, onPick }: { colors: string[]; value: string
 function Home({
   token,
   notice,
-  colors,
-  shadowColor,
   onPalette,
-  onPick,
   onClearNotice,
   onLogout,
   onCreate,
@@ -240,10 +234,7 @@ function Home({
 }: {
   token: string;
   notice: string;
-  colors: string[];
-  shadowColor: string;
   onPalette: (colors: string[]) => void;
-  onPick: (color: string) => void;
   onClearNotice: () => void;
   onLogout: () => void;
   onCreate: () => void;
@@ -286,7 +277,6 @@ function Home({
           <button className="btn ghost" onClick={onLogout}>Sair</button>
         </header>
         <p className="muted">Cria uma sala e espera o pessoal, ou entra numa que já está aberta.</p>
-        <ShadowPick colors={colors} value={shadowColor} onPick={onPick} />
         <button className="btn primary" onClick={onCreate}>Criar sala</button>
         {error || notice ? <p className="error">{error || notice}</p> : null}
         <div className="rooms">
