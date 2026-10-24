@@ -6,6 +6,7 @@ const PHASE: Record<string, string> = {
   betting: "Apostas",
   duel: "Duelo",
   shop: "Loja",
+  dungeon: "Masmorra",
   ended: "Fim",
 };
 
@@ -116,6 +117,7 @@ function samePlayer(prev: PlayerSnap | null, next: PlayerSnap | null) {
   if (prev.hp !== next.hp || prev.maxHp !== next.maxHp || prev.lives !== next.lives || prev.xp !== next.xp) return false;
   if (prev.ready !== next.ready || prev.pauseWant !== next.pauseWant || prev.godmode !== next.godmode) return false;
   if (prev.eliminated !== next.eliminated || prev.respawnIn !== next.respawnIn || prev.inDuel !== next.inDuel) return false;
+  if (prev.downed !== next.downed || Math.round(prev.revive * 8) !== Math.round(next.revive * 8)) return false;
   if (prev.abilities.length !== next.abilities.length) return false;
   for (let i = 0; i < prev.abilities.length; i += 1) {
     if (prev.abilities[i]!.cooldown !== next.abilities[i]!.cooldown || prev.abilities[i]!.level !== next.abilities[i]!.level) return false;

@@ -9,7 +9,7 @@ export const EndScreen = memo(function EndScreen({ onLeave }: { onLeave: () => v
   if (!ended || !snap) return null;
   return (
     <section className="overlay end">
-      <h2>{snap.winnerId ? `${name} venceu` : "Sem vencedor"}</h2>
+      <h2>{snap.dungeon?.result === "win" ? "Vitória do grupo" : snap.dungeon?.result === "lose" ? "Derrota" : snap.winnerId ? `${name} venceu` : "Sem vencedor"}</h2>
       <table>
         <thead><tr><th>#</th><th>Nome</th><th>Dano</th><th>Abates</th><th>Build</th></tr></thead>
         <tbody>

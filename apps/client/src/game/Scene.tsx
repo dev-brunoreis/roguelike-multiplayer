@@ -1,9 +1,10 @@
-import type { Snapshot } from "@game/shared/protocol";
+import type { ArenaSnap, PortalSnap, Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { Plane, Raycaster, Vector2, Vector3 } from "three";
 import { arenaInView, inView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
+import { CAMERA_ZOOM } from "./glyphs.js";
 import { setWorldAim } from "./input.js";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion } from "./motion.js";
@@ -25,7 +26,7 @@ export const Scene = memo(function Scene({
     <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
       <color attach="background" args={["#0e0c0a"]} />
       <fog attach="fog" args={["#0e0c0a", 72, 168]} />
-      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={420} />
+      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={CAMERA_ZOOM} near={-120} far={420} />
       <AimCursor snapRef={snapRef} watchId={watchId} />
       <World snapRef={snapRef} indexRef={indexRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
@@ -127,7 +128,8 @@ function World({
     camera.updateMatrixWorld();
     fitView(camera, state.gl);
 
-    const arenas = snap.arenas.filter((arena) => arenaInView(arena));
+    const revealed = snap.dungeon ? new Set(snap.dungeon.revealed) : null;
+    const arenas = snap.arenas.filter((arena) => (!revealed || revealed.has(arena.id)) && arenaInView(arena));
     const shown = new Set(arenas.map((arena) => arena.id));
     const entities = snap.entities.filter((entity) => shown.has(entity.arenaId));
     renderStats.entities = entities.length;
@@ -146,7 +148,7 @@ function World({
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
-        <planeGeometry args={[420, 420]} />
+        <planeGeometry args={[voidSpan(snap), voidSpan(snap)]} />
         <meshBasicMaterial map={voidTexture()} color="#141210" dispose={null} />
       </mesh>
       <Drift />
@@ -154,21 +156,32 @@ function World({
         const arena = snap?.arenas.find((item) => item.id === id);
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
       })}
+      <PortalLayer snap={snap} shown={visible.arenas} />
       {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} indexRef={indexRef} />)}
       <DeathLayer snapRef={snapRef} />
       <FloatLayer snapRef={snapRef} />
-      <HpLayer ids={visible.entities} indexRef={indexRef} />
+      <HpLayer ids={visible.entities} indexRef={indexRef} snapRef={snapRef} />
       <Shots snapRef={snapRef} indexRef={indexRef} />
       <FxLayer snapRef={snapRef} indexRef={indexRef} />
     </>
   );
 }
 
-function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: number; kind: string } }) {
+function voidSpan(snap: Snapshot | null) {
+  if (!snap || snap.arenas.length === 0) return 420;
+  let max = 40;
+  for (const arena of snap.arenas) {
+    max = Math.max(max, Math.abs(arena.x), Math.abs(arena.y), Math.abs(arena.x + arena.size), Math.abs(arena.y + arena.size));
+  }
+  return max * 2 + 80;
+}
+
+function ArenaPad({ arena }: { arena: ArenaSnap }) {
   const cx = arena.x + arena.size / 2;
   const cz = arena.y + arena.size / 2;
-  const skirt = arena.kind === "hub" ? "#1c2218" : arena.kind === "duel" ? "#1a100e" : "#1a1612";
-  const map = floorTexture(arena.kind);
+  const boss = arena.role === "boss";
+  const skirt = arena.kind === "hub" ? "#1c2218" : arena.kind === "duel" ? "#1a100e" : boss ? "#2a1214" : arena.kind === "room" ? "#16141c" : "#1a1612";
+  const map = floorTexture(boss ? "boss" : arena.kind);
   return (
     <group position={[cx, 0, cz]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
@@ -187,6 +200,28 @@ function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: 
       ) : null}
       <ArenaDressing id={arena.id} size={arena.size} kind={arena.kind} />
     </group>
+  );
+}
+
+function PortalLayer({ snap, shown }: { snap: Snapshot | null; shown: string[] }) {
+  if (!snap?.dungeon) return null;
+  const open = new Set(shown);
+  const sealed = new Set(snap.dungeon.sealed);
+  return (
+    <>
+      {snap.portals.filter((portal) => open.has(portal.arenaId)).map((portal) => (
+        <PortalMark key={portal.id} portal={portal} sealed={sealed.has(portal.arenaId)} />
+      ))}
+    </>
+  );
+}
+
+function PortalMark({ portal, sealed }: { portal: PortalSnap; sealed: boolean }) {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[portal.x, 0.08, portal.y]}>
+      <ringGeometry args={[0.55, 1.05, 20]} />
+      <meshBasicMaterial color={sealed ? "#5c5348" : "#e6c15a"} transparent opacity={sealed ? 0.35 : 0.85} />
+    </mesh>
   );
 }
 

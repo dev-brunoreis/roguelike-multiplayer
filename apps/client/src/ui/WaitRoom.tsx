@@ -155,12 +155,20 @@ export function WaitRoom({
           <h2>Como vai ser</h2>
           {host ? null : <p className="muted">Só o host muda isso.</p>}
           <div className="settings">
+            <label>Modo
+              <select disabled={!host} value={state?.config.mode ?? "arena"} onChange={(event) => sendConfig({ mode: event.target.value === "masmorra" ? "masmorra" : "arena" })}>
+                <option value="arena">Arena</option>
+                <option value="masmorra">Masmorra</option>
+              </select>
+            </label>
             <label>Lugares
-              <input disabled={!host} type="number" min={2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
+              <input disabled={!host} type="number" min={state?.config.mode === "masmorra" ? 1 : 2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
             </label>
-            <label>Vidas
-              <input disabled={!host} type="number" min={1} max={9} value={state?.config.lives ?? 3} onChange={(event) => sendConfig({ lives: Number(event.target.value) })} />
-            </label>
+            {state?.config.mode === "masmorra" ? null : (
+              <label>Vidas
+                <input disabled={!host} type="number" min={1} max={9} value={state?.config.lives ?? 3} onChange={(event) => sendConfig({ lives: Number(event.target.value) })} />
+              </label>
+            )}
             <label>Cartas por nível
               <input disabled={!host} type="number" min={2} max={8} value={state?.config.cardsPerLevelUp ?? 5} onChange={(event) => sendConfig({ cardsPerLevelUp: Number(event.target.value) })} />
             </label>

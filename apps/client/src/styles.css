@@ -91,6 +91,7 @@ input[type="text"], input[type="password"], input[type="number"] {
 .hero-sprite { position: relative; z-index: 1; display: block; image-rendering: pixelated; }
 .hero-card .taken { color: #e6c15a; font-style: normal; font-size: 12px; }
 .settings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.settings select { background: #1c1914; border: 1px solid #3a3228; padding: 6px; width: 100%; }
 .check { grid-column: 1 / -1; grid-template-columns: auto 1fr; align-items: center; }
 
 .match { height: 100%; position: relative; overflow: hidden; }
@@ -118,6 +119,11 @@ input[type="text"], input[type="password"], input[type="number"] {
   display: flex; gap: 10px; align-items: center;
 }
 .hud.top .flag { font-style: normal; color: #e6c15a; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; }
+.hud.dungeon {
+  top: 58px; left: 50%; transform: translateX(-50%);
+  pointer-events: none; background: #1c1914cc; padding: 6px 12px; border: 1px solid #3a3228;
+  color: #e6c15a; letter-spacing: 0.04em;
+}
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
 .xp i { display: block; height: 100%; background: #e07a3d; }
 .hud.side {

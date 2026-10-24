@@ -6,6 +6,7 @@ import { cameraMove, clearMove, isTypingTarget, worldAim } from "../../game/inpu
 import { mergeChat, TextChat } from "../TextChat.js";
 import { AbilityBar } from "./AbilityBar.js";
 import { Banner } from "./Banner.js";
+import { DungeonHud } from "./DungeonHud.js";
 import { Board } from "./Board.js";
 import { CardPick } from "./CardPick.js";
 import { EndScreen } from "./EndScreen.js";
@@ -142,6 +143,7 @@ export function MatchScreen({ token, roomId, onLeave, onDown }: { token: string;
       <Scene snapRef={snapRef} indexRef={indexRef} watchId={watchId} shakeRef={shakeRef} />
       <NetStat netRef={netRef} />
       <PhaseBar />
+      <DungeonHud />
       <Board watchId={watchId} onWatch={setWatch} />
       <AbilityBar />
       <MatchLog />

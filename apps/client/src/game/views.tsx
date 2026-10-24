@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
 import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
 import { inView, type SnapIndex } from "./frame.js";
-import { floatTexture, labelTexture } from "./glyphs.js";
+import { FLOAT_SCALE, LABEL_SCALE, floatTexture, labelTexture } from "./glyphs.js";
 import { worldAim } from "./input.js";
 import { motionAt } from "./motion.js";
 import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
@@ -73,6 +73,7 @@ export function EntityPuppet({
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
   const tell = useRef<Mesh>(null);
+  const reviveRing = useRef<Mesh>(null);
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
@@ -146,10 +147,12 @@ export function EntityPuppet({
       }
     }
 
+    const owner = entity.playerId ? snap.players.find((player) => player.id === entity.playerId) : undefined;
+    const downed = owner?.downed === true;
     let clip: ClipName = "idle";
-    if (anim.current.attack > 0) clip = "attack";
-    else if (anim.current.hit > 0) clip = "hit";
-    else if (moving) clip = "run";
+    if (!downed && anim.current.attack > 0) clip = "attack";
+    else if (!downed && anim.current.hit > 0) clip = "hit";
+    else if (!downed && moving) clip = "run";
     if (clip !== anim.current.clip) {
       anim.current.clip = clip;
       anim.current.frame = 0;
@@ -167,9 +170,17 @@ export function EntityPuppet({
     const lunge = clip === "attack" ? anim.current.frame * 0.045 * anim.current.flip : 0;
     if (sprite.current) {
       sprite.current.visible = true;
-      sprite.current.position.set(lunge, 0, 0);
+      sprite.current.position.set(downed ? 0 : lunge, downed ? 0.05 : 0, 0);
+      sprite.current.rotation.z = downed ? anim.current.flip * 1.15 : 0;
       sprite.current.scale.set(wide, tall, 1);
       sprite.current.renderOrder = root.renderOrder;
+    }
+    if (reviveRing.current) {
+      reviveRing.current.visible = downed;
+      if (downed) {
+        const fill = 0.45 + (owner?.revive ?? 0) * 1.15;
+        reviveRing.current.scale.set(fill, fill, 1);
+      }
     }
     if (shadow.current) {
       const show = entity.kind === "hero";
@@ -241,7 +252,7 @@ export function EntityPuppet({
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
     glow.current *= 0.78;
     if (material.current) {
-      const lit = 1 + glow.current * 1.8;
+      const lit = downed ? 0.42 : 1 + glow.current * 1.8;
       material.current.color.setRGB(lit, lit, lit);
     }
   });
@@ -266,6 +277,10 @@ export function EntityPuppet({
       <mesh ref={tell} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={2}>
         <circleGeometry args={[1, 20]} />
         <meshBasicMaterial color="#ffc4bc" transparent opacity={0.55} depthWrite={false} depthTest={false} />
+      </mesh>
+      <mesh ref={reviveRing} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]} renderOrder={4}>
+        <ringGeometry args={[0.72, 0.92, 24]} />
+        <meshBasicMaterial color="#7dce6a" transparent opacity={0.8} depthWrite={false} />
       </mesh>
       <sprite ref={sprite} center={[0.5, 0]} visible={false}>
         <spriteMaterial ref={material} transparent alphaTest={0.4} depthWrite={false} depthTest />
@@ -343,16 +358,20 @@ function DeathSprite({ item, onDone }: { item: Death; onDone: (key: string) => v
   );
 }
 
+const OVERLAY_ORDER = 100000;
+
 export function HpLayer({
   ids,
   indexRef,
+  snapRef,
 }: {
   ids: number[];
   indexRef: MutableRefObject<SnapIndex>;
+  snapRef: MutableRefObject<Snapshot | null>;
 }) {
   return (
     <>
-      {ids.map((id) => <HpBar key={id} id={id} indexRef={indexRef} />)}
+      {ids.map((id) => <HpBar key={id} id={id} indexRef={indexRef} snapRef={snapRef} />)}
     </>
   );
 }
@@ -360,9 +379,11 @@ export function HpLayer({
 function HpBar({
   id,
   indexRef,
+  snapRef,
 }: {
   id: number;
   indexRef: MutableRefObject<SnapIndex>;
+  snapRef: MutableRefObject<Snapshot | null>;
 }) {
   const group = useRef<Group>(null);
   const bar = useRef<Sprite>(null);
@@ -380,6 +401,7 @@ function HpBar({
     const placed = motionAt(id, performance.now() / 1000);
     if (!placed) return;
     root.visible = true;
+    root.renderOrder = OVERLAY_ORDER;
     root.position.set(placed.x, 0, placed.y);
     const barY = bodyHeight(entity) + 0.42;
     const hp = Math.max(0.04, Math.min(1, entity.hp / entity.maxHp));
@@ -399,14 +421,16 @@ function HpBar({
       const ink = entity.kind === "hero" ? (entity.shadowColor || "#f3ecdf") : "#c9bfb2";
       const text = entity.label ?? "";
       const hero = entity.kind === "hero";
-      const key = `${hero}|${ink}|${text}`;
+      const mine = hero && entity.playerId != null && entity.playerId === snapRef.current?.youId;
+      const key = `${mine}|${ink}|${text}`;
+      const lift = mine ? 1.12 : 1;
       name.current.visible = text.length > 0;
-      name.current.position.set(0, barY + 0.36, 0);
-      name.current.scale.set(hero ? 1.8 : 1.25, 0.34, 1);
+      name.current.position.set(0, barY + (hero ? 0.56 : 0.48) * lift, 0);
+      name.current.scale.set(LABEL_SCALE[0] * lift, LABEL_SCALE[1] * lift, 1);
       if (text && key !== labelRef.current) {
         labelRef.current = key;
         const mat = name.current.material as SpriteMaterial;
-        mat.map = labelTexture(text, ink, hero);
+        mat.map = labelTexture(text, ink, hero, mine);
         mat.needsUpdate = true;
       }
     }
@@ -488,14 +512,14 @@ export function FloatLayer({ snapRef }: { snapRef: MutableRefObject<Snapshot | n
   });
 
   return (
-    <group>
+    <group renderOrder={OVERLAY_ORDER + 1}>
       {Array.from({ length: FLOAT_POOL }, (_, i) => (
         <sprite
           key={i}
           ref={(node) => { sprites.current[i] = node; }}
           visible={false}
           center={[0.5, 0.5]}
-          scale={[1.4, 0.46, 1]}
+          scale={[FLOAT_SCALE[0], FLOAT_SCALE[1], 1]}
           renderOrder={900}
         >
           <spriteMaterial transparent depthTest={false} depthWrite={false} />

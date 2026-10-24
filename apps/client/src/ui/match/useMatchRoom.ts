@@ -14,7 +14,7 @@ const CONSENTED = 4000;
 
 function moodOf(phase: string, fighting: boolean): Mood {
   if (phase === "duel" && fighting) return "duel";
-  if (phase === "pve") return "wild";
+  if (phase === "pve" || phase === "dungeon") return "wild";
   if (phase === "ended") return "end";
   return "calm";
 }
