@@ -2,7 +2,7 @@
   {
     "id": "golpe_rapido",
     "nome": "Golpe Rápido",
-    "descricao": "Bate no inimigo mais próximo.",
+    "descricao": "Bate em quem está na linha da mira.",
     "behavior": "single",
     "targeting": "nearest",
     "tags": [
@@ -30,7 +30,7 @@
   {
     "id": "raio_encadeado",
     "nome": "Raio Encadeado",
-    "descricao": "Atinge o mais próximo e salta, perdendo dano a cada salto.",
+    "descricao": "Atinge quem está na mira e salta, perdendo dano a cada salto.",
     "behavior": "chain",
     "targeting": "nearest",
     "tags": [
@@ -74,7 +74,7 @@
   {
     "id": "explosao",
     "nome": "Explosão",
-    "descricao": "Estoura no grupo mais denso.",
+    "descricao": "Estoura no ponto da mira.",
     "behavior": "aoe",
     "targeting": "densest",
     "tags": [
@@ -106,7 +106,7 @@
   {
     "id": "flecha",
     "nome": "Flecha",
-    "descricao": "Dispara um projétil no alvo.",
+    "descricao": "Dispara um projétil na linha da mira.",
     "behavior": "projectile",
     "targeting": "nearest",
     "tags": [
@@ -168,7 +168,7 @@
   {
     "id": "lamina",
     "nome": "Lâmina Giratória",
-    "descricao": "Corta quem estiver em volta.",
+    "descricao": "Corta em volta do ponto mirado.",
     "behavior": "aoe",
     "targeting": "nearest",
     "tags": [
@@ -200,7 +200,7 @@
   {
     "id": "martelo",
     "nome": "Martelo",
-    "descricao": "Esmaga o inimigo mais ferido, de perto.",
+    "descricao": "Esmaga quem está na linha da mira, de perto.",
     "behavior": "single",
     "targeting": "lowestHp",
     "tags": [
@@ -228,7 +228,7 @@
   {
     "id": "lanca",
     "nome": "Lança",
-    "descricao": "Arremessa uma lança pesada e lenta.",
+    "descricao": "Arremessa uma lança pesada e lenta na linha da mira.",
     "behavior": "projectile",
     "targeting": "nearest",
     "tags": [
@@ -259,7 +259,7 @@
   {
     "id": "gelo",
     "nome": "Estilhaço de Gelo",
-    "descricao": "Um estilhaço salta entre os inimigos.",
+    "descricao": "Um estilhaço sai na mira e salta entre os inimigos.",
     "behavior": "chain",
     "targeting": "nearest",
     "tags": [
@@ -303,7 +303,7 @@
   {
     "id": "dardo",
     "nome": "Dardo",
-    "descricao": "Dispara agulhas rápidas e fracas.",
+    "descricao": "Dispara agulhas rápidas e fracas na linha da mira.",
     "behavior": "projectile",
     "targeting": "nearest",
     "tags": [

@@ -49,11 +49,15 @@ function moveHeroes(match: Match, dt: number) {
     if (len > 0.05) {
       entity.x += x * speed * dt;
       entity.y += y * speed * dt;
-      entity.facing = Math.atan2(y, x);
-      continue;
     }
-    const enemy = nearestEnemy(match, entity);
-    if (enemy) entity.facing = Math.atan2(enemy.y - entity.y, enemy.x - entity.x);
+    if (player.aimX != null && player.aimY != null) {
+      entity.facing = Math.atan2(player.aimY - entity.y, player.aimX - entity.x);
+    } else if (len > 0.05) {
+      entity.facing = Math.atan2(y, x);
+    } else {
+      const enemy = nearestEnemy(match, entity);
+      if (enemy) entity.facing = Math.atan2(enemy.y - entity.y, enemy.x - entity.x);
+    }
   }
 }
 

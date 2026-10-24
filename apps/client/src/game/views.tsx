@@ -3,6 +3,7 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
 import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
+import { worldAim } from "./input.js";
 import { motionAt } from "./motion.js";
 import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
 
@@ -58,6 +59,7 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const shadow = useRef<Mesh>(null);
   const reachFill = useRef<Mesh>(null);
   const reachBand = useRef<Mesh>(null);
+  const aimMark = useRef<Mesh>(null);
   const reachSpan = useRef(-1);
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
@@ -105,7 +107,11 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
     const vz = placed.y - prevZ;
     const speed = Math.hypot(vx, vz) / Math.max(delta, 0.0001);
     const moving = speed > 0.55 && speed < 24;
-    const right = vx - vz;
+    const mine = entity.playerId != null && entity.playerId === snap.youId;
+    const aim = mine ? worldAim() : null;
+    let right = vx - vz;
+    if (aim) right = aim.x - placed.x - (aim.y - placed.y);
+    else if (entity.kind === "hero") right = Math.cos(entity.facing) - Math.sin(entity.facing);
     if (Math.abs(right) > 0.0008) anim.current.flip = right > 0 ? 1 : -1;
 
     if (!anim.current.ready) {
@@ -165,7 +171,6 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       }
     }
     const span = entity.attackRange;
-    const mine = entity.playerId != null && entity.playerId === snap.youId;
     const arena = snap.arenas.find((item) => item.id === entity.arenaId);
     const fighting = arena != null && arena.kind !== "hub";
     const mark = mine && fighting && span > 0.05;
@@ -191,6 +196,23 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
         const band = reachBand.current.material as MeshBasicMaterial;
         band.color.set(tint);
         band.opacity = 0.16;
+      }
+    }
+    if (aimMark.current) {
+      const show = mark && aim != null;
+      aimMark.current.visible = show;
+      if (show && aim) {
+        let dx = aim.x - placed.x;
+        let dz = aim.y - placed.y;
+        const len = Math.hypot(dx, dz);
+        if (len > span && len > 0.0001) {
+          dx *= span / len;
+          dz *= span / len;
+        }
+        aimMark.current.position.set(dx, 0.06, dz);
+        const dot = aimMark.current.material as MeshBasicMaterial;
+        dot.color.set(tint);
+        dot.opacity = 0.9;
       }
     }
     const goal = entity.kind === "hero" ? 0 : entity.strike;
@@ -227,6 +249,10 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       </mesh>
       <mesh ref={reachBand} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} renderOrder={3}>
         <meshBasicMaterial transparent opacity={0.7} depthWrite={false} />
+      </mesh>
+      <mesh ref={aimMark} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} renderOrder={4}>
+        <ringGeometry args={[0.1, 0.22, 16]} />
+        <meshBasicMaterial transparent opacity={0.9} depthWrite={false} />
       </mesh>
       <mesh ref={tell} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={2}>
         <circleGeometry args={[1, 20]} />

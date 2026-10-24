@@ -4,7 +4,7 @@ import type { AnnounceSnap, LobbyState, Snapshot } from "@game/shared/protocol";
 import { SkillGlyph } from "../game/icons.js";
 import { Scene } from "../game/Scene.js";
 import { loadIdle } from "../game/sprites.js";
-import { cameraMove, isTypingTarget } from "../game/input.js";
+import { cameraMove, isTypingTarget, worldAim } from "../game/input.js";
 import { api, ServerDown, serverReachable, wsBase } from "../net.js";
 import {
   hearWorld,
@@ -633,6 +633,10 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
   }, [roomId, token, onDown]);
 
   useEffect(() => {
+    const sendMove = (x: number, y: number) => {
+      const aim = worldAim();
+      roomRef.current?.send("input", aim ? { x, y, aimX: aim.x, aimY: aim.y } : { x, y });
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.code === "Escape" && event.type === "keydown" && !event.repeat) {
         event.preventDefault();
@@ -647,7 +651,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         setMenu(next);
         setAsk(null);
         if (next) {
-          roomRef.current?.send("input", { x: 0, y: 0 });
+          sendMove(0, 0);
           sfxUi();
         }
         return;
@@ -680,13 +684,17 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       if (you && digit >= 1 && digit <= 6 && you.pending[digit - 1]) {
         roomRef.current?.send("pick", { cardId: you.pending[digit - 1]!.id });
       }
-      roomRef.current?.send("input", cameraMove());
+      const move = cameraMove();
+      sendMove(move.x, move.y);
     };
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("keyup", onKey, true);
     const pulse = setInterval(() => {
-      if (menuRef.current) roomRef.current?.send("input", { x: 0, y: 0 });
-      else roomRef.current?.send("input", cameraMove());
+      if (menuRef.current) sendMove(0, 0);
+      else {
+        const move = cameraMove();
+        sendMove(move.x, move.y);
+      }
     }, 50);
     const ping = setInterval(() => roomRef.current?.send("ping", performance.now()), 1000);
     return () => {

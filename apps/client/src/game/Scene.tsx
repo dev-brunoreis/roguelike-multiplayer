@@ -1,7 +1,9 @@
 import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { memo, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { Plane, Raycaster, Vector2, Vector3 } from "three";
+import { setWorldAim } from "./input.js";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion, trackMotion } from "./motion.js";
 import { shotScale, shotShape, shotTexture } from "./sprites.js";
@@ -23,10 +25,44 @@ export const Scene = memo(function Scene({
       <color attach="background" args={["#0e0c0a"]} />
       <fog attach="fog" args={["#0e0c0a", 72, 168]} />
       <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={420} />
+      <AimCursor snapRef={snapRef} watchId={watchId} />
       <World snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
   );
 });
+
+function AimCursor({
+  snapRef,
+  watchId,
+}: {
+  snapRef: MutableRefObject<Snapshot | null>;
+  watchId: string | null;
+}) {
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+  useEffect(() => {
+    const el = gl.domElement;
+    const raycaster = new Raycaster();
+    const plane = new Plane(new Vector3(0, 1, 0), 0);
+    const hit = new Vector3();
+    const ndc = new Vector2();
+    const onMove = (event: PointerEvent) => {
+      const snap = snapRef.current;
+      if (!snap) return;
+      if (watchId && watchId !== snap.youId) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      if (!raycaster.ray.intersectPlane(plane, hit)) return;
+      setWorldAim(hit.x, hit.z);
+    };
+    el.addEventListener("pointermove", onMove);
+    return () => el.removeEventListener("pointermove", onMove);
+  }, [camera, gl, snapRef, watchId]);
+  return null;
+}
 
 function World({
   snapRef,

@@ -135,6 +135,8 @@ export interface PlayerState {
   waveClear: boolean;
   inputX: number;
   inputY: number;
+  aimX: number | null;
+  aimY: number | null;
   abilities: AbilitySlot[];
   cards: string[];
   tags: Record<string, number>;

@@ -23,9 +23,54 @@ function seek(ctx: AbilityContext, origin: Entity, range: number, ignore: Set<nu
   return fn(ctx.match, origin, range * (1 + ctx.player.stats.areaPct), ignore);
 }
 
+function aimedPoint(player: PlayerState) {
+  if (player.aimX == null || player.aimY == null) return null;
+  return { x: player.aimX, y: player.aimY };
+}
+
+function clampAim(origin: Entity, aim: { x: number; y: number }, range: number) {
+  const dx = aim.x - origin.x;
+  const dy = aim.y - origin.y;
+  const len = Math.hypot(dx, dy);
+  if (len <= range || len < 0.0001) return { x: origin.x + dx, y: origin.y + dy };
+  const scale = range / len;
+  return { x: origin.x + dx * scale, y: origin.y + dy * scale };
+}
+
+function distToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const len2 = abx * abx + aby * aby;
+  if (len2 < 0.0000001) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * abx + (py - ay) * aby) / len2));
+  return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
+}
+
+function enemyOnAim(match: Match, origin: Entity, player: PlayerState, range: number, ignore: Set<number>) {
+  const aim = aimedPoint(player);
+  if (!aim) return null;
+  const end = clampAim(origin, aim, range);
+  const slack = match.config.aimSlack;
+  let best: Entity | null = null;
+  let bestCursor = Infinity;
+  for (const entity of match.entities) {
+    if (!entity.alive || ignore.has(entity.id) || entity.arenaId !== origin.arenaId || entity.team === origin.team) continue;
+    if (dist(origin, entity) > range + entity.radius) continue;
+    if (distToSegment(entity.x, entity.y, origin.x, origin.y, end.x, end.y) > entity.radius + slack) continue;
+    const cursor = Math.hypot(entity.x - aim.x, entity.y - aim.y);
+    if (cursor < bestCursor) {
+      best = entity;
+      bestCursor = cursor;
+    }
+  }
+  return best;
+}
+
 registerAbilityBehavior("single", (ctx) => {
   const range = ctx.level.range * (1 + ctx.player.stats.areaPct);
-  const target = seek(ctx, ctx.caster, range, new Set());
+  const target = aimedPoint(ctx.player)
+    ? enemyOnAim(ctx.match, ctx.caster, ctx.player, range, new Set())
+    : seek(ctx, ctx.caster, range, new Set());
   if (!target) return false;
   const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
   dealDamage(ctx.match, {
@@ -69,7 +114,9 @@ registerAbilityBehavior("chain", (ctx) => {
   for (let i = 0; i < jumps; i += 1) {
     const probe = { ...from, team: ctx.caster.team, id: -1 };
     const step = { ...ctx, ability: { ...ctx.ability, targeting: i === 0 ? ctx.ability.targeting : "nearest" } };
-    const target = seek(step, probe, range, ignore);
+    const target = i === 0 && aimedPoint(ctx.player)
+      ? enemyOnAim(ctx.match, probe, ctx.player, range, ignore)
+      : seek(step, probe, range, ignore);
     if (!target) break;
     ignore.add(target.id);
     const ratio = falloff[Math.min(i, falloff.length - 1)] ?? 1;
@@ -111,22 +158,25 @@ registerAbilityBehavior("chain", (ctx) => {
 registerAbilityBehavior("aoe", (ctx) => {
   const range = ctx.level.range * (1 + ctx.player.stats.areaPct);
   const radius = (ctx.level.radius ?? ctx.level.range) * (1 + ctx.player.stats.areaPct);
-  const center = seek(ctx, ctx.caster, range, new Set());
+  const aim = aimedPoint(ctx.player);
+  const center = aim ? clampAim(ctx.caster, aim, range) : seek(ctx, ctx.caster, range, new Set());
   if (!center) return false;
-  const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
   const victims = ctx.match.entities.filter(
     (entity) => entity.alive && entity.arenaId === ctx.caster.arenaId && entity.team !== ctx.caster.team && dist(center, entity) <= radius + entity.radius,
   );
-  if (victims.length === 0) return false;
-  for (const target of victims) {
-    dealDamage(ctx.match, {
-      source: ctx.caster,
-      sourcePlayer: ctx.player,
-      target,
-      amount: hit.amount,
-      abilityId: ctx.ability.id,
-      crit: hit.crit,
-    });
+  if (!aim && victims.length === 0) return false;
+  if (victims.length > 0) {
+    const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
+    for (const target of victims) {
+      dealDamage(ctx.match, {
+        source: ctx.caster,
+        sourcePlayer: ctx.player,
+        target,
+        amount: hit.amount,
+        abilityId: ctx.ability.id,
+        crit: hit.crit,
+      });
+    }
   }
   markSwing(ctx.caster);
   emitFx(ctx.match, {
@@ -143,7 +193,9 @@ registerAbilityBehavior("aoe", (ctx) => {
 
 registerAbilityBehavior("projectile", (ctx) => {
   const range = ctx.level.range * (1 + ctx.player.stats.areaPct);
-  const target = seek(ctx, ctx.caster, range, new Set());
+  const target = aimedPoint(ctx.player)
+    ? enemyOnAim(ctx.match, ctx.caster, ctx.player, range, new Set())
+    : seek(ctx, ctx.caster, range, new Set());
   if (!target) return false;
   const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
   const speed = ctx.level.projectileSpeed ?? 10;

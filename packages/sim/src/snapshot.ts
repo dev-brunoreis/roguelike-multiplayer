@@ -141,6 +141,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
         ? playerByName(match, entity.playerId)
         : match.data.creeps.find((creep) => creep.id === entity.defId)?.nome,
       playerId: entity.playerId,
+      facing: entity.facing,
     })),
     projectiles: match.projectiles.map((shot) => ({
       id: shot.id,

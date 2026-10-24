@@ -4,7 +4,7 @@ Partida curta, por volta de 30 minutos. O último com vida vence. Fechar o jogo 
 
 ## Controle
 
-WASD move relativo à câmera (W sobe na tela). A câmera segue o herói ou quem está em observação. As habilidades disparam sozinhas quando o cooldown acaba e existe alvo. Na escolha de carta, as teclas `1`–`6` pegam a oferta. No salão, `Espaço` confirma Seguir. `Esc` abre o menu: continuar, pedir pausa, volume da música, volume dos efeitos, desistir ou sair. A partida só para quando todo humano vivo pediu pausa.
+WASD move relativo à câmera (W sobe na tela). A câmera segue o herói ou quem está em observação e o mouse não a desloca: o cursor marca um ponto no chão. O herói olha para esse ponto. As habilidades disparam sozinhas quando o cooldown acaba. `single`, `projectile` e o primeiro salto do `chain` acertam quem está na linha até o ponto, cortada no alcance (`aimSlack` alarga a linha). `aoe` estoura nesse ponto, mesmo vazio, e gasta o cooldown. `cone` sai no leque à frente da mira e não gasta cooldown se o leque está vazio. Sem mira ainda, volta o targeting do JSON (`nearest`, `lowestHp`, `random`, `densest`). Na escolha de carta, as teclas `1`–`6` pegam a oferta. No salão, `Espaço` confirma Seguir. `Esc` abre o menu: continuar, pedir pausa, volume da música, volume dos efeitos, desistir ou sair. A partida só para quando todo humano vivo pediu pausa.
 
 Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `projectile`, `cone`.
 

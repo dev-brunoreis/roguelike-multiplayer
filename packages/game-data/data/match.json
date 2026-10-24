@@ -24,6 +24,7 @@
   "levelCap": 99,
   "respawnSeconds": 2.5,
   "invulnSeconds": 1.2,
+  "aimSlack": 0.45,
   "shadowColors": [
     "#1c1914",
     "#4ea1ff",

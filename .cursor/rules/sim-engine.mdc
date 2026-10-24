@@ -10,7 +10,7 @@ alwaysApply: false
 
 Ordem: se a pausa estiver fechada (todo humano vivo pediu), o tick volta sem avançar o tempo. Senão: bots, cooldowns, respawn, escolha de carta, combate se a fase for pve ou duelo, só movimento no salão (`hub`), transição de fase, vitória. A onda só fecha quando o último vivo limpa. Carta de nível espera o salão.
 
-Behavior de habilidade devolve `false` quando não há alvo, para não gastar cooldown. Dano passa por `dealDamage` (armadura, crítico, onHit, lifesteal, eventos).
+`single`, `projectile`, `chain` e `cone` devolvem `false` sem alvo na mira, para não gastar cooldown. `aoe` com mira devolve `true` mesmo no chão vazio. Sem `aimX`/`aimY`, o targeting do JSON escolhe. Dano passa por `dealDamage` (armadura, crítico, onHit, lifesteal, eventos).
 
 `chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. O snapshot manda `strike` de 0 a 1 nesse intervalo.
 

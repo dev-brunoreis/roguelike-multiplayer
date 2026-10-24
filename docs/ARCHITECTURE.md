@@ -1,6 +1,6 @@
 # Arquitetura
 
-Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servidor. O cliente só mostra o estado e manda intenção (mover, escolher carta, comprar, apostar, desistir).
+Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servidor. O cliente só mostra o estado e manda intenção (mover, mirar o chão, escolher carta, comprar, apostar, desistir).
 
 ## Pacotes
 

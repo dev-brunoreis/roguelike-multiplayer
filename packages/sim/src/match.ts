@@ -123,6 +123,8 @@ export function createMatch(options: {
       waveClear: false,
       inputX: 0,
       inputY: 0,
+      aimX: null,
+      aimY: null,
       abilities: [{ abilityId: hero.startingAbility, level: 1, cooldown: 0.35, cooldownMax: 0.35 }],
       cards: [],
       tags: {},

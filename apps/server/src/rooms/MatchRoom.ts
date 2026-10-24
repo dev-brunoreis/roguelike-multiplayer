@@ -71,7 +71,7 @@ export class MatchRoom extends Room {
     this.onMessage("input", (client, message: ClientInput) => {
       const id = this.users.get(client.sessionId);
       if (!id || !Number.isFinite(message?.x) || !Number.isFinite(message?.y)) return;
-      setInput(this.match, id, message.x, message.y);
+      setInput(this.match, id, message.x, message.y, message.aimX, message.aimY);
     });
     this.onMessage("pick", (client, message: { cardId?: string }) => {
       const id = this.users.get(client.sessionId);

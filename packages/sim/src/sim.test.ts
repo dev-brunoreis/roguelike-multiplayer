@@ -2,9 +2,42 @@ import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { dealDamage } from "./damage.js";
 import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, setPauseWant, surrender, tick } from "./index.js";
+import type { Match } from "./types.js";
 import { arenaCenter } from "./world.js";
 
 const data = loadGameData();
+
+function stillCreep(match: Match, arenaId: string, x: number, y: number, hp = 1000) {
+  const creepDef = data.creeps.find((creep) => creep.id === "slime")!;
+  const id = match.nextId++;
+  match.entities.push({
+    id,
+    kind: "creep",
+    defId: "slime",
+    arenaId,
+    x,
+    y,
+    radius: creepDef.radius,
+    hp,
+    maxHp: hp,
+    speed: 0,
+    damage: 0,
+    attackCooldown: 10,
+    attackTimer: 10,
+    attackRange: 0.2,
+    armor: 0,
+    xp: 0,
+    gold: 0,
+    color: "#f00",
+    team: "enemy",
+    alive: true,
+    invuln: 0,
+    flash: 0,
+    facing: 0,
+    behavior: "chase",
+  });
+  return id;
+}
 
 describe("game data", () => {
   it("carrega e valida os json", () => {
@@ -488,5 +521,117 @@ describe("simulação", () => {
     const snap = buildSnapshot(match, "a");
     expect(snap.paused).toBe(false);
     expect(snap.players.find((player) => player.id === "b")?.pauseWant).toBe(true);
+  });
+
+  it("single acerta quem está na linha e ignora o mais perto fora dela", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 9,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    player.stats.critChance = 0;
+    player.abilities[0]!.cooldown = 0;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const aside = stillCreep(match, arena.id, center.x + 0.5, center.y + 0.95);
+    const lined = stillCreep(match, arena.id, center.x + 1.5, center.y);
+    player.aimX = center.x + 10;
+    player.aimY = center.y;
+    tick(match);
+    expect(match.entities.find((entity) => entity.id === aside)!.hp).toBe(1000);
+    expect(match.entities.find((entity) => entity.id === lined)!.hp).toBeLessThan(1000);
+    expect(player.abilities[0]!.cooldown).toBeGreaterThan(0);
+  });
+
+  it("aoe no ponto vazio gasta cooldown e só acerta o raio desse ponto", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "piromante" }],
+      seed: 9,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    player.stats.critChance = 0;
+    player.abilities[0]!.cooldown = 0;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const near = stillCreep(match, arena.id, center.x - 3, center.y);
+    const crowd = [
+      stillCreep(match, arena.id, center.x + 4, center.y),
+      stillCreep(match, arena.id, center.x + 4.4, center.y + 0.3),
+      stillCreep(match, arena.id, center.x + 4.2, center.y - 0.35),
+    ];
+    player.aimX = center.x - 4.5;
+    player.aimY = center.y;
+    tick(match);
+    expect(match.entities.find((entity) => entity.id === near)!.hp).toBeLessThan(1000);
+    for (const id of crowd) expect(match.entities.find((entity) => entity.id === id)!.hp).toBe(1000);
+    expect(player.abilities[0]!.cooldown).toBeGreaterThan(0);
+    expect(match.fx.some((item) => item.kind === "ring")).toBe(true);
+  });
+
+  it("cone olha para a mira", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 9,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    player.stats.critChance = 0;
+    player.abilities = [{ abilityId: "sopro", level: 1, cooldown: 0, cooldownMax: 1 }];
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const front = stillCreep(match, arena.id, center.x + 2, center.y);
+    const back = stillCreep(match, arena.id, center.x - 2, center.y);
+    player.aimX = center.x + 8;
+    player.aimY = center.y;
+    tick(match);
+    expect(hero.facing).toBeCloseTo(0, 5);
+    expect(match.entities.find((entity) => entity.id === front)!.hp).toBeLessThan(1000);
+    expect(match.entities.find((entity) => entity.id === back)!.hp).toBe(1000);
+  });
+
+  it("bot parado grava a mira no alvo", () => {
+    const match = createMatch({
+      players: [{ id: "b", name: "Nox", isBot: true, heroId: "guerreiro" }],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const id = stillCreep(match, arena.id, center.x + 1.1, center.y);
+    const creep = match.entities.find((entity) => entity.id === id)!;
+    const x = creep.x;
+    const y = creep.y;
+    tick(match);
+    expect(player.inputX).toBe(0);
+    expect(player.inputY).toBe(0);
+    expect(player.aimX).toBeCloseTo(x, 5);
+    expect(player.aimY).toBeCloseTo(y, 5);
   });
 });

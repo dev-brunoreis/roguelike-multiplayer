@@ -57,8 +57,12 @@ function steer(match: Match, player: PlayerState) {
   if (!target) {
     if (match.tick % 40 === 0) player.wander = match.rng.next() * Math.PI * 2;
     setMove(player, entity, arena, Math.cos(player.wander), Math.sin(player.wander));
+    player.aimX = entity.x + Math.cos(player.wander) * 4;
+    player.aimY = entity.y + Math.sin(player.wander) * 4;
     return;
   }
+  player.aimX = target.x;
+  player.aimY = target.y;
   const gap = dist(entity, target);
   const plan = attackPlan(match, player);
   const dx = target.x - entity.x;

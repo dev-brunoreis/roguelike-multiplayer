@@ -8,7 +8,7 @@ Em `abilities.json`. `behavior` e `targeting` precisam já estar registrados.
 
 Behaviors atuais: `single`, `chain`, `aoe`, `projectile`, `cone`.
 
-Targeting atual: `nearest`, `lowestHp`, `random`, `densest`.
+Targeting atual: `nearest`, `lowestHp`, `random`, `densest`. Com mira do mouse, `single`, `projectile` e o primeiro salto do `chain` usam a linha até o ponto; `aoe` estoura no ponto e gasta cooldown mesmo vazio. O targeting do JSON vale enquanto `aimX`/`aimY` ainda são nulos.
 
 `levels` é a progressão. Nível 1 usa o primeiro item. `chain` lê `targets` e `falloff`.
 

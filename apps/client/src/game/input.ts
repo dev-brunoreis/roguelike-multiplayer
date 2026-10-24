@@ -1,4 +1,13 @@
 const keys = new Set<string>();
+let aim: { x: number; y: number } | null = null;
+
+export function setWorldAim(x: number, y: number) {
+  aim = { x, y };
+}
+
+export function worldAim() {
+  return aim;
+}
 
 if (typeof window !== "undefined") {
   window.addEventListener("keydown", (event) => keys.add(event.code));

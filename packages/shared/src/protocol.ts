@@ -102,6 +102,7 @@ export interface EntitySnap {
   strike: number;
   label?: string;
   playerId?: string;
+  facing: number;
 }
 
 export interface ProjectileSnap {
@@ -179,6 +180,8 @@ export interface Snapshot {
 export interface ClientInput {
   x: number;
   y: number;
+  aimX?: number;
+  aimY?: number;
 }
 
 export interface ShopAction {

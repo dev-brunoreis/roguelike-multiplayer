@@ -4,7 +4,7 @@ import { checkWinner } from "./phases.js";
 import type { Match } from "./types.js";
 import { clamp, emit, playerById } from "./world.js";
 
-export function setInput(match: Match, playerId: string, x: number, y: number) {
+export function setInput(match: Match, playerId: string, x: number, y: number, aimX?: number, aimY?: number) {
   const player = playerById(match, playerId);
   if (!player || player.eliminated || player.isBot) return;
   if (match.phase === "ended") {
@@ -14,6 +14,10 @@ export function setInput(match: Match, playerId: string, x: number, y: number) {
   }
   player.inputX = clamp(x, -1, 1);
   player.inputY = clamp(y, -1, 1);
+  if (aimX != null && aimY != null && Number.isFinite(aimX) && Number.isFinite(aimY)) {
+    player.aimX = aimX;
+    player.aimY = aimY;
+  }
 }
 
 export function pickCard(match: Match, playerId: string, cardId: string, auto = false) {

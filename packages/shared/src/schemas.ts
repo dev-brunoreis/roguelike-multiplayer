@@ -151,6 +151,7 @@ export const matchConfigSchema = z.object({
   levelCap: z.number().int().min(1),
   respawnSeconds: z.number().nonnegative(),
   invulnSeconds: z.number().nonnegative(),
+  aimSlack: z.number().nonnegative(),
   shadowColors: z.array(z.string()).min(1),
 });
 
