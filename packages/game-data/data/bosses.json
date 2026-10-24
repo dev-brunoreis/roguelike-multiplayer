@@ -16,5 +16,11 @@
     "creepId": "boss_matriarca",
     "nome": "Matriarca",
     "everyRounds": 9
+  },
+  {
+    "id": "wogol",
+    "creepId": "boss_wogol",
+    "nome": "Wogol",
+    "everyRounds": 12
   }
 ]

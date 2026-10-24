@@ -2,166 +2,95 @@
   {
     "round": 1,
     "spawns": [
-      {
-        "creepId": "slime",
-        "count": 6,
-        "interval": 0.7
-      }
+      { "creepId": "slime", "count": 6, "interval": 0.7 }
     ]
   },
   {
     "round": 2,
     "spawns": [
-      {
-        "creepId": "slime",
-        "count": 6,
-        "interval": 0.5
-      },
-      {
-        "creepId": "atirador",
-        "count": 2,
-        "interval": 1.1
-      },
-      {
-        "creepId": "corredor",
-        "count": 2,
-        "interval": 0.8
-      }
+      { "creepId": "slime", "count": 5, "interval": 0.5 },
+      { "creepId": "lodo", "count": 2, "interval": 1.2 }
     ]
   },
   {
     "round": 3,
     "spawns": [
-      {
-        "creepId": "slime",
-        "count": 6,
-        "interval": 0.45
-      },
-      {
-        "creepId": "atirador",
-        "count": 3,
-        "interval": 0.9
-      },
-      {
-        "creepId": "bruto",
-        "count": 2,
-        "interval": 1.4
-      }
+      { "creepId": "slime", "count": 4, "interval": 0.45 },
+      { "creepId": "lodo", "count": 2, "interval": 1 },
+      { "creepId": "corredor", "count": 2, "interval": 0.7 }
     ]
   },
   {
     "round": 4,
     "spawns": [
-      {
-        "creepId": "slime",
-        "count": 4,
-        "interval": 0.45
-      },
-      {
-        "creepId": "morcego",
-        "count": 5,
-        "interval": 0.4
-      },
-      {
-        "creepId": "guarda",
-        "count": 1,
-        "interval": 1.6
-      }
+      { "creepId": "esqueleto", "count": 6, "interval": 0.45 },
+      { "creepId": "morcego", "count": 3, "interval": 0.4 }
     ]
   },
   {
     "round": 5,
     "spawns": [
-      {
-        "creepId": "bruto",
-        "count": 3,
-        "interval": 1.1
-      },
-      {
-        "creepId": "atirador",
-        "count": 4,
-        "interval": 0.7
-      },
-      {
-        "creepId": "corredor",
-        "count": 4,
-        "interval": 0.4
-      },
-      {
-        "creepId": "slime",
-        "count": 4,
-        "interval": 0.4
-      }
+      { "creepId": "esqueleto", "count": 4, "interval": 0.4 },
+      { "creepId": "lodo", "count": 2, "interval": 1 },
+      { "creepId": "bruto", "count": 2, "interval": 1.2 }
     ]
   },
   {
     "round": 6,
     "spawns": [
-      {
-        "creepId": "aranha",
-        "count": 5,
-        "interval": 0.55
-      },
-      {
-        "creepId": "atirador",
-        "count": 3,
-        "interval": 0.8
-      },
-      {
-        "creepId": "guarda",
-        "count": 2,
-        "interval": 1.2
-      },
-      {
-        "creepId": "corredor",
-        "count": 3,
-        "interval": 0.45
-      }
+      { "creepId": "aranha", "count": 4, "interval": 0.55 },
+      { "creepId": "xama", "count": 2, "interval": 1.1 },
+      { "creepId": "guarda", "count": 1, "interval": 1.6 }
     ]
   },
   {
     "round": 7,
     "spawns": [
-      {
-        "creepId": "bruto",
-        "count": 5,
-        "interval": 0.8
-      },
-      {
-        "creepId": "atirador",
-        "count": 5,
-        "interval": 0.55
-      },
-      {
-        "creepId": "corredor",
-        "count": 6,
-        "interval": 0.35
-      }
+      { "creepId": "corredor", "count": 5, "interval": 0.4 },
+      { "creepId": "guarda", "count": 2, "interval": 1.2 },
+      { "creepId": "xama", "count": 2, "interval": 0.9 }
+    ]
+  },
+  {
+    "round": 8,
+    "spawns": [
+      { "creepId": "corredor", "count": 4, "interval": 0.4 },
+      { "creepId": "diabrete", "count": 3, "interval": 0.7 },
+      { "creepId": "guarda", "count": 2, "interval": 1.1 },
+      { "creepId": "xama", "count": 2, "interval": 0.85 }
     ]
   },
   {
     "round": 9,
     "spawns": [
-      {
-        "creepId": "bruto",
-        "count": 4,
-        "interval": 0.9
-      },
-      {
-        "creepId": "aranha",
-        "count": 6,
-        "interval": 0.4
-      },
-      {
-        "creepId": "morcego",
-        "count": 6,
-        "interval": 0.35
-      },
-      {
-        "creepId": "guarda",
-        "count": 2,
-        "interval": 1.1
-      }
+      { "creepId": "aranha", "count": 5, "interval": 0.4 },
+      { "creepId": "morcego", "count": 4, "interval": 0.35 },
+      { "creepId": "bruto", "count": 2, "interval": 1 }
+    ]
+  },
+  {
+    "round": 10,
+    "spawns": [
+      { "creepId": "diabrete", "count": 4, "interval": 0.6 },
+      { "creepId": "atirador", "count": 4, "interval": 0.6 },
+      { "creepId": "esqueleto", "count": 4, "interval": 0.4 }
+    ]
+  },
+  {
+    "round": 11,
+    "spawns": [
+      { "creepId": "diabrete", "count": 4, "interval": 0.55 },
+      { "creepId": "xama", "count": 3, "interval": 0.8 },
+      { "creepId": "bruto", "count": 2, "interval": 0.9 },
+      { "creepId": "guarda", "count": 2, "interval": 1 }
+    ]
+  },
+  {
+    "round": 12,
+    "spawns": [
+      { "creepId": "diabrete", "count": 3, "interval": 0.6 },
+      { "creepId": "esqueleto", "count": 6, "interval": 0.35 },
+      { "creepId": "lodo", "count": 2, "interval": 0.9 }
     ]
   }
 ]
