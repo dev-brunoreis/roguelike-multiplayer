@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
 import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
 import { motionAt } from "./motion.js";
-import { loadActor, setSpriteFrame, shotTexture, type ActorSheet, type ClipName } from "./sprites.js";
+import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
 
 export type ViewProps = { entity: EntitySnap };
 
@@ -61,7 +61,7 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const reachSpan = useRef(-1);
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
-  const tell = useRef<Sprite>(null);
+  const tell = useRef<Mesh>(null);
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
@@ -200,13 +200,11 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       const shown = anim.current.tell;
       tell.current.visible = shown > 0.02;
       if (shown > 0.02) {
-        const size = 0.45 + shown * 1.25;
-        tell.current.position.set(0, tall + 0.08, 0);
-        tell.current.scale.set(size, size, 1);
-        tell.current.renderOrder = root.renderOrder + 4;
-        const mat = tell.current.material as SpriteMaterial;
-        mat.color.set("#fff6d0");
-        mat.opacity = 1;
+        const span = wide * (0.32 + shown * 0.3);
+        tell.current.scale.set(span, span * 0.5, 1);
+        const mat = tell.current.material as MeshBasicMaterial;
+        mat.color.set("#ffc4bc");
+        mat.opacity = 0.38 + shown * 0.42;
       }
     }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
@@ -230,9 +228,10 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       <mesh ref={reachBand} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} renderOrder={3}>
         <meshBasicMaterial transparent opacity={0.7} depthWrite={false} />
       </mesh>
-      <sprite ref={tell} center={[0.5, 0.5]} visible={false} position={[0, 0.8, 0]}>
-        <spriteMaterial map={shotTexture("orb")} transparent depthWrite={false} depthTest={false} />
-      </sprite>
+      <mesh ref={tell} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={2}>
+        <circleGeometry args={[1, 20]} />
+        <meshBasicMaterial color="#ffc4bc" transparent opacity={0.55} depthWrite={false} depthTest={false} />
+      </mesh>
       <sprite ref={sprite} center={[0.5, 0]} visible={false}>
         <spriteMaterial ref={material} transparent alphaTest={0.4} depthWrite={false} depthTest />
       </sprite>
