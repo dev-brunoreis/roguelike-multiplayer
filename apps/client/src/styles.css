@@ -122,11 +122,14 @@ input[type="text"], input[type="password"], input[type="number"] {
 .board button b { font-weight: 500; opacity: 0.62; }
 .board button.me { border-color: #6f8a62; }
 .board button.me b { font-weight: 800; opacity: 1; }
+.board button.duel:not(.on) { border-color: #c46a3a; }
 .board button.on {
   border-color: #e6c15a;
   background: #2c2616;
   box-shadow: inset 4px 0 0 #e6c15a;
 }
+.board .life { display: block; height: 5px; background: #2a241c; }
+.board .life i { display: block; height: 100%; background: #8fdb67; }
 .pips { display: flex; gap: 4px; height: 22px; align-items: center; }
 .pips .skill-glyph { width: 22px; height: 22px; display: block; border-radius: 2px; }
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
@@ -225,6 +228,11 @@ input[type="text"], input[type="password"], input[type="number"] {
 .rarity-lendario { border-color: #f0a202; }
 .end table { width: 100%; border-collapse: collapse; }
 .end td, .end th { text-align: left; padding: 6px 4px; border-bottom: 1px solid #3a3228; }
+.respawn {
+  position: absolute; z-index: 4; top: 42%; left: 50%; transform: translate(-50%, -50%);
+  background: #1c1914; border: 1px solid #c44a3a; padding: 10px 16px; text-align: center; pointer-events: none;
+}
+.respawn strong { font-size: 28px; color: #f0a202; }
 .spectate, .hint {
   position: absolute; z-index: 3; bottom: 16px; left: 50%; transform: translateX(-50%);
   background: #1c1914; padding: 8px 12px; border: 1px solid #3a3228;

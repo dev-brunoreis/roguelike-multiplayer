@@ -1,6 +1,7 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
-import { createMatch, grantXp, pickCard, quietMatch, runTicks, surrender, tick } from "./index.js";
+import { dealDamage } from "./damage.js";
+import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, surrender, tick } from "./index.js";
 import { arenaCenter } from "./world.js";
 
 const data = loadGameData();
@@ -369,5 +370,26 @@ describe("simulação", () => {
     expect(match.duelAnnounce).toBeGreaterThan(9);
     expect(match.banner?.kind).toBe("duel");
     expect(match.banner?.title).toMatch(/ vs /);
+  });
+
+  it("morte na onda conta segundos até renascer enquanto sobra vida", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 8,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const lives = player.lives;
+    dealDamage(match, { target: hero, amount: hero.hp + 50 });
+    expect(player.lives).toBe(lives - 1);
+    expect(player.lives).toBeGreaterThan(0);
+    expect(player.respawnIn).toBe(match.config.respawnSeconds);
+    const snap = buildSnapshot(match, "p");
+    expect(snap.players[0]?.respawnIn).toBe(match.config.respawnSeconds);
+    runTicks(match, 1);
+    expect(snap.players[0] && buildSnapshot(match, "p").players[0]?.respawnIn).toBeLessThan(match.config.respawnSeconds);
   });
 });

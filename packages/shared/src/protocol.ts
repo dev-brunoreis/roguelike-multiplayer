@@ -64,6 +64,7 @@ export interface PlayerSnap {
   luck: number;
   hp: number;
   maxHp: number;
+  respawnIn: number;
   eliminated: boolean;
   choosing: boolean;
   cardTimer: number;

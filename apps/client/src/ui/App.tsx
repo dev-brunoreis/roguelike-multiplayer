@@ -468,11 +468,16 @@ function WaitRoom({
   );
 }
 
-function cycleWatch(players: { id: string }[], youId: string, current: string | null) {
-  if (players.length === 0) return null;
+function stillIn(player: { eliminated: boolean; lives: number }) {
+  return !player.eliminated && player.lives > 0;
+}
+
+function cycleWatch(players: { id: string; eliminated: boolean; lives: number }[], youId: string, current: string | null) {
+  const live = players.filter(stillIn);
+  if (live.length === 0) return null;
   const id = current ?? youId;
-  const start = Math.max(0, players.findIndex((player) => player.id === id));
-  const next = players[(start + 1) % players.length];
+  const index = live.findIndex((player) => player.id === id);
+  const next = live[(index + 1) % live.length];
   if (!next || next.id === youId) return null;
   return next.id;
 }
@@ -651,13 +656,16 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       </header>
       <aside className="hud side">
         <div className="board">
-          {snap.players.map((player) => {
+          {[...snap.players].sort((a, b) => Number(!stillIn(a)) - Number(!stillIn(b))).map((player) => {
             const mine = player.id === snap.youId;
             const followed = (watchId ?? snap.youId) === player.id;
             return (
-            <button key={player.id} tabIndex={-1} className={[player.eliminated ? "out" : "", mine ? "me" : "", followed ? "on" : ""].filter(Boolean).join(" ")} onClick={() => setWatchId(player.id === snap.youId ? null : player.id)}>
+            <button key={player.id} tabIndex={-1} className={[player.eliminated ? "out" : "", mine ? "me" : "", player.inDuel ? "duel" : "", followed ? "on" : ""].filter(Boolean).join(" ")} onClick={() => setWatchId(player.id === snap.youId ? null : player.id)}>
               <b style={{ color: player.color }}>{player.name}</b>
-              <small>{"♥".repeat(Math.max(0, player.lives))}{player.eliminated ? " fora" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
+              <span className="life" title={`${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`}>
+                <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / Math.max(1, player.maxHp)) * 100))}%` }} />
+              </span>
+              <small>{"♥".repeat(Math.max(0, player.lives))}{player.respawnIn > 0 && player.lives > 0 ? ` · ${Math.ceil(player.respawnIn)}s` : ""}{player.eliminated ? " fora" : ""}{player.inDuel ? " · duelo" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
               <span className="pips">
                 {player.abilities.map((ability) => {
                   const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;
@@ -734,6 +742,9 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
           </table>
           <button className="btn primary" tabIndex={-1} onClick={onLeave}>Voltar ao lobby</button>
         </section>
+      ) : null}
+      {me && me.respawnIn > 0 && me.lives > 0 && !me.eliminated ? (
+        <p className="respawn">Renasce em <strong>{Math.ceil(me.respawnIn)}s</strong></p>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
         <p className="hint">W sobe na tela. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
