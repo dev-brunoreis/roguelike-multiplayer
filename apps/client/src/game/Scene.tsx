@@ -1,7 +1,7 @@
 import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { memo, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { forgetMotion, motionAt, trackMotion } from "./motion.js";
 import { shotTexture } from "./sprites.js";
 import { DeathLayer, EntityPuppet, FloatLayer, HpLayer } from "./views.js";
@@ -36,52 +36,10 @@ function World({
   shakeRef: MutableRefObject<number>;
 }) {
   const camera = useThree((state) => state.camera);
-  const gl = useThree((state) => state.gl);
   const follow = useRef({ x: 0, z: 0, ready: false });
   const focusMem = useRef({ x: 0, z: 0, ready: false });
-  const pan = useRef({ x: 0, z: 0 });
-  const mouse = useRef({ x: 0.5, y: 0.5, drag: false, lx: 0, ly: 0 });
   const [visible, setVisible] = useState<{ arenas: string[]; entities: number[] }>({ arenas: [], entities: [] });
   const idsKey = useRef("");
-
-  useEffect(() => {
-    const el = gl.domElement;
-    const onMove = (event: PointerEvent) => {
-      const rect = el.getBoundingClientRect();
-      mouse.current.x = (event.clientX - rect.left) / Math.max(1, rect.width);
-      mouse.current.y = (event.clientY - rect.top) / Math.max(1, rect.height);
-      if (!mouse.current.drag) return;
-      const dx = event.clientX - mouse.current.lx;
-      const dy = event.clientY - mouse.current.ly;
-      mouse.current.lx = event.clientX;
-      mouse.current.ly = event.clientY;
-      pan.current.x += (-dx - dy) * 0.045;
-      pan.current.z += (dx - dy) * 0.045;
-    };
-    const onDown = (event: PointerEvent) => {
-      if (event.button !== 1 && event.button !== 2) return;
-      mouse.current.drag = true;
-      mouse.current.lx = event.clientX;
-      mouse.current.ly = event.clientY;
-      el.setPointerCapture(event.pointerId);
-    };
-    const onUp = () => {
-      mouse.current.drag = false;
-    };
-    const onMenu = (event: Event) => event.preventDefault();
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerdown", onDown);
-    el.addEventListener("pointerup", onUp);
-    el.addEventListener("pointerleave", onUp);
-    el.addEventListener("contextmenu", onMenu);
-    return () => {
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointerup", onUp);
-      el.removeEventListener("pointerleave", onUp);
-      el.removeEventListener("contextmenu", onMenu);
-    };
-  }, [gl]);
 
   useFrame((state, delta) => {
     const snap = snapRef.current;
@@ -98,29 +56,11 @@ function World({
     }
     forgetMotion(alive);
     const focus = smoothFocus(snap, watchId, now);
-    const edge = 0.07;
-    const speed = 28 * delta;
-    if (mouse.current.x < edge) {
-      pan.current.x -= speed * Math.SQRT1_2;
-      pan.current.z += speed * Math.SQRT1_2;
-    } else if (mouse.current.x > 1 - edge) {
-      pan.current.x += speed * Math.SQRT1_2;
-      pan.current.z -= speed * Math.SQRT1_2;
-    }
-    if (mouse.current.y < edge) {
-      pan.current.x -= speed * Math.SQRT1_2;
-      pan.current.z -= speed * Math.SQRT1_2;
-    } else if (mouse.current.y > 1 - edge) {
-      pan.current.x += speed * Math.SQRT1_2;
-      pan.current.z += speed * Math.SQRT1_2;
-    }
-    const lookX = focus[0] + pan.current.x;
-    const lookZ = focus[1] + pan.current.z;
+    const lookX = focus[0];
+    const lookZ = focus[1];
     if (!focusMem.current.ready) {
       focusMem.current = { x: focus[0], z: focus[1], ready: true };
     } else if (Math.hypot(focus[0] - focusMem.current.x, focus[1] - focusMem.current.z) > 18) {
-      pan.current.x = 0;
-      pan.current.z = 0;
       follow.current.x = focus[0];
       follow.current.z = focus[1];
       focusMem.current = { x: focus[0], z: focus[1], ready: true };
