@@ -226,12 +226,63 @@ export function ArenaDressing({ id, size, kind }: { id: string; size: number; ki
   );
 }
 
-export function moteSpec() {
-  return Array.from({ length: 28 }, (_, index) => ({
-    radius: 6 + (index % 7) * 2.4,
-    speed: 0.08 + (index % 5) * 0.03,
-    phase: index * 0.7,
-    size: index % 6 === 0 ? 0.16 : 0.08,
-    color: index % 6 === 0 ? "#e6c15a" : "#cbbba6",
-  }));
+let moteTex: CanvasTextureType | null = null;
+
+export function moteTexture() {
+  if (moteTex) return moteTex;
+  const canvas = document.createElement("canvas");
+  canvas.width = 4;
+  canvas.height = 4;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("sem canvas");
+  ctx.clearRect(0, 0, 4, 4);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(1, 1, 2, 2);
+  moteTex = new CanvasTexture(canvas);
+  moteTex.magFilter = NearestFilter;
+  moteTex.minFilter = NearestFilter;
+  moteTex.colorSpace = SRGBColorSpace;
+  moteTex.needsUpdate = true;
+  return moteTex;
+}
+
+export interface MoteField {
+  homes: Float32Array;
+  positions: Float32Array;
+  phases: Float32Array;
+  speeds: Float32Array;
+  wanders: Float32Array;
+  lifts: Float32Array;
+}
+
+export function moteField(seed: number, count: number, span: number): MoteField {
+  const rand = mulberry32(seed);
+  const homes = new Float32Array(count * 3);
+  const positions = new Float32Array(count * 3);
+  const phases = new Float32Array(count);
+  const speeds = new Float32Array(count);
+  const wanders = new Float32Array(count);
+  const lifts = new Float32Array(count);
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  for (let i = 0; i < count; i += 1) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cellX = (span * 2) / cols;
+    const cellZ = (span * 2) / rows;
+    const x = -span + (col + 0.5) * cellX + (rand() - 0.5) * cellX * 0.65;
+    const z = -span + (row + 0.5) * cellZ + (rand() - 0.5) * cellZ * 0.65;
+    const y = 0.4 + rand() * 2.8;
+    homes[i * 3] = x;
+    homes[i * 3 + 1] = y;
+    homes[i * 3 + 2] = z;
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+    phases[i] = rand() * Math.PI * 2;
+    speeds[i] = 0.12 + rand() * 0.28;
+    wanders[i] = 0.28 + rand() * 0.55;
+    lifts[i] = 0.12 + rand() * 0.4;
+  }
+  return { homes, positions, phases, speeds, wanders, lifts };
 }

@@ -2,7 +2,7 @@ import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { ArenaDressing, floorTexture, moteSpec, voidTexture } from "./atmosphere.js";
+import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion, trackMotion } from "./motion.js";
 import { shotTexture } from "./sprites.js";
 import { DeathLayer, EntityPuppet, FloatLayer, HpLayer, resetPoses } from "./views.js";
@@ -112,7 +112,7 @@ function World({
         <planeGeometry args={[420, 420]} />
         <meshBasicMaterial map={voidTexture()} color="#141210" dispose={null} />
       </mesh>
-      <Drift follow={follow} />
+      <Drift />
       {visible.arenas.map((id) => {
         const arena = snap?.arenas.find((item) => item.id === id);
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
@@ -153,31 +153,49 @@ function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: 
   );
 }
 
-function Drift({ follow }: { follow: MutableRefObject<{ x: number; z: number; ready: boolean }> }) {
-  const spec = useMemo(() => moteSpec(), []);
-  const group = useRef<import("three").Group>(null);
+function Drift() {
+  const dust = useMemo(() => moteField(0x51a7e, 560, 104), []);
+  const spark = useMemo(() => moteField(0xc15a, 90, 104), []);
+  return (
+    <group>
+      <MoteCloud field={dust} color="#cbbba6" size={2.2} opacity={0.34} />
+      <MoteCloud field={spark} color="#e6c15a" size={3.4} opacity={0.5} />
+    </group>
+  );
+}
+
+function MoteCloud({ field, color, size, opacity }: { field: MoteField; color: string; size: number; opacity: number }) {
+  const points = useRef<import("three").Points>(null);
   useFrame((state) => {
-    const root = group.current;
-    if (!root || !follow.current.ready) return;
+    const attr = points.current?.geometry.getAttribute("position") as import("three").BufferAttribute | undefined;
+    if (!attr) return;
     const t = state.clock.elapsedTime;
-    root.children.forEach((child, index) => {
-      const mote = spec[index];
-      if (!mote) return;
-      child.position.set(
-        follow.current.x + Math.sin(t * mote.speed + mote.phase) * mote.radius,
-        0.6 + (Math.sin(t * 0.45 + mote.phase) * 0.5 + 0.5) * 2.4,
-        follow.current.z + Math.cos(t * mote.speed * 0.75 + mote.phase) * mote.radius,
-      );
-    });
+    const pos = attr.array as Float32Array;
+    const { homes, phases, speeds, wanders, lifts } = field;
+    for (let i = 0; i < phases.length; i += 1) {
+      const wobble = t * speeds[i]! + phases[i]!;
+      pos[i * 3] = homes[i * 3]! + Math.sin(wobble) * wanders[i]!;
+      pos[i * 3 + 1] = homes[i * 3 + 1]! + Math.sin(wobble * 0.65) * lifts[i]!;
+      pos[i * 3 + 2] = homes[i * 3 + 2]! + Math.cos(wobble * 0.75) * wanders[i]!;
+    }
+    attr.needsUpdate = true;
   });
   return (
-    <group ref={group}>
-      {spec.map((mote, index) => (
-        <sprite key={index} scale={[mote.size, mote.size, 1]} renderOrder={3}>
-          <spriteMaterial color={mote.color} transparent opacity={0.38} depthWrite={false} />
-        </sprite>
-      ))}
-    </group>
+    <points ref={points} renderOrder={3}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[field.positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        color={color}
+        size={size}
+        sizeAttenuation={false}
+        map={moteTexture()}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        alphaTest={0.05}
+      />
+    </points>
   );
 }
 
