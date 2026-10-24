@@ -69,7 +69,6 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     level: player.level,
     xp: player.xp,
     xpNext: xpToNext(match, player.level),
-    luck: player.stats.luck,
     hp: entity?.alive ? entity.hp : 0,
     maxHp: entity?.maxHp ?? 1,
     respawnIn: Math.max(0, player.respawnIn),

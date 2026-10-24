@@ -11,7 +11,6 @@ export const STATS = [
   "lifesteal",
   "areaPct",
   "xpPct",
-  "luck",
   "cooldownPct",
 ] as const;
 
@@ -126,10 +125,6 @@ export const synergySchema = z.object({
   effects: z.array(effectSchema).min(1),
 });
 
-export const economySchema = z.object({
-  luckBias: z.record(z.string(), z.number()),
-});
-
 export const matchConfigSchema = z.object({
   version: z.string(),
   minPlayers: z.number().int().min(1),
@@ -175,6 +170,5 @@ export type CreepDef = z.infer<typeof creepSchema>;
 export type WaveDef = z.infer<typeof waveSchema>;
 export type BossDef = z.infer<typeof bossSchema>;
 export type SynergyDef = z.infer<typeof synergySchema>;
-export type EconomyDef = z.infer<typeof economySchema>;
 export type MatchConfig = z.infer<typeof matchConfigSchema>;
 export type MatchOptions = z.infer<typeof matchOptionsSchema>;

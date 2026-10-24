@@ -23,7 +23,6 @@ export interface Stats {
   lifesteal: number;
   areaPct: number;
   xpPct: number;
-  luck: number;
   cooldownPct: number;
 }
 
@@ -224,7 +223,6 @@ export function emptyStats(): Stats {
     lifesteal: 0,
     areaPct: 0,
     xpPct: 0,
-    luck: 0,
     cooldownPct: 0,
   };
 }

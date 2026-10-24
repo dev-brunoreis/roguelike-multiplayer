@@ -13,7 +13,7 @@ alwaysApply: false
 - Onda e boss citam `creepId` que exista.
 - Creep corpo a corpo leva `attackWindup`: tempo parado em que a sombra vermelha cresce no chão antes do dano. Atirador fica em `0`.
 - `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`), `hubSize` e `version`.
-- `economy.json` é sorte (`luckBias`), não ouro.
+- A oferta de carta usa o `weight` do JSON. Não existe stat de sorte.
 - Não duplique esses números no servidor ou no cliente.
 
 Exemplo de nível de raio: `targets` cresce e `falloff` tem um fator por salto, o primeiro sempre `1`.

@@ -806,7 +806,6 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       {me && me.pending.length > 0 ? (
         <section className="overlay pick">
           <h2>Escolhe uma carta <small>{Math.ceil(me.cardTimer)}s</small></h2>
-          {me.luck > 0 ? <p className="muted">Sorte {(me.luck * 100).toFixed(0)}% — cartas melhores aparecem mais.</p> : null}
           <div className="cards">
             {me.pending.map((card, index) => (
               <button key={card.id} tabIndex={-1} className={`card rarity-${card.rarity}`} onClick={() => send("pick", { cardId: card.id })}>

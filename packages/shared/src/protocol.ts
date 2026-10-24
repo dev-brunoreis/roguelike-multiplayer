@@ -61,7 +61,6 @@ export interface PlayerSnap {
   level: number;
   xp: number;
   xpNext: number;
-  luck: number;
   hp: number;
   maxHp: number;
   respawnIn: number;

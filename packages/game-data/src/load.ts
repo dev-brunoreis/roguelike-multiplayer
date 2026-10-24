@@ -6,7 +6,6 @@ import {
   bossSchema,
   cardSchema,
   creepSchema,
-  economySchema,
   heroSchema,
   matchConfigSchema,
   synergySchema,
@@ -15,7 +14,6 @@ import {
   type BossDef,
   type CardDef,
   type CreepDef,
-  type EconomyDef,
   type HeroDef,
   type MatchConfig,
   type SynergyDef,
@@ -31,7 +29,6 @@ export interface GameData {
   waves: WaveDef[];
   bosses: BossDef[];
   synergies: SynergyDef[];
-  economy: EconomyDef;
   match: MatchConfig;
 }
 
@@ -114,7 +111,6 @@ export function loadGameData(dir = dataDir()): GameData {
     waves: parseFile(dir, "waves.json", waveSchema.array().min(1)),
     bosses: parseFile(dir, "bosses.json", bossSchema.array()),
     synergies: parseFile(dir, "synergies.json", synergySchema.array()),
-    economy: parseFile(dir, "economy.json", economySchema),
     match,
   };
   checkRefs(data);

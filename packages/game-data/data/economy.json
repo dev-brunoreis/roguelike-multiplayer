@@ -1,9 +1,0 @@
-{
-  "luckBias": {
-    "comum": 0,
-    "incomum": 0.4,
-    "raro": 0.85,
-    "epico": 1.35,
-    "lendario": 1.9
-  }
-}

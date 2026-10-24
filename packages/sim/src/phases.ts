@@ -154,9 +154,6 @@ function endPve(match: Match, cleared: boolean) {
   if (cleared) {
     emit(match, { type: "wave_cleared", round: match.round });
     addLog(match, `Onda ${match.round} limpa`);
-    for (const player of alivePlayers(match)) {
-      player.stats.luck += 0.03;
-    }
   } else {
     emit(match, { type: "wave_failed", round: match.round });
     addLog(match, `Onda ${match.round} acabou no tempo`);

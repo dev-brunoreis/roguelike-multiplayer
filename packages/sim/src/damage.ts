@@ -113,12 +113,9 @@ export function killEntity(match: Match, entity: Entity, killer?: PlayerState) {
   }
   if (killer && !killer.eliminated) {
     killer.kills += 1;
-    for (const hook of killer.hooks.onKill) {
-      if (hook.hook === "luck") killer.stats.luck += hook.value;
-    }
     grantXp(match, killer, entity.xp);
     const def = match.data.creeps.find((creep) => creep.id === entity.defId);
-    const chance = (def?.dropChance ?? 0) * (1 + killer.stats.luck);
+    const chance = def?.dropChance ?? 0;
     if (def && chance > 0 && match.rng.next() < chance) {
       killer.unspentPicks += 1;
       addLogSafe(match, `${killer.name} achou um item`);
@@ -207,11 +204,11 @@ export function offerCards(match: Match, player: PlayerState) {
   const draft = [...pool];
   const count = Math.min(match.config.cardsPerLevelUp, draft.length);
   for (let i = 0; i < count; i += 1) {
-    const total = draft.reduce((sum, card) => sum + cardWeight(match, player, card), 0);
+    const total = draft.reduce((sum, card) => sum + card.weight, 0);
     let roll = match.rng.next() * total;
     let index = draft.length - 1;
     for (let n = 0; n < draft.length; n += 1) {
-      roll -= cardWeight(match, player, draft[n]!);
+      roll -= draft[n]!.weight;
       if (roll <= 0) {
         index = n;
         break;
@@ -227,11 +224,6 @@ export function offerCards(match: Match, player: PlayerState) {
   player.pendingCards = picked;
   player.cardTimer = match.config.cardPickSeconds;
   match.events.push({ type: "card_offer", round: match.round, playerId: player.id, cards: picked });
-}
-
-export function cardWeight(match: Match, player: PlayerState, card: (typeof match.data.cards)[number]) {
-  const bias = match.data.economy.luckBias[card.rarity] ?? 0;
-  return Math.max(0.01, card.weight * (1 + player.stats.luck * bias));
 }
 
 export function eligible(match: Match, player: PlayerState, card: (typeof match.data.cards)[number]) {

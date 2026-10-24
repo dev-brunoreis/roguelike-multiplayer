@@ -102,22 +102,6 @@
     ]
   },
   {
-    "id": "amuleto",
-    "nome": "Amuleto",
-    "descricao": "+15% de sorte nas cartas.",
-    "rarity": "comum",
-    "weight": 8,
-    "unique": false,
-    "tags": [],
-    "effects": [
-      {
-        "type": "stat",
-        "stat": "luck",
-        "value": 0.15
-      }
-    ]
-  },
-  {
     "id": "mira",
     "nome": "Mira Letal",
     "descricao": "+10% de chance de crítico.",
@@ -182,22 +166,6 @@
         "type": "onHit",
         "hook": "burn",
         "value": 4
-      }
-    ]
-  },
-  {
-    "id": "destino",
-    "nome": "Destino",
-    "descricao": "+28% de sorte. Cartas raras aparecem mais.",
-    "rarity": "incomum",
-    "weight": 6,
-    "unique": false,
-    "tags": [],
-    "effects": [
-      {
-        "type": "stat",
-        "stat": "luck",
-        "value": 0.28
       }
     ]
   },
@@ -634,22 +602,6 @@
         "type": "onHit",
         "hook": "burn",
         "value": 3
-      }
-    ]
-  },
-  {
-    "id": "colheita",
-    "nome": "Colheita",
-    "descricao": "Cada abate dá +4% de sorte.",
-    "rarity": "raro",
-    "weight": 4,
-    "unique": true,
-    "tags": [],
-    "effects": [
-      {
-        "type": "onKill",
-        "hook": "luck",
-        "value": 0.04
       }
     ]
   },
