@@ -1,6 +1,6 @@
 # Design
 
-Partida curta, por volta de 30 minutos, com rodadas de até 60 segundos. O último com vida vence. Fechar o jogo abandona a partida.
+Partida curta, por volta de 30 minutos. O último com vida vence. Fechar o jogo abandona a partida.
 
 ## Controle
 
@@ -10,11 +10,11 @@ Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `pr
 
 ## Rodada
 
-1. PvE. Cada jogador tem uma arena. A onda é a mesma, os bichos são cópias. Limpar a onda paga ouro. Estourar o tempo só segue em frente.
-2. Subir de nível abre `cardsPerLevelUp` cartas (padrão 5) por alguns segundos. O herói continua andando e lutando. Se o tempo acaba, uma carta sai sozinha.
-3. Morrer custa uma vida e respawna na mesma onda. Sem vidas, vira espectador.
-4. A partir da rodada `duelStartRound`, quem está vivo é pareado. Os outros apostam ouro. O perdedor do duelo perde uma vida. Empate devolve a aposta.
-5. Loja: comprar carta, subir nível de habilidade, trocar a vitrine, ou seguir. O ouro não volta no próximo login.
+1. PvE. Cada jogador vai para o próprio quadrado. A onda é a mesma, os bichos são cópias. Quem limpa espera no quadrado. A onda só fecha quando o último vivo termina, ou estoura `pveSeconds`. Limpar paga ouro.
+2. Salão no centro do mapa. Sem dano, sem mob, sem PvP. Aqui sobe de nível vira escolha de carta (`cardPickSeconds`, padrão 22s). Loja e aposta do duelo cabem no mesmo respiro. Andar continua liberado. `Seguir` ou o fim de `hubSeconds` manda o próximo passo.
+3. Morrer na onda custa uma vida e respawna no mesmo quadrado. Sem vidas, vira espectador.
+4. A partir da rodada `duelStartRound`, o salão avisa o duelo. Quem não luta aposta. Depois do timer, só os pareados teleportam. O perdedor perde uma vida. Empate devolve a aposta. Depois do duelo já vai a próxima onda.
+5. Nível durante a onda só guarda a escolha (`unspentPicks`). A carta abre no salão. Se o tempo acaba, uma carta sai sozinha.
 
 Boss entra nas rodadas múltiplas de `everyRounds` do `bosses.json`. O de intervalo maior ganha a rodada quando os dois coincidem.
 

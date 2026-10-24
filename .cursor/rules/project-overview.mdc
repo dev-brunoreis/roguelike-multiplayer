@@ -12,5 +12,6 @@ Roguelike multiplayer autoritativo. Servidor simula, cliente só renderiza. Cont
 - Número de jogo (dano, cooldown, vida, preço) vai no JSON, não espalhado no TS.
 - Plugin novo entra por registro: behavior, targeting, effect, creep, bot ou `registerEntityView`.
 - Partida não continua no próximo login. Desconectar por 8s elimina.
+- Onda no quadrado de cada um; espera o último. Cartas, loja e aposta no salão central, sem dano.
 
 Ao mudar arquitetura, atualize `docs/ARCHITECTURE.md` e a rule da pasta afetada.

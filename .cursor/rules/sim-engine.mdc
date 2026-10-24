@@ -8,7 +8,7 @@ alwaysApply: false
 
 `createMatch` + `tick` em `src/match.ts`. Tick fixo, `dt = 1 / tickRate`.
 
-Ordem: bots, cooldowns, respawn, escolha de carta, combate se a fase for pve ou duelo, transição de fase, vitória.
+Ordem: bots, cooldowns, respawn, escolha de carta, combate se a fase for pve ou duelo, só movimento no salão (`hub`), transição de fase, vitória. A onda só fecha quando o último vivo limpa. Carta de nível espera o salão.
 
 Behavior de habilidade devolve `false` quando não há alvo, para não gastar cooldown. Dano passa por `dealDamage` (armadura, crítico, onHit, lifesteal, eventos).
 

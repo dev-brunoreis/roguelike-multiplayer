@@ -12,4 +12,4 @@ React + React Three Fiber. A câmera é ortográfica, deslocada em +X+Z. O 3D l�
 
 WASD é relativo à câmera: W sobe na tela, D vai pra direita. Converte antes de mandar `{ x, y }` no mundo. Botão direito arrasta a câmera; encostar o mouse na borda também. Só desenha arena perto do olhar.
 
-Carta não pausa o herói. Loja, aposta e desistir são mensagens. Textos em português.
+Carta não pausa o herói. No salão o overlay fica embaixo; dá pra andar. Loja, aposta e desistir são mensagens. Textos em português.

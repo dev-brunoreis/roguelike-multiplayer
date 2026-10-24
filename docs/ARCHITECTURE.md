@@ -15,9 +15,10 @@ Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servido
 1. Login JWT (HMAC). O token vai no join do Colyseus.
 2. Lobby único. O host define vagas, vidas, cartas por nível e bots, e dá start.
 3. O servidor cria uma `MatchRoom` com `createMatch()`. Humanos e bots entram na mesma simulação.
-4. Cada tick chama `tick()`. O snapshot sai a 10 Hz, filtrado por jogador (cartas e loja só para quem escolhe).
-5. Fechar a aba espera 8 segundos. Sem voltar, conta como desistência. Sem persistir a partida no próximo login.
-6. Eventos importantes vão para SQLite (`users`, `matches`, `match_players`, `events`), uma linha por acontecimento.
+4. Cada tick chama `tick()`. PvE e duelo simulam combate. No salão só tem movimento. O snapshot sai a 10 Hz, filtrado por jogador (cartas e loja só para quem escolhe).
+5. O mapa tem um salão no centro (`hub`) e um quadrado PvE por jogador em anel. A onda espera o último vivo. Depois todos voltam ao salão.
+6. Fechar a aba espera 8 segundos. Sem voltar, conta como desistência. Sem persistir a partida no próximo login.
+7. Eventos importantes vão para SQLite (`users`, `matches`, `match_players`, `events`), uma linha por acontecimento.
 
 ## Plugins
 
