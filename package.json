@@ -11,6 +11,7 @@
     "build": "pnpm --filter @game/client build",
     "start": "pnpm build && pnpm --filter @game/server start",
     "test": "vitest run",
+    "bench": "pnpm --filter @game/server exec tsx ../../scripts/bench.ts",
     "lint": "tsc -p tsconfig.json --noEmit && eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
