@@ -4,7 +4,7 @@ Partida curta, por volta de 30 minutos. O último com vida vence. Fechar o jogo 
 
 ## Controle
 
-WASD move relativo à câmera (W sobe na tela). A câmera segue o herói ou quem está em observação. As habilidades disparam sozinhas quando o cooldown acaba e existe alvo. Na escolha de carta, as teclas `1`–`6` pegam a oferta. No salão, `Espaço` confirma Seguir.
+WASD move relativo à câmera (W sobe na tela). A câmera segue o herói ou quem está em observação. As habilidades disparam sozinhas quando o cooldown acaba e existe alvo. Na escolha de carta, as teclas `1`–`6` pegam a oferta. No salão, `Espaço` confirma Seguir. `Esc` abre o menu: continuar, pedir pausa, volume da música, volume dos efeitos, desistir ou sair. A partida só para quando todo humano vivo pediu pausa.
 
 Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `projectile`, `cone`.
 
