@@ -147,6 +147,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       vx: shot.vx,
       vy: shot.vy,
       arenaId: shot.arenaId,
+      abilityId: shot.abilityId,
       color: shot.color,
     })),
     fx: match.fx.map((item) => ({

@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion, trackMotion } from "./motion.js";
-import { shotTexture } from "./sprites.js";
+import { shotScale, shotShape, shotTexture } from "./sprites.js";
 import { DeathLayer, EntityPuppet, FloatLayer, HpLayer, resetPoses } from "./views.js";
 
 const VIEW_RANGE = 92;
@@ -238,8 +238,14 @@ function Shot({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot 
     }
     sprite.current.visible = true;
     sprite.current.position.set(placed.x, 0.55, placed.y);
-    sprite.current.scale.set(0.42, 0.42, 1);
+    const shape = shotShape(shot.abilityId);
+    const [wide, tall] = shotScale(shape);
+    sprite.current.scale.set(wide, tall, 1);
     const mat = sprite.current.material as import("three").SpriteMaterial;
+    mat.map = shotTexture(shape);
+    const screenX = shot.vx - shot.vy;
+    const screenY = -0.75 * (shot.vx + shot.vy);
+    mat.rotation = shape === "orb" ? 0 : Math.atan2(screenY, screenX);
     mat.color.set(shot.color);
   });
   return (

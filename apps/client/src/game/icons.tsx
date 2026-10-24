@@ -1,54 +1,219 @@
-export function SkillGlyph({ id, color, title }: { id: string; color: string; title?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className="skill-glyph" aria-hidden={title ? undefined : true} role={title ? "img" : undefined}>
-      {title ? <title>{title}</title> : null}
-      <rect width="24" height="24" fill="#1a1612" />
-      {glyph(id, color)}
-      <rect x="0.5" y="0.5" width="23" height="23" fill="none" stroke="#3a3228" />
-    </svg>
-  );
+const GLYPHS: Record<string, string[]> = {
+  golpe_rapido: [
+    "..............",
+    "......hh......",
+    "......bb......",
+    "......bb......",
+    "......bb......",
+    "......bb......",
+    "....bbbbbb....",
+    "......bb......",
+    "......bb......",
+    "......ss......",
+    "......ss......",
+    "......hs......",
+    "..............",
+    "..............",
+  ],
+  raio_encadeado: [
+    "..............",
+    ".......hh.....",
+    "......bbb.....",
+    ".....bbb......",
+    "....bbbbb.....",
+    ".......bb.....",
+    "......bbb.....",
+    ".....bbb......",
+    "....bbb.......",
+    "...bbb........",
+    "...ss.........",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  explosao: [
+    "..............",
+    "......hh......",
+    ".s....bb....s.",
+    "..s...bb...s..",
+    "......bb......",
+    "hbbbbbbbbbbbbh",
+    "......bb......",
+    "..s...bb...s..",
+    ".s....ss....s.",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  flecha: [
+    "..............",
+    "..............",
+    "..............",
+    "..........h...",
+    "..........b...",
+    "hhhhbbbbbbbbh.",
+    "..........b...",
+    "..........s...",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  sopro: [
+    "..............",
+    ".......h......",
+    "......bbh.....",
+    ".....bbbbh....",
+    "....bbbbbbh...",
+    "hhhhbbbbbbbb..",
+    "....bbbbbbs...",
+    ".....bbbbs....",
+    "......bbs.....",
+    ".......s......",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  lamina: [
+    "..............",
+    "....hhhhhh....",
+    "..hhbbbbbbhh..",
+    ".hb........bh.",
+    ".hb...bb...bh.",
+    "hb....bb....bh",
+    "hbbbbbbbbbbbbh",
+    "hb....bb....bh",
+    ".hb...bb...bh.",
+    ".hb........bh.",
+    "..ssbbbbbbss..",
+    "....ssssss....",
+    "..............",
+    "..............",
+  ],
+  martelo: [
+    "..............",
+    "hhhhhhhhhhhh..",
+    "bbbbbbbbbbbb..",
+    "bbbbbbbbbbbb..",
+    "bbssssssssbb..",
+    "....bbbb......",
+    "....bbbb......",
+    "....bbbb......",
+    "....bbbb......",
+    "....ssss......",
+    ".....hh.......",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  lanca: [
+    ".............h",
+    "............bb",
+    "...........bb.",
+    "..........bb..",
+    ".........bb...",
+    "........bb....",
+    ".......bb.....",
+    "......bb......",
+    ".....ss.......",
+    "....ss........",
+    "...ss.........",
+    "..............",
+    "..............",
+    "..............",
+  ],
+  gelo: [
+    "..............",
+    "......hh......",
+    "......bb......",
+    ".h....bb....h.",
+    "..b..bbbb..b..",
+    "...bbbbbbbb...",
+    "hbbbbbbbbbbbbh",
+    "...bbbbbbbb...",
+    "..s..bbbb..s..",
+    ".s....bb....s.",
+    "......bb......",
+    "......ss......",
+    "..............",
+    "..............",
+  ],
+  dardo: [
+    "..............",
+    "..............",
+    ".............h",
+    "............b.",
+    "...........b..",
+    "..........b...",
+    ".........b....",
+    "........b.....",
+    ".......s......",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+  ],
+};
+
+const cache = new Map<string, string>();
+
+function channel(hex: string, index: number) {
+  const raw = hex.replace("#", "");
+  const full = raw.length === 3 ? raw.split("").map((part) => part + part).join("") : raw;
+  return Number.parseInt(full.slice(index * 2, index * 2 + 2), 16);
 }
 
-function glyph(id: string, color: string) {
-  if (id === "golpe_rapido") {
-    return <path fill={color} d="M11 3h3v14h-3zm-3 12h9v3H8zm2 3h5v3h-5z" />;
-  }
-  if (id === "raio_encadeado") {
-    return <path fill={color} d="M14 2 7 13h5l-4 9 10-12h-6l2-8z" />;
-  }
-  if (id === "explosao") {
-    return (
-      <>
-        <circle cx="12" cy="12" r="7" fill={color} />
-        <path fill="#1a1612" d="M11 5h2v14h-2zM5 11h14v2H5z" />
-      </>
-    );
-  }
-  if (id === "flecha") {
-    return <path fill={color} d="M4 9h2v6H4zm3 3h10v2H7zm10-4 5 4-5 4v-3h-2v-2h2z" />;
-  }
-  if (id === "sopro") {
-    return <path fill={color} d="M5 12 20 4v16z" />;
-  }
-  if (id === "lamina") {
-    return (
-      <>
-        <circle cx="12" cy="12" r="8" fill="none" stroke={color} strokeWidth="2" />
-        <path fill={color} d="M11 4h2v16h-2zM4 11h16v2H4z" />
-      </>
-    );
-  }
-  if (id === "martelo") {
-    return <path fill={color} d="M6 4h12v6H6zm4 6h4v12H10z" />;
-  }
-  if (id === "lanca") {
-    return <path fill={color} d="M14 2h3v3h-3zM13 5h2l-7 12H6L13 5zm-6 13h3v4H7z" />;
-  }
-  if (id === "gelo") {
-    return <path fill={color} d="M11 2h2v6h6v2h-6v6h5v2h-5v4h-2v-4H6v-2h5V10H5V8h6V2z" />;
-  }
-  if (id === "dardo") {
-    return <path fill={color} d="M4 11h12v2H4zm12-3 5 4-5 4v-2h-1v-4h1z" />;
-  }
-  return <rect x="7" y="7" width="10" height="10" fill={color} />;
+function mix(hex: string, toward: string, amount: number) {
+  const parts = [0, 1, 2].map((index) => {
+    const from = channel(hex, index);
+    const to = channel(toward, index);
+    return Math.round(from + (to - from) * amount);
+  });
+  return `rgb(${parts.join(",")})`;
+}
+
+function iconUrl(id: string, color: string) {
+  const key = `${id}:${color}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const canvas = document.createElement("canvas");
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#1a1612";
+  ctx.fillRect(0, 0, 16, 16);
+  const ink: Record<string, string> = {
+    b: color,
+    h: mix(color, "#fff6d8", 0.62),
+    s: mix(color, "#1a1612", 0.5),
+  };
+  const rows = GLYPHS[id] ?? ["......bbbb....", "......bbbb....", "......bbbb....", "......bbbb...."];
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x += 1) {
+      const pixel = ink[row[x] ?? ""];
+      if (!pixel) continue;
+      ctx.fillStyle = pixel;
+      ctx.fillRect(x + 1, y + 1, 1, 1);
+    }
+  });
+  ctx.fillStyle = "#3a3228";
+  ctx.fillRect(0, 0, 16, 1);
+  ctx.fillRect(0, 15, 16, 1);
+  ctx.fillRect(0, 0, 1, 16);
+  ctx.fillRect(15, 0, 1, 16);
+  const url = canvas.toDataURL();
+  cache.set(key, url);
+  return url;
+}
+
+export function SkillGlyph({ id, color, title }: { id: string; color: string; title?: string }) {
+  return <img className="skill-glyph" src={iconUrl(id, color)} alt={title ?? ""} title={title} />;
 }

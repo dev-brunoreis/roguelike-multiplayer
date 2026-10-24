@@ -32,7 +32,7 @@ IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged
 
 O snapshot manda `view` = id do herói ou do creep. O visual padrão é um sprite de pixel em `apps/client/src/game/sprites.ts`, com idle, corrida, ataque e hit. A folha CC0 fica em `apps/client/public/sprites/0x72/`.
 
-Sprite novo de um frame do pack: entrada em `PACK`. Sprite desenhado no cliente: entrada em `DRAWN`. Modelo 3D no lugar do sprite:
+Sprite novo de um frame do pack: entrada em `PACK`. Sprite desenhado no cliente: entrada em `DRAWN`. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Tiro com forma própria entra em `shotShape` em `sprites.ts` (flecha, lança, dardo). Modelo 3D no lugar do sprite:
 
 ```tsx
 registerEntityView("guerreiro", GuerreiroModel);

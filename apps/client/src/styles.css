@@ -140,6 +140,7 @@ input[type="text"], input[type="password"], input[type="number"] {
 .board .life { display: block; height: 5px; background: #2a241c; }
 .board .life i { display: block; height: 100%; background: #8fdb67; }
 .pips { display: flex; gap: 4px; height: 22px; align-items: center; }
+.skill-glyph { image-rendering: pixelated; background: #1a1612; }
 .pips .skill-glyph { width: 22px; height: 22px; display: block; border-radius: 2px; }
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
 .xp i { display: block; height: 100%; background: #e07a3d; }

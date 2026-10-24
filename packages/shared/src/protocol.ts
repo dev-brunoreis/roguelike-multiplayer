@@ -111,6 +111,7 @@ export interface ProjectileSnap {
   vx: number;
   vy: number;
   arenaId: string;
+  abilityId: string;
   color: string;
 }
 

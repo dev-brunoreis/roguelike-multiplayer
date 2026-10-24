@@ -60,8 +60,13 @@ const PACK: Record<string, PackActor> = {
   corredor: creep("goblin", "split", "slash"),
   atirador: creep("imp", "split", "none"),
   guarda: creep("orc_warrior", "split", "slash"),
+  esqueleto: creep("skelet", "split", "slash"),
+  lodo: creep("muddy", "loop", "none"),
+  xama: creep("orc_shaman", "split", "flame"),
+  diabrete: creep("chort", "split", "flame"),
   boss_golem: creep("ogre", "split", "slash"),
   boss_matriarca: creep("big_demon", "split", "slash"),
+  boss_wogol: creep("wogol", "split", "flame"),
 };
 
 function atlasIndex() {
@@ -319,30 +324,64 @@ export function setSpriteFrame(texture: Texture, frame: number, frames: number, 
   texture.offset.x = index * span;
 }
 
-let orbTexture: Texture | null = null;
+export type ShotShape = "orb" | "arrow" | "spear" | "dart";
 
-export function shotTexture() {
-  if (orbTexture) return orbTexture;
+const SHOT_BY_ABILITY: Record<string, ShotShape> = {
+  flecha: "arrow",
+  lanca: "spear",
+  dardo: "dart",
+};
+
+export function shotShape(abilityId: string): ShotShape {
+  return SHOT_BY_ABILITY[abilityId] ?? "orb";
+}
+
+export function shotScale(shape: ShotShape): [number, number] {
+  if (shape === "arrow") return [0.78, 0.34];
+  if (shape === "spear") return [1.05, 0.26];
+  if (shape === "dart") return [0.58, 0.2];
+  return [0.42, 0.42];
+}
+
+const shotTextures = new Map<ShotShape, Texture>();
+
+function shotCanvas(shape: ShotShape) {
   const canvas = document.createElement("canvas");
-  canvas.width = 8;
-  canvas.height = 8;
+  canvas.width = 16;
+  canvas.height = 16;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas");
-  const rows = ["..wwww..", ".wyyyww.", "wyyyyyyw", "wyyyyyyw", "wyyyyyyw", "wyyyyyyw", ".wyyyww.", "..wwww.."];
-  const color: Record<string, string> = { w: "#2a241c", y: "#fff6d8" };
+  ctx.imageSmoothingEnabled = false;
+  const rows = shape === "arrow"
+    ? [".......www......", ".....wwwwwww....", "wwwwwwwwwwwwwwwh", ".....wwwwwww....", ".......www......"]
+    : shape === "spear"
+      ? ["...............h", "wwwwwwwwwwwwwwwh", "wwwwwwwwwwwwwwss", "...............h"]
+        : shape === "dart"
+        ? ["...............h", "wwwwwwwwwwwwwwwh", "...............s"]
+        : ["......oooo......", "....oyyyyyyo....", "...oyyyyyyyyo...", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "...oyyyyyyyyo...", "....oyyyyyyo....", "......oooo......"];
+  const color: Record<string, string> = { o: "#2a241c", y: "#fff6d8", w: "#ffffff", h: "#fff6d8", s: "#c8c0b4" };
+  const top = Math.floor((16 - rows.length) / 2);
   rows.forEach((row, y) => {
+    const left = Math.floor((16 - row.length) / 2);
     for (let x = 0; x < row.length; x += 1) {
       const pixel = color[row[x] ?? ""];
       if (!pixel) continue;
       ctx.fillStyle = pixel;
-      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(left + x, top + y, 1, 1);
     }
   });
-  orbTexture = new CanvasTexture(canvas);
-  orbTexture.colorSpace = SRGBColorSpace;
-  orbTexture.magFilter = NearestFilter;
-  orbTexture.minFilter = NearestFilter;
-  orbTexture.generateMipmaps = false;
-  orbTexture.needsUpdate = true;
-  return orbTexture;
+  return canvas;
+}
+
+export function shotTexture(shape: ShotShape = "orb") {
+  const cached = shotTextures.get(shape);
+  if (cached) return cached;
+  const texture = new CanvasTexture(shotCanvas(shape));
+  texture.colorSpace = SRGBColorSpace;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  shotTextures.set(shape, texture);
+  return texture;
 }
