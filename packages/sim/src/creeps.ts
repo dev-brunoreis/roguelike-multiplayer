@@ -10,11 +10,26 @@ registerCreepBehavior("chase", (match, creep, dt) => {
   heroes.sort((a, b) => dist(creep, a) - dist(creep, b));
   const target = heroes[0]!;
   const gap = dist(creep, target);
+  const reach = creep.attackRange + target.radius * 0.4;
   creep.facing = Math.atan2(target.y - creep.y, target.x - creep.x);
-  if (gap > creep.attackRange + target.radius * 0.4) {
+  if ((creep.winding ?? 0) > 0) {
+    creep.winding = Math.max(0, (creep.winding ?? 0) - dt);
+    if (creep.winding > 0) return;
+    creep.attackTimer = creep.attackCooldown;
+    creep.swing = (creep.swing ?? 0) + 1;
+    if (gap <= reach) dealDamage(match, { source: creep, target, amount: creep.damage });
+    return;
+  }
+  if (gap > reach) {
     const step = creep.speed * dt;
     creep.x += ((target.x - creep.x) / gap) * step;
     creep.y += ((target.y - creep.y) / gap) * step;
+    return;
+  }
+  const windup = creep.attackWindup ?? 0;
+  if (windup > 0 && creep.attackTimer <= windup) {
+    creep.winding = creep.attackTimer > 0 ? creep.attackTimer : windup;
+    creep.attackTimer = 0;
     return;
   }
   creep.attackTimer -= dt;

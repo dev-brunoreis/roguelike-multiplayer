@@ -25,6 +25,8 @@ export function spawnCreep(match: Match, arenaId: string, creepId: string) {
     attackCooldown: def.attackCooldown,
     attackTimer: def.attackCooldown * 0.5,
     attackRange: def.attackRange,
+    attackWindup: def.attackWindup,
+    winding: 0,
     armor: def.armor,
     xp: def.xp,
     gold: def.gold,

@@ -135,6 +135,9 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       arenaId: entity.arenaId,
       flash: entity.flash,
       swing: entity.swing ?? 0,
+      strike: entity.winding && entity.attackWindup
+        ? Math.min(1, Math.max(0, 1 - entity.winding / entity.attackWindup))
+        : 0,
       label: entity.kind === "hero"
         ? playerByName(match, entity.playerId)
         : match.data.creeps.find((creep) => creep.id === entity.defId)?.nome,

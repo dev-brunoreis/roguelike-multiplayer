@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
 import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
 import { motionAt } from "./motion.js";
-import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
+import { loadActor, setSpriteFrame, shotTexture, type ActorSheet, type ClipName } from "./sprites.js";
 
 export type ViewProps = { entity: EntitySnap };
 
@@ -61,7 +61,8 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const reachSpan = useRef(-1);
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
-  const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, ready: false });
+  const tell = useRef<Sprite>(null);
+  const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
   const view = useRef(snapRef.current?.entities.find((item) => item.id === id)?.view ?? "slime");
@@ -192,6 +193,22 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
         band.opacity = 0.16;
       }
     }
+    const goal = entity.kind === "hero" ? 0 : entity.strike;
+    if (goal <= 0) anim.current.tell = 0;
+    else anim.current.tell += (goal - anim.current.tell) * Math.min(1, delta * 12);
+    if (tell.current) {
+      const shown = anim.current.tell;
+      tell.current.visible = shown > 0.02;
+      if (shown > 0.02) {
+        const size = 0.45 + shown * 1.25;
+        tell.current.position.set(0, tall + 0.08, 0);
+        tell.current.scale.set(size, size, 1);
+        tell.current.renderOrder = root.renderOrder + 4;
+        const mat = tell.current.material as SpriteMaterial;
+        mat.color.set("#fff6d0");
+        mat.opacity = 1;
+      }
+    }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
     glow.current *= 0.78;
     if (material.current) {
@@ -213,6 +230,9 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       <mesh ref={reachBand} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} renderOrder={3}>
         <meshBasicMaterial transparent opacity={0.7} depthWrite={false} />
       </mesh>
+      <sprite ref={tell} center={[0.5, 0.5]} visible={false} position={[0, 0.8, 0]}>
+        <spriteMaterial map={shotTexture("orb")} transparent depthWrite={false} depthTest={false} />
+      </sprite>
       <sprite ref={sprite} center={[0.5, 0]} visible={false}>
         <spriteMaterial ref={material} transparent alphaTest={0.4} depthWrite={false} depthTest />
       </sprite>

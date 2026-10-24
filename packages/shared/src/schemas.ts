@@ -86,6 +86,7 @@ export const creepSchema = z.object({
   damage: z.number().nonnegative(),
   attackCooldown: z.number().positive(),
   attackRange: z.number().positive(),
+  attackWindup: z.number().nonnegative().default(0),
   radius: z.number().positive(),
   xp: z.number().nonnegative(),
   gold: z.number().nonnegative(),

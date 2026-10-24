@@ -233,6 +233,70 @@ describe("simulação", () => {
     expect(tank).toBeCloseTo(open * 0.5, 5);
   });
 
+  it("corpo a corpo avisa antes do golpe e erra se o alvo sair", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 2,
+      data,
+    });
+    quietMatch(match);
+    match.phaseTime = 90;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const creepId = match.nextId++;
+    match.entities.push({
+      id: creepId,
+      kind: "creep",
+      defId: "slime",
+      arenaId: hero.arenaId,
+      x: hero.x + 1.2,
+      y: hero.y,
+      radius: 0.32,
+      hp: 500,
+      maxHp: 500,
+      speed: 0,
+      damage: 10,
+      attackCooldown: 1,
+      attackTimer: 0.2,
+      attackRange: 1.6,
+      attackWindup: 0.2,
+      winding: 0,
+      armor: 0,
+      xp: 0,
+      gold: 0,
+      color: "#e23d3d",
+      team: "enemy",
+      alive: true,
+      invuln: 0,
+      flash: 0,
+      facing: 0,
+      behavior: "chase",
+    });
+    const creep = match.entities.find((entity) => entity.id === creepId)!;
+    const before = hero.hp;
+    tick(match);
+    expect(hero.hp).toBe(before);
+    expect(creep.winding).toBeCloseTo(0.2);
+    tick(match);
+    expect(hero.hp).toBe(before);
+    const strike = buildSnapshot(match, "p").entities.find((entity) => entity.id === creepId)?.strike ?? 0;
+    expect(strike).toBeGreaterThan(0);
+    expect(strike).toBeLessThan(1);
+    runTicks(match, 5);
+    expect(hero.hp).toBeLessThan(before);
+
+    hero.hp = hero.maxHp;
+    hero.x = creep.x - 1.2;
+    hero.y = creep.y;
+    creep.attackTimer = 0.2;
+    creep.winding = 0;
+    creep.swing = 0;
+    tick(match);
+    hero.x += 10;
+    runTicks(match, 6);
+    expect(hero.hp).toBe(hero.maxHp);
+    expect(creep.swing).toBeGreaterThan(0);
+  });
+
   it("carta de dano aumenta o golpe", () => {
     const match = createMatch({
       players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
@@ -315,7 +379,7 @@ describe("simulação", () => {
     const creeps = match.entities.filter((entity) => entity.defId === "slime" && entity.alive);
     const nearest = Math.min(...creeps.map((creep) => Math.hypot(creep.x - hero.x, creep.y - hero.y)));
     const hurt = creeps.reduce((sum, creep) => sum + (500 - creep.hp), 0);
-    expect(nearest).toBeLessThan(1.9 + creepDef.radius);
+    expect(nearest).toBeLessThan(creepDef.attackRange + 0.7);
     expect(hurt).toBeGreaterThan(20);
   });
 

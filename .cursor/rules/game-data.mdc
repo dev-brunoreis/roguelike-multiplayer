@@ -11,6 +11,7 @@ alwaysApply: false
 - Habilidade nova precisa de `behavior` e `targeting` já registrados na sim.
 - Carta cita `abilityId` que exista. `requires` também.
 - Onda e boss citam `creepId` que exista.
+- Creep corpo a corpo leva `attackWindup`: tempo parado em que a bolinha cresce antes do dano. Atirador fica em `0`.
 - `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`), `hubSize` e `version`.
 - `economy.json` é sorte (`luckBias`), não ouro.
 - Não duplique esses números no servidor ou no cliente.

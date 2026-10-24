@@ -55,6 +55,8 @@ export interface Entity {
   attackCooldown: number;
   attackTimer: number;
   attackRange: number;
+  attackWindup?: number;
+  winding?: number;
   armor: number;
   xp: number;
   gold: number;

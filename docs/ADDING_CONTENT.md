@@ -26,7 +26,7 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 `creeps.json` define status, `behavior` e `dropChance`. `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual; depois da última, ela se repete mais forte. `bosses.json` soma um spawn quando a rodada divide `everyRounds`.
 
-IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira).
+IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira). No corpo a corpo, `attackWindup` é o tempo da bolinha: o bicho para, a bolinha cresce, e o dano sai no fim se o alvo ainda está no alcance.
 
 ## Visual
 

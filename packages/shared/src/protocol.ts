@@ -100,6 +100,7 @@ export interface EntitySnap {
   arenaId: string;
   flash: number;
   swing: number;
+  strike: number;
   label?: string;
   playerId?: string;
 }
