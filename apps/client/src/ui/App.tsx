@@ -754,7 +754,6 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       <header className="hud top">
         <div>
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
-          <span>{Math.ceil(snap.announce?.kind === "duel" ? snap.announce.left : snap.phaseTime)}s</span>
           {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
           {snap.paused ? <em className="flag">pausado</em> : null}
           {!snap.paused && asking.length > 0 ? <em className="flag">{asking.length}/{humans.length} pausa</em> : null}

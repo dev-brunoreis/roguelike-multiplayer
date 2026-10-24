@@ -105,20 +105,24 @@ input[type="text"], input[type="password"], input[type="number"] {
 .scene { position: absolute !important; inset: 0; }
 .hud { position: absolute; z-index: 2; }
 .netstat {
-  position: absolute; z-index: 2; top: 56px; right: 14px;
+  position: absolute; z-index: 2; top: 12px; right: 14px;
   margin: 0; font-size: 11px; color: #a39886; pointer-events: none;
   font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000;
 }
 .hud.top {
-  top: 12px; left: 12px; right: 12px;
-  display: flex; justify-content: space-between; gap: 12px; align-items: center;
+  top: 12px; left: 50%; transform: translateX(-50%);
   pointer-events: none;
 }
-.hud.top > * { pointer-events: auto; background: #1c1914cc; padding: 8px 12px; border: 1px solid #3a3228; display: flex; gap: 10px; align-items: center; }
+.hud.top > * {
+  pointer-events: auto; background: #1c1914cc; padding: 8px 12px; border: 1px solid #3a3228;
+  display: flex; gap: 10px; align-items: center;
+}
 .hud.top .flag { font-style: normal; color: #e6c15a; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; }
+.xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
+.xp i { display: block; height: 100%; background: #e07a3d; }
 .hud.side {
-  top: 68px; left: 12px; width: 188px;
-  max-height: calc(100% - 176px);
+  top: 12px; left: 12px; width: 188px;
+  max-height: calc(100% - 120px);
   overflow: auto;
   pointer-events: none;
 }
@@ -142,8 +146,6 @@ input[type="text"], input[type="password"], input[type="number"] {
 .pips { display: flex; gap: 4px; height: 22px; align-items: center; }
 .skill-glyph { image-rendering: pixelated; background: #1a1612; }
 .pips .skill-glyph { width: 22px; height: 22px; display: block; border-radius: 2px; }
-.xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
-.xp i { display: block; height: 100%; background: #e07a3d; }
 .abilities {
   left: 12px; bottom: 12px; display: flex; gap: 8px;
 }
