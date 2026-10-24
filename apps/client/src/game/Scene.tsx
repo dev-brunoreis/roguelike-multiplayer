@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { EntityPuppet } from "./views.js";
 
-const VIEW_RANGE = 36;
+const VIEW_RANGE = 48;
 
 export const Scene = memo(function Scene({
   snapRef,
@@ -106,6 +106,11 @@ function World({
     const lookZ = focus[1] + pan.current.z;
     if (!follow.current.ready) {
       follow.current = { x: lookX, z: lookZ, ready: true };
+    } else if (Math.hypot(lookX - follow.current.x, lookZ - follow.current.z) > 24) {
+      follow.current.x = lookX;
+      follow.current.z = lookZ;
+      pan.current.x = 0;
+      pan.current.z = 0;
     }
     const smear = Math.min(1, delta * 8);
     follow.current.x += (lookX - follow.current.x) * smear;
@@ -161,7 +166,7 @@ function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: 
     <group position={[cx, 0, cz]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[arena.size, arena.size]} />
-        <meshStandardMaterial color={arena.kind === "duel" ? "#6a3d28" : "#4a4034"} />
+        <meshStandardMaterial color={arena.kind === "hub" ? "#3d4a3a" : arena.kind === "duel" ? "#6a3d28" : "#4a4034"} />
       </mesh>
       <lineSegments>
         <bufferGeometry>

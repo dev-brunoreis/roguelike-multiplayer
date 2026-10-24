@@ -159,6 +159,7 @@ function Lobby({ token, onLogout, onStart }: { token: string; onLogout: () => vo
 }
 
 const PHASE: Record<string, string> = {
+  hub: "Salão",
   pve: "Onda",
   betting: "Apostas",
   duel: "Duelo",
@@ -262,6 +263,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
             <b style={{ color: player.color }}>{player.name}</b>
             <small>{player.eliminated ? "fora" : `${Math.ceil(player.hp)} hp · ${player.lives} vidas`}</small>
             {player.choosing ? <small>escolhendo carta</small> : null}
+            {snap.phase === "pve" && player.waveClear && !player.eliminated ? <small>limpo</small> : null}
           </button>
         ))}
       </aside>
@@ -293,8 +295,8 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           </div>
         </section>
       ) : null}
-      {snap.phase === "betting" && me && !me.inDuel && !me.eliminated ? (
-        <section className="overlay">
+      {(snap.phase === "betting" || (snap.phase === "hub" && snap.duel.length > 0)) && me && !me.inDuel && !me.eliminated ? (
+        <section className="overlay dock bet">
           <h2>Apostar em quem</h2>
           <input type="range" min={5} max={Math.max(5, Math.min(40, me.gold))} value={betAmount} onChange={(event) => setBetAmount(Number(event.target.value))} />
           <p>{betAmount} de ouro</p>
@@ -308,28 +310,40 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           {me.bet ? <p>Aposta em {snap.players.find((player) => player.id === me.bet?.targetId)?.name}: {me.bet.amount}</p> : null}
         </section>
       ) : null}
-      {snap.phase === "shop" && me?.shop && !me.eliminated ? (
-        <section className="overlay shop">
-          <h2>Loja <small>{Math.ceil(snap.phaseTime)}s</small></h2>
-          <div className="cards">
-            {me.shop.offers.map((card) => (
-              <button key={card.id} className={`card rarity-${card.rarity}`} disabled={me.gold < card.price} onClick={() => send("shop", { kind: "buy", cardId: card.id })}>
-                <em>{card.rarity} · {card.price} ouro</em>
-                <strong>{card.nome}</strong>
-                <span>{card.descricao}</span>
-              </button>
-            ))}
-          </div>
-          <div className="row">
-            {me.shop.upgrades.map((upgrade) => (
-              <button key={upgrade.abilityId} className="btn" disabled={me.gold < upgrade.cost} onClick={() => send("shop", { kind: "upgrade", abilityId: upgrade.abilityId })}>
-                {upgrade.nome} nv{upgrade.level} → {upgrade.level + 1} · {upgrade.cost}
-              </button>
-            ))}
-            <button className="btn" disabled={me.gold < me.shop.rerollCost} onClick={() => send("shop", { kind: "reroll" })}>Trocar cartas · {me.shop.rerollCost}</button>
-            <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
-          </div>
+      {(snap.phase === "shop" || snap.phase === "hub") && me && !me.eliminated && me.pending.length === 0 ? (
+        <section className="overlay dock shop">
+          {me.shop ? (
+            <>
+              <h2>{snap.phase === "hub" ? "Salão" : "Loja"} <small>{Math.ceil(snap.phaseTime)}s</small></h2>
+              <div className="cards">
+                {me.shop.offers.map((card) => (
+                  <button key={card.id} className={`card rarity-${card.rarity}`} disabled={me.gold < card.price} onClick={() => send("shop", { kind: "buy", cardId: card.id })}>
+                    <em>{card.rarity} · {card.price} ouro</em>
+                    <strong>{card.nome}</strong>
+                    <span>{card.descricao}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="row">
+                {me.shop.upgrades.map((upgrade) => (
+                  <button key={upgrade.abilityId} className="btn" disabled={me.gold < upgrade.cost} onClick={() => send("shop", { kind: "upgrade", abilityId: upgrade.abilityId })}>
+                    {upgrade.nome} nv{upgrade.level} → {upgrade.level + 1} · {upgrade.cost}
+                  </button>
+                ))}
+                <button className="btn" disabled={me.gold < me.shop.rerollCost} onClick={() => send("shop", { kind: "reroll" })}>Trocar cartas · {me.shop.rerollCost}</button>
+                <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2>Salão <small>{Math.ceil(snap.phaseTime)}s</small></h2>
+              <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
+            </>
+          )}
         </section>
+      ) : null}
+      {snap.phase === "pve" && me?.waveClear && !me.eliminated ? (
+        <p className="hint wait">Você limpou. Esperando o resto terminar.</p>
       ) : null}
       {snap.phase === "ended" ? (
         <section className="overlay end">
@@ -352,7 +366,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         </section>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
-        <p className="hint">W sobe na tela. Botão direito ou borda do mouse pra olhar outra arena.</p>
+        <p className="hint">W sobe na tela. No salão ninguém se bate. A onda só acaba quando o último limpa.</p>
       )}
     </main>
   );

@@ -100,12 +100,16 @@ input[type="text"], input[type="password"], input[type="number"] {
   background: #16130fcc; border: 1px solid #6a573f; padding: 18px;
   display: grid; gap: 12px;
 }
-.overlay.pick {
+.overlay.pick,
+.overlay.dock {
   top: auto; bottom: 86px; transform: translate(-50%, 0);
   pointer-events: none;
   background: #16130fe8;
 }
-.overlay.pick button { pointer-events: auto; }
+.overlay.pick button,
+.overlay.dock button,
+.overlay.dock input { pointer-events: auto; }
+.overlay.dock.bet { bottom: 280px; width: min(420px, calc(100% - 40px)); }
 .cards { display: flex; gap: 10px; flex-wrap: wrap; }
 .card {
   width: 160px; min-height: 140px; text-align: left; padding: 10px;
