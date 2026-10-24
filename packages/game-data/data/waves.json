@@ -1,10 +1,167 @@
 [
-  { "round": 1, "spawns": [{ "creepId": "slime", "count": 6, "interval": 0.7 }] },
-  { "round": 2, "spawns": [{ "creepId": "slime", "count": 6, "interval": 0.5 }, { "creepId": "atirador", "count": 2, "interval": 1.1 }, { "creepId": "corredor", "count": 2, "interval": 0.8 }] },
-  { "round": 3, "spawns": [{ "creepId": "slime", "count": 6, "interval": 0.45 }, { "creepId": "atirador", "count": 3, "interval": 0.9 }, { "creepId": "bruto", "count": 2, "interval": 1.4 }] },
-  { "round": 4, "spawns": [{ "creepId": "slime", "count": 4, "interval": 0.45 }, { "creepId": "morcego", "count": 5, "interval": 0.4 }, { "creepId": "guarda", "count": 1, "interval": 1.6 }] },
-  { "round": 5, "spawns": [{ "creepId": "bruto", "count": 3, "interval": 1.1 }, { "creepId": "atirador", "count": 4, "interval": 0.7 }, { "creepId": "corredor", "count": 4, "interval": 0.4 }, { "creepId": "slime", "count": 4, "interval": 0.4 }] },
-  { "round": 6, "spawns": [{ "creepId": "aranha", "count": 5, "interval": 0.55 }, { "creepId": "atirador", "count": 3, "interval": 0.8 }, { "creepId": "guarda", "count": 2, "interval": 1.2 }, { "creepId": "corredor", "count": 3, "interval": 0.45 }] },
-  { "round": 7, "spawns": [{ "creepId": "bruto", "count": 5, "interval": 0.8 }, { "creepId": "atirador", "count": 5, "interval": 0.55 }, { "creepId": "corredor", "count": 6, "interval": 0.35 }] },
-  { "round": 9, "spawns": [{ "creepId": "bruto", "count": 4, "interval": 0.9 }, { "creepId": "aranha", "count": 6, "interval": 0.4 }, { "creepId": "morcego", "count": 6, "interval": 0.35 }, { "creepId": "guarda", "count": 2, "interval": 1.1 }] }
+  {
+    "round": 1,
+    "spawns": [
+      {
+        "creepId": "slime",
+        "count": 6,
+        "interval": 0.7
+      }
+    ]
+  },
+  {
+    "round": 2,
+    "spawns": [
+      {
+        "creepId": "slime",
+        "count": 6,
+        "interval": 0.5
+      },
+      {
+        "creepId": "atirador",
+        "count": 2,
+        "interval": 1.1
+      },
+      {
+        "creepId": "corredor",
+        "count": 2,
+        "interval": 0.8
+      }
+    ]
+  },
+  {
+    "round": 3,
+    "spawns": [
+      {
+        "creepId": "slime",
+        "count": 6,
+        "interval": 0.45
+      },
+      {
+        "creepId": "atirador",
+        "count": 3,
+        "interval": 0.9
+      },
+      {
+        "creepId": "bruto",
+        "count": 2,
+        "interval": 1.4
+      }
+    ]
+  },
+  {
+    "round": 4,
+    "spawns": [
+      {
+        "creepId": "slime",
+        "count": 4,
+        "interval": 0.45
+      },
+      {
+        "creepId": "morcego",
+        "count": 5,
+        "interval": 0.4
+      },
+      {
+        "creepId": "guarda",
+        "count": 1,
+        "interval": 1.6
+      }
+    ]
+  },
+  {
+    "round": 5,
+    "spawns": [
+      {
+        "creepId": "bruto",
+        "count": 3,
+        "interval": 1.1
+      },
+      {
+        "creepId": "atirador",
+        "count": 4,
+        "interval": 0.7
+      },
+      {
+        "creepId": "corredor",
+        "count": 4,
+        "interval": 0.4
+      },
+      {
+        "creepId": "slime",
+        "count": 4,
+        "interval": 0.4
+      }
+    ]
+  },
+  {
+    "round": 6,
+    "spawns": [
+      {
+        "creepId": "aranha",
+        "count": 5,
+        "interval": 0.55
+      },
+      {
+        "creepId": "atirador",
+        "count": 3,
+        "interval": 0.8
+      },
+      {
+        "creepId": "guarda",
+        "count": 2,
+        "interval": 1.2
+      },
+      {
+        "creepId": "corredor",
+        "count": 3,
+        "interval": 0.45
+      }
+    ]
+  },
+  {
+    "round": 7,
+    "spawns": [
+      {
+        "creepId": "bruto",
+        "count": 5,
+        "interval": 0.8
+      },
+      {
+        "creepId": "atirador",
+        "count": 5,
+        "interval": 0.55
+      },
+      {
+        "creepId": "corredor",
+        "count": 6,
+        "interval": 0.35
+      }
+    ]
+  },
+  {
+    "round": 9,
+    "spawns": [
+      {
+        "creepId": "bruto",
+        "count": 4,
+        "interval": 0.9
+      },
+      {
+        "creepId": "aranha",
+        "count": 6,
+        "interval": 0.4
+      },
+      {
+        "creepId": "morcego",
+        "count": 6,
+        "interval": 0.35
+      },
+      {
+        "creepId": "guarda",
+        "count": 2,
+        "interval": 1.1
+      }
+    ]
+  }
 ]

@@ -5,7 +5,13 @@
     "descricao": "3 cartas de raio: +20% de dano.",
     "tag": "raio",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.2 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "damagePct",
+        "value": 0.2
+      }
+    ]
   },
   {
     "id": "inferno",
@@ -13,7 +19,13 @@
     "descricao": "3 cartas de fogo: +15% de dano.",
     "tag": "fogo",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.15 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "damagePct",
+        "value": 0.15
+      }
+    ]
   },
   {
     "id": "redemoinho",
@@ -21,7 +33,13 @@
     "descricao": "3 cartas de área: +25% de área.",
     "tag": "area",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "areaPct", "value": 0.25 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "areaPct",
+        "value": 0.25
+      }
+    ]
   },
   {
     "id": "braco",
@@ -29,7 +47,13 @@
     "descricao": "3 cartas de força: +12% de dano.",
     "tag": "forca",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.12 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "damagePct",
+        "value": 0.12
+      }
+    ]
   },
   {
     "id": "vento",
@@ -37,7 +61,13 @@
     "descricao": "3 cartas de agilidade: +15% de velocidade de ataque.",
     "tag": "agilidade",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "attackSpeedPct", "value": 0.15 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "attackSpeedPct",
+        "value": 0.15
+      }
+    ]
   },
   {
     "id": "academia",
@@ -45,7 +75,13 @@
     "descricao": "3 cartas de magia: -10% de recarga.",
     "tag": "magia",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "cooldownPct", "value": 0.1 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "cooldownPct",
+        "value": 0.1
+      }
+    ]
   },
   {
     "id": "nevasca",
@@ -53,7 +89,13 @@
     "descricao": "3 cartas de gelo: +18% de área.",
     "tag": "gelo",
     "count": 3,
-    "effects": [{ "type": "stat", "stat": "areaPct", "value": 0.18 }]
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "areaPct",
+        "value": 0.18
+      }
+    ]
   },
   {
     "id": "peconha",
@@ -61,6 +103,12 @@
     "descricao": "3 cartas de veneno: ataques causam +3 de dano.",
     "tag": "veneno",
     "count": 3,
-    "effects": [{ "type": "onHit", "hook": "burn", "value": 3 }]
+    "effects": [
+      {
+        "type": "onHit",
+        "hook": "burn",
+        "value": 3
+      }
+    ]
   }
 ]
