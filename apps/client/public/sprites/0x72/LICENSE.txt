@@ -1,0 +1,8 @@
+DungeonTileset II v1.7
+Author: Robert (0x72), recolor by GrafxKid
+Source: https://0x72.itch.io/dungeontileset-ii
+License: Creative Commons Zero 1.0 Universal (CC0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The sheet is used for characters and creatures. Frames the pack does not
+include (bat, spider, eye) are original pixel art in this repository.

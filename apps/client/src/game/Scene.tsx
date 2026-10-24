@@ -3,7 +3,8 @@ import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { forgetMotion, motionAt, trackMotion } from "./motion.js";
-import { EntityPuppet, HpLayer } from "./views.js";
+import { shotTexture } from "./sprites.js";
+import { DeathLayer, EntityPuppet, FloatLayer, HpLayer } from "./views.js";
 
 const VIEW_RANGE = 92;
 
@@ -165,6 +166,8 @@ function World({
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
       })}
       {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} />)}
+      <DeathLayer snapRef={snapRef} />
+      <FloatLayer snapRef={snapRef} />
       <HpLayer ids={visible.entities} snapRef={snapRef} />
       <Shots snapRef={snapRef} follow={follow} />
       <FxLayer snapRef={snapRef} follow={follow} />
@@ -248,26 +251,25 @@ function Shots({
 }
 
 function Shot({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
-  const mesh = useRef<import("three").Mesh>(null);
+  const sprite = useRef<import("three").Sprite>(null);
   useFrame((state) => {
     const shot = snapRef.current?.projectiles.find((item) => item.id === id);
     const placed = motionAt(id, state.clock.elapsedTime);
-    if (!mesh.current) return;
+    if (!sprite.current) return;
     if (!shot || !placed) {
-      mesh.current.visible = false;
+      sprite.current.visible = false;
       return;
     }
-    mesh.current.visible = true;
-    mesh.current.position.set(placed.x, 0.5, placed.y);
-    mesh.current.scale.setScalar(1.35);
-    const mat = mesh.current.material as import("three").MeshBasicMaterial;
-    if (mat.color) mat.color.set(shot.color);
+    sprite.current.visible = true;
+    sprite.current.position.set(placed.x, 0.55, placed.y);
+    sprite.current.scale.set(0.42, 0.42, 1);
+    const mat = sprite.current.material as import("three").SpriteMaterial;
+    mat.color.set(shot.color);
   });
   return (
-    <mesh ref={mesh}>
-      <sphereGeometry args={[0.14, 8, 6]} />
-      <meshBasicMaterial color="#f4efe4" />
-    </mesh>
+    <sprite ref={sprite} center={[0.5, 0.5]} renderOrder={12}>
+      <spriteMaterial map={shotTexture()} transparent alphaTest={0.4} depthWrite={false} />
+    </sprite>
   );
 }
 

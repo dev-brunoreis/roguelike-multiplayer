@@ -1,49 +1,175 @@
 import { CanvasTexture, ClampToEdgeWrapping, NearestFilter, RepeatWrapping, SRGBColorSpace, Texture } from "three";
 
-export const SHEET_FRAMES = 8;
-const SIZE = 24;
+export type ClipName = "idle" | "run" | "attack" | "hit";
 
-type Draw = (ctx: CanvasRenderingContext2D, frame: number, pal: Palette) => void;
-
-interface Palette {
-  ink: string;
-  fill: string;
-  dark: string;
-  light: string;
-  skin: string;
-  metal: string;
-  white: string;
+export interface ActorSheet {
+  texture: Texture;
+  frames: number;
+  aspect: number;
+  clips: Record<ClipName, [number, number]>;
 }
 
-const cache = new Map<string, Texture>();
+type Rect = [number, number, number, number];
+type Fx = "slash" | "flame" | "none";
 
-function mix(hex: string, other: string, t: number) {
-  const a = parse(hex);
-  const b = parse(other);
-  const n = (i: number) => Math.round(a[i]! + (b[i]! - a[i]!) * t);
-  return `#${[n(0), n(1), n(2)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+interface PackActor {
+  idle: string[];
+  run: string[];
+  hit: string[];
+  fx: Fx;
 }
 
-function parse(hex: string): [number, number, number] {
-  const raw = hex.replace("#", "");
-  const full = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
-  return [
-    Number.parseInt(full.slice(0, 2), 16),
-    Number.parseInt(full.slice(2, 4), 16),
-    Number.parseInt(full.slice(4, 6), 16),
-  ];
+const loading = new Map<string, Promise<ActorSheet>>();
+let indexPromise: Promise<Map<string, Rect>> | null = null;
+let imagePromise: Promise<HTMLImageElement> | null = null;
+
+function quad(prefix: string, kind: "idle" | "run") {
+  return [0, 1, 2, 3].map((frame) => `${prefix}_${kind}_anim_f${frame}`);
 }
 
-function palette(fill: string): Palette {
+function loop(prefix: string) {
+  return [0, 1, 2, 3].map((frame) => `${prefix}_anim_f${frame}`);
+}
+
+function hero(prefix: string, fx: Fx): PackActor {
   return {
-    ink: "#1b1410",
-    fill,
-    dark: mix(fill, "#000000", 0.38),
-    light: mix(fill, "#fff4e0", 0.42),
-    skin: "#e8b894",
-    metal: "#d5c7a1",
-    white: "#f4efe4",
+    idle: quad(prefix, "idle"),
+    run: quad(prefix, "run"),
+    hit: [`${prefix}_hit_anim_f0`],
+    fx,
   };
+}
+
+function creep(prefix: string, pattern: "split" | "loop", fx: Fx): PackActor {
+  if (pattern === "loop") {
+    const idle = loop(prefix);
+    return { idle, run: idle, hit: [idle[0]!], fx };
+  }
+  const idle = quad(prefix, "idle");
+  return { idle, run: quad(prefix, "run"), hit: [idle[0]!], fx };
+}
+
+const PACK: Record<string, PackActor> = {
+  guerreiro: hero("knight_m", "slash"),
+  mago: hero("wizzard_m", "slash"),
+  arqueiro: hero("elf_f", "slash"),
+  piromante: hero("wizzard_f", "flame"),
+  lanceiro: hero("dwarf_m", "slash"),
+  slime: creep("tiny_slug", "loop", "none"),
+  bruto: creep("big_zombie", "split", "slash"),
+  corredor: creep("goblin", "split", "slash"),
+  atirador: creep("imp", "split", "none"),
+  guarda: creep("orc_warrior", "split", "slash"),
+  boss_golem: creep("ogre", "split", "slash"),
+  boss_matriarca: creep("big_demon", "split", "slash"),
+};
+
+function atlasIndex() {
+  indexPromise ??= fetch("/sprites/0x72/tile_list_v1.7")
+    .then((res) => {
+      if (!res.ok) throw new Error("tile list");
+      return res.text();
+    })
+    .then((text) => {
+      const map = new Map<string, Rect>();
+      for (const line of text.split("\n")) {
+        const [name, x, y, w, h] = line.trim().split(/\s+/);
+        if (!name || h == null) continue;
+        map.set(name, [Number(x), Number(y), Number(w), Number(h)]);
+      }
+      return map;
+    });
+  return indexPromise;
+}
+
+function atlasImage() {
+  imagePromise ??= new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("sprite sheet"));
+    image.src = "/sprites/0x72/sheet.png";
+  });
+  return imagePromise;
+}
+
+function finish(canvas: HTMLCanvasElement, frames: number, clips: ActorSheet["clips"]): ActorSheet {
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = ClampToEdgeWrapping;
+  texture.repeat.set(1 / frames, 1);
+  texture.needsUpdate = true;
+  return {
+    texture,
+    frames,
+    aspect: canvas.height === 0 ? 1 : (canvas.width / frames) / canvas.height,
+    clips,
+  };
+}
+
+function paintSlash(ctx: CanvasRenderingContext2D, destX: number, cellW: number, cellH: number, step: number) {
+  const x = destX + Math.floor(cellW * 0.46) + step * 2;
+  const y = Math.floor(cellH * 0.38) + (step > 1 ? 2 : 0);
+  ctx.fillStyle = step === 3 ? "#fff6d8" : "#f7f1e4";
+  ctx.fillRect(x, y, 2 + step, 1);
+  ctx.fillStyle = "#e6d7a4";
+  ctx.fillRect(x, y + 1, 1 + step, 1);
+}
+
+function paintFlame(ctx: CanvasRenderingContext2D, destX: number, cellW: number, cellH: number, step: number, big: boolean) {
+  const x = destX + Math.floor(cellW * 0.58);
+  const y = Math.floor(cellH * 0.34) - (step % 2);
+  const h = (big ? 6 : 3) + (step % 2);
+  ctx.fillStyle = "#c4481a";
+  ctx.fillRect(x, y, big ? 3 : 2, h);
+  ctx.fillStyle = "#f0a202";
+  ctx.fillRect(x, y, big ? 3 : 2, Math.max(2, h - 2));
+  ctx.fillStyle = "#fff0c2";
+  ctx.fillRect(x, y, 1, 2);
+}
+
+async function sheetFromPack(spec: PackActor): Promise<ActorSheet> {
+  const index = await atlasIndex();
+  const image = await atlasImage();
+  const attack = [...spec.run.slice(0, 3), spec.hit[0] ?? spec.run[0]!];
+  const order: { name: string; fx: Fx | "body" }[] = [
+    ...spec.idle.map((name) => ({ name, fx: spec.fx === "flame" ? "flame" as const : "body" as const })),
+    ...spec.run.map((name) => ({ name, fx: spec.fx === "flame" ? "flame" as const : "body" as const })),
+    ...attack.map((name) => ({ name, fx: spec.fx === "none" ? "body" as const : spec.fx })),
+    ...spec.hit.map((name) => ({ name, fx: "body" as const })),
+  ];
+  const rects = order.map((item) => index.get(item.name) ?? [0, 0, 16, 16] as Rect);
+  const maxW = Math.max(...rects.map((rect) => rect[2]));
+  const maxH = Math.max(...rects.map((rect) => rect[3]));
+  const pad = 6;
+  const cellW = maxW + pad * 2;
+  const cellH = maxH;
+  const canvas = document.createElement("canvas");
+  canvas.width = cellW * order.length;
+  canvas.height = cellH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas");
+  ctx.imageSmoothingEnabled = false;
+  order.forEach((item, frame) => {
+    const rect = rects[frame]!;
+    const destX = frame * cellW;
+    const dx = destX + pad + Math.floor((maxW - rect[2]) / 2);
+    const dy = cellH - rect[3];
+    ctx.drawImage(image, rect[0], rect[1], rect[2], rect[3], dx, dy, rect[2], rect[3]);
+    if (item.fx === "slash") paintSlash(ctx, destX, cellW, cellH, frame % 4);
+    if (item.fx === "flame") paintFlame(ctx, destX, cellW, cellH, frame, frame >= spec.idle.length + spec.run.length);
+  });
+  const idleCount = spec.idle.length;
+  const runCount = spec.run.length;
+  return finish(canvas, order.length, {
+    idle: [0, idleCount],
+    run: [idleCount, runCount],
+    attack: [idleCount + runCount, attack.length],
+    hit: [idleCount + runCount + attack.length, spec.hit.length],
+  });
 }
 
 function px(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, w = 1, h = 1) {
@@ -51,311 +177,161 @@ function px(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, 
   ctx.fillRect(x, y, w, h);
 }
 
-function bob(frame: number) {
-  if (frame >= 6) return 0;
-  if (frame < 2) return frame;
-  return frame === 3 || frame === 5 ? 1 : 0;
+function drawBat(ctx: CanvasRenderingContext2D, ox: number, oy: number, frame: number, attack: boolean) {
+  const flap = [0, 1, 2, 1][frame % 4] ?? 0;
+  const lift = flap === 0 ? -2 : flap === 2 ? 2 : 0;
+  const bite = attack ? 2 : 0;
+  const ink = "#140e18";
+  const wing = "#3a2754";
+  const body = "#6b4c8a";
+  const light = "#cbb6e6";
+  px(ctx, ox + 1, oy + 7 + lift, ink, 5, 3);
+  px(ctx, ox + 10, oy + 7 + lift, ink, 5, 3);
+  px(ctx, ox + 2, oy + 8 + lift, wing, 4, 2);
+  px(ctx, ox + 10, oy + 8 + lift, wing, 4, 2);
+  px(ctx, ox + 5, oy + 6, ink, 6, 6);
+  px(ctx, ox + 6, oy + 7, body, 4 + bite, 4);
+  px(ctx, ox + 6, oy + 7, light, 3, 1);
+  px(ctx, ox + 6, oy + 8, "#f4efe4", 1, 1);
+  px(ctx, ox + 9, oy + 8, "#f4efe4", 1, 1);
+  px(ctx, ox + 6, oy + 9, "#1b1410", 1, 1);
+  px(ctx, ox + 9, oy + 9, "#1b1410", 1, 1);
+  if (attack) px(ctx, ox + 11, oy + 9, "#e7d7a4", 3, 1);
 }
 
-function stride(frame: number) {
-  if (frame >= 6 || frame < 2) return 0;
-  return frame === 3 || frame === 4 ? 1 : 0;
+function drawSpider(ctx: CanvasRenderingContext2D, ox: number, oy: number, frame: number, attack: boolean) {
+  const step = frame % 2;
+  const ink = "#14210f";
+  const body = "#3d6b3a";
+  const light = "#7dce6a";
+  px(ctx, ox + 1, oy + 6 + step, ink, 4, 1);
+  px(ctx, ox + 11, oy + 6 + (1 - step), ink, 4, 1);
+  px(ctx, ox + 2, oy + 10 + (1 - step), ink, 3, 1);
+  px(ctx, ox + 11, oy + 10 + step, ink, 3, 1);
+  px(ctx, ox + 1, oy + 13, ink, 3, 1);
+  px(ctx, ox + 12, oy + 13, ink, 3, 1);
+  px(ctx, ox + 5, oy + 6, ink, 6, 7);
+  px(ctx, ox + 6, oy + 7, body, 4, 5);
+  px(ctx, ox + 6, oy + 7, light, 3, 2);
+  px(ctx, ox + 6, oy + 9, "#f4efe4", 1, 1);
+  px(ctx, ox + 9, oy + 9, "#f4efe4", 1, 1);
+  if (attack) px(ctx, ox + 11, oy + 8, "#e7d7a4", 4, 1);
 }
 
-function reach(frame: number) {
-  return frame >= 6 ? (frame === 7 ? 3 : 2) : 0;
-}
-
-function humanoid(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 3 - bob(frame);
-  const step = stride(frame);
-  px(ctx, 8, 17 + y, pal.dark, 3, 5 - step);
-  px(ctx, 13, 17 + y + step, pal.dark, 3, 5 - step);
-  px(ctx, 7, 10 + y, pal.fill, 10, 8);
-  px(ctx, 7, 10 + y, pal.light, 10, 3);
-  px(ctx, 8, 4 + y, pal.skin, 8, 7);
-  px(ctx, 8, 4 + y, pal.ink, 8, 2);
-  px(ctx, 10, 7 + y, pal.ink);
-  px(ctx, 13, 7 + y, pal.ink);
-  px(ctx, 5, 12 + y + (frame >= 2 ? step : 0), pal.skin, 2, 4);
-  if (reach(frame)) px(ctx, 16, 11 + y, pal.skin, 3, 2);
-}
-
-function guerreiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  humanoid(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  if (frame === 6) {
-    px(ctx, 11, 0, pal.metal, 2, 12);
-    px(ctx, 9, 0, pal.light, 6, 3);
-    px(ctx, 8, 9 + y, pal.metal, 8, 2);
-    return;
+function oval(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string) {
+  for (let y = -ry; y <= ry; y += 1) {
+    const span = Math.round(rx * Math.sqrt(Math.max(0, 1 - (y * y) / (ry * ry))));
+    px(ctx, cx - span, cy + y, color, span * 2 + 1, 1);
   }
-  if (frame === 7) {
-    px(ctx, 14, 8 + y, pal.metal, 10, 2);
-    px(ctx, 22, 6 + y, pal.light, 2, 6);
-    px(ctx, 20, 7 + y, pal.white, 4, 4);
-    px(ctx, 8, 9 + y, pal.metal, 8, 2);
-    return;
-  }
-  px(ctx, 16 + reach(frame), 6 + y, pal.metal, 2, 12);
-  px(ctx, 15 + reach(frame), 5 + y, pal.light, 4, 3);
-  px(ctx, 8, 9 + y, pal.metal, 8, 2);
 }
 
-function mago(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  humanoid(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  px(ctx, 7, 2 + y, pal.fill, 10, 4);
-  px(ctx, 10, 0 + y, pal.fill, 4, 3);
-  px(ctx, 10, 0 + y, pal.light, 4, 1);
-  if (frame === 6) {
-    px(ctx, 11, 0, pal.metal, 2, 14);
-    px(ctx, 9, 0, pal.white, 6, 3);
-    px(ctx, 10, 0, "#9ad8ff", 4, 2);
-    px(ctx, 8, 1, "#c8eeff", 8, 1);
-    return;
-  }
-  if (frame === 7) {
-    px(ctx, 16, 10 + y, pal.metal, 8, 2);
-    px(ctx, 22, 8 + y, pal.white, 3, 6);
-    px(ctx, 21, 9 + y, "#9ad8ff", 5, 3);
-    px(ctx, 23, 10 + y, "#e8f6ff", 3, 2);
-    return;
-  }
-  px(ctx, 17, 8 + y, pal.metal, 2, 13);
-  px(ctx, 16, 7 + y, pal.white, 4, 2);
-}
-
-function arqueiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  humanoid(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  px(ctx, 17, 8 + y, pal.ink, 1, 10);
-  px(ctx, 16, 8 + y, pal.metal, 1, 2);
-  px(ctx, 16, 16 + y, pal.metal, 1, 2);
-  if (frame === 6) {
-    px(ctx, 14, 11 + y, pal.metal, 8, 1);
-    px(ctx, 13, 10 + y, pal.white, 2, 3);
-    return;
-  }
-  if (frame === 7) {
-    px(ctx, 19, 11 + y, pal.metal, 5, 1);
-    px(ctx, 22, 10 + y, pal.white, 2, 3);
-    return;
-  }
-  px(ctx, 18, 11 + y, pal.metal, 4, 1);
-}
-
-function piromante(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  humanoid(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  const flare = frame % 2;
-  px(ctx, 8, 1 + y, "#f0a202", 8, 4);
-  px(ctx, 10, 0 + y - flare, "#ffcf70", 4, 3);
-  if (frame === 6) {
-    px(ctx, 16, 4 + y, "#f0a202", 4, 5);
-    px(ctx, 17, 2 + y, "#ffcf70", 3, 3);
-    return;
-  }
-  if (frame === 7) {
-    px(ctx, 18, 10 + y, "#f0a202", 6, 4);
-    px(ctx, 21, 9 + y, "#ffcf70", 3, 3);
-    return;
-  }
-  px(ctx, 16, 12 + y, "#f0a202", 3, 3 + flare);
-}
-
-function slime(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const squash = frame === 1 || frame === 4 ? 1 : 0;
-  const y = 8 + squash;
-  px(ctx, 5, y + 2, pal.ink, 14, 12 - squash);
-  px(ctx, 6, y + 3, pal.fill, 12, 10 - squash);
-  px(ctx, 7, y + 4, pal.light, 10, 3);
-  px(ctx, 8, y + 6, pal.ink, 2, 2);
-  px(ctx, 14, y + 6, pal.ink, 2, 2);
-  px(ctx, 10, y + 9, pal.dark, 4, 2);
-}
-
-function bruto(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 2 - bob(frame);
-  const step = stride(frame);
-  px(ctx, 5, 16 + y, pal.dark, 5, 6 - step);
-  px(ctx, 14, 16 + y + step, pal.dark, 5, 6 - step);
-  px(ctx, 4, 8 + y, pal.fill, 16, 10);
-  px(ctx, 4, 8 + y, pal.light, 16, 3);
-  px(ctx, 7, 3 + y, pal.skin, 10, 7);
-  px(ctx, 7, 3 + y, pal.ink, 10, 2);
-  px(ctx, 9, 6 + y, pal.ink, 2, 2);
-  px(ctx, 14, 6 + y, pal.ink, 2, 2);
-}
-
-function corredor(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 5 - bob(frame);
-  const lean = frame >= 2 ? 2 : 0;
-  px(ctx, 8 + lean, 16 + y, pal.dark, 2, 6);
-  px(ctx, 13 + lean, 16 + y - (frame % 2), pal.dark, 2, 6);
-  px(ctx, 8 + lean, 9 + y, pal.fill, 8, 8);
-  px(ctx, 9 + lean, 4 + y, pal.skin, 6, 6);
-  px(ctx, 10 + lean, 6 + y, pal.ink);
-  px(ctx, 13 + lean, 6 + y, pal.ink);
-}
-
-function golem(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 1 - (frame % 2);
-  px(ctx, 3, 6 + y, pal.dark, 18, 16);
-  px(ctx, 4, 7 + y, pal.fill, 16, 14);
-  px(ctx, 6, 8 + y, pal.light, 6, 4);
-  px(ctx, 8, 10 + y, pal.ink, 2, 2);
-  px(ctx, 14, 10 + y, pal.ink, 2, 2);
-  px(ctx, 9, 14 + y, pal.ink, 6, 2);
-}
-
-function olho(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const blink = frame === 1;
-  px(ctx, 4, 6, pal.ink, 16, 14);
-  px(ctx, 5, 7, pal.fill, 14, 12);
-  px(ctx, 6, 8, pal.white, 12, 10);
+function drawEye(ctx: CanvasRenderingContext2D, ox: number, oy: number, frame: number, attack: boolean) {
+  const blink = !attack && frame % 4 === 3;
+  const look = attack ? 3 : (frame % 4) - 1;
+  oval(ctx, ox + 16, oy + 16, 14, 12, "#1b1410");
+  oval(ctx, ox + 16, oy + 16, 13, 11, "#f4efe4");
+  oval(ctx, ox + 16, oy + 15, 8, 4, "#f7f1e4");
   if (blink) {
-    px(ctx, 6, 12, pal.ink, 12, 2);
-  } else {
-    px(ctx, 9, 10, pal.ink, 6, 6);
-    px(ctx, 11, 12, pal.white, 2, 2);
-  }
-}
-
-function lanceiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  humanoid(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  px(ctx, 8, 9 + y, pal.dark, 8, 2);
-  if (frame === 6) {
-    px(ctx, 12, 2, pal.metal, 2, 16);
-    px(ctx, 11, 2, pal.light, 4, 3);
+    px(ctx, ox + 4, oy + 15, "#1b1410", 24, 3);
     return;
   }
-  if (frame === 7) {
-    px(ctx, 16, 10 + y, pal.metal, 8, 2);
-    px(ctx, 22, 9 + y, pal.light, 2, 4);
-    return;
-  }
-  px(ctx, 16, 4 + y, pal.metal, 2, 16);
-  px(ctx, 15, 4 + y, pal.light, 4, 2);
+  oval(ctx, ox + 16 + look, oy + 16, 6, 6, "#c9a227");
+  oval(ctx, ox + 16 + look, oy + 16, 3, 3, "#1b1410");
+  px(ctx, ox + 15 + look, oy + 14, "#fff6d8", 2, 2);
+  if (attack) oval(ctx, ox + 16 + look, oy + 16, 2, 2, "#ffcf70");
 }
 
-function morcego(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const flap = frame % 2 === 0 ? 0 : 2;
-  const y = 6 - bob(frame);
-  px(ctx, 2, 8 + y + flap, pal.dark, 6, 3);
-  px(ctx, 16, 8 + y + flap, pal.dark, 6, 3);
-  px(ctx, 8, 8 + y, pal.fill, 8, 6);
-  px(ctx, 9, 9 + y, pal.light, 6, 2);
-  px(ctx, 10, 10 + y, pal.ink);
-  px(ctx, 13, 10 + y, pal.ink);
-}
-
-function guarda(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 3 - bob(frame);
-  px(ctx, 8, 16 + y, pal.dark, 3, 5);
-  px(ctx, 13, 16 + y, pal.dark, 3, 5);
-  px(ctx, 7, 9 + y, pal.fill, 10, 8);
-  px(ctx, 8, 4 + y, pal.skin, 8, 6);
-  px(ctx, 10, 6 + y, pal.ink);
-  px(ctx, 13, 6 + y, pal.ink);
-  px(ctx, 2, 8 + y, pal.metal, 5, 8);
-  px(ctx, 3, 9 + y, pal.light, 3, 3);
-  if (frame >= 6) px(ctx, 17, 10 + y, pal.metal, 5, 2);
-}
-
-function aranha(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 8 - (frame % 2);
-  px(ctx, 3, 12 + y, pal.dark, 4, 1);
-  px(ctx, 17, 12 + y, pal.dark, 4, 1);
-  px(ctx, 4, 16 + y, pal.dark, 3, 1);
-  px(ctx, 17, 16 + y, pal.dark, 3, 1);
-  px(ctx, 7, 8 + y, pal.ink, 10, 8);
-  px(ctx, 8, 9 + y, pal.fill, 8, 6);
-  px(ctx, 9, 10 + y, pal.ink);
-  px(ctx, 14, 10 + y, pal.ink);
-  if (frame >= 6) px(ctx, 16, 10 + y, pal.light, 4, 2);
-}
-
-function matriarca(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  const y = 4 - (frame % 2);
-  px(ctx, 2, 14 + y, pal.dark, 6, 2);
-  px(ctx, 16, 14 + y, pal.dark, 6, 2);
-  px(ctx, 4, 18 + y, pal.dark, 4, 2);
-  px(ctx, 16, 18 + y, pal.dark, 4, 2);
-  px(ctx, 5, 6 + y, pal.ink, 14, 12);
-  px(ctx, 6, 7 + y, pal.fill, 12, 10);
-  px(ctx, 7, 8 + y, pal.light, 6, 3);
-  px(ctx, 8, 10 + y, pal.ink, 2, 2);
-  px(ctx, 14, 10 + y, pal.ink, 2, 2);
-}
-
-function atirador(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
-  arqueiro(ctx, frame, pal);
-  const y = 3 - bob(frame);
-  if (frame >= 6) px(ctx, 19, 11 + y, pal.metal, 3, 1);
-}
-
-const DRAWS: Record<string, Draw> = {
-  guerreiro,
-  mago,
-  arqueiro,
-  piromante,
-  lanceiro,
-  slime,
-  bruto,
-  corredor,
-  atirador,
-  morcego,
-  guarda,
-  aranha,
-  boss_golem: golem,
-  boss_olho: olho,
-  boss_matriarca: matriarca,
-};
-
-function paint(id: string, color: string) {
+function sheetDrawn(
+  cellW: number,
+  cellH: number,
+  draw: (ctx: CanvasRenderingContext2D, ox: number, oy: number, frame: number, attack: boolean) => void,
+): ActorSheet {
+  const clips: ActorSheet["clips"] = { idle: [0, 4], run: [4, 4], attack: [8, 4], hit: [12, 2] };
+  const frames = 14;
   const canvas = document.createElement("canvas");
-  canvas.width = SIZE * SHEET_FRAMES;
-  canvas.height = SIZE;
+  canvas.width = cellW * frames;
+  canvas.height = cellH;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas");
   ctx.imageSmoothingEnabled = false;
-  const pal = palette(color);
-  const draw = DRAWS[id] ?? slime;
-  for (let frame = 0; frame < SHEET_FRAMES; frame += 1) {
-    ctx.save();
-    ctx.translate(frame * SIZE, 0);
-    draw(ctx, frame, pal);
-    ctx.restore();
+  for (let frame = 0; frame < frames; frame += 1) {
+    const attack = frame >= 8 && frame < 12;
+    const local = frame >= 12 ? 0 : frame % 4;
+    draw(ctx, frame * cellW, 0, attack ? frame - 8 : local, attack);
+    if (frame >= 12) {
+      ctx.fillStyle = "rgba(255,246,216,0.45)";
+      ctx.fillRect(frame * cellW, 0, cellW, cellH);
+    }
   }
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.magFilter = NearestFilter;
-  texture.minFilter = NearestFilter;
-  texture.wrapS = RepeatWrapping;
-  texture.wrapT = ClampToEdgeWrapping;
-  texture.repeat.set(1 / SHEET_FRAMES, 1);
-  texture.needsUpdate = true;
-  return texture;
+  return finish(canvas, frames, clips);
 }
 
-export function spriteSheet(view: string, color: string) {
-  const key = `${view}:${color}`;
-  const hit = cache.get(key);
-  if (hit) return hit;
-  const texture = paint(view, color);
-  cache.set(key, texture);
-  return texture;
+const DRAWN: Record<string, () => ActorSheet> = {
+  morcego: () => sheetDrawn(16, 16, drawBat),
+  aranha: () => sheetDrawn(16, 16, drawSpider),
+  boss_olho: () => sheetDrawn(32, 32, drawEye),
+};
+
+async function buildActor(view: string): Promise<ActorSheet> {
+  const drawn = DRAWN[view];
+  if (drawn) return drawn();
+  return sheetFromPack(PACK[view] ?? PACK.slime!);
 }
 
-export function cloneSheet(view: string, color: string) {
-  const sheet = spriteSheet(view, color).clone();
-  sheet.repeat.set(1 / SHEET_FRAMES, 1);
-  sheet.offset.set(0, 0);
-  return sheet;
+export function loadActor(view: string): Promise<ActorSheet> {
+  const pending = loading.get(view) ?? buildActor(view);
+  loading.set(view, pending);
+  return pending.then((master) => {
+    const texture = master.texture.clone();
+    texture.magFilter = NearestFilter;
+    texture.minFilter = NearestFilter;
+    texture.generateMipmaps = false;
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = ClampToEdgeWrapping;
+    texture.colorSpace = SRGBColorSpace;
+    texture.repeat.set(1 / master.frames, 1);
+    texture.offset.set(0, 0);
+    texture.needsUpdate = true;
+    return { ...master, texture };
+  });
 }
 
-export function setSpriteFrame(texture: Texture, frame: number) {
-  texture.offset.x = (frame % SHEET_FRAMES) / SHEET_FRAMES;
+export function setSpriteFrame(texture: Texture, frame: number, frames: number, flip: number) {
+  const span = 1 / frames;
+  const index = ((frame % frames) + frames) % frames;
+  if (flip < 0) {
+    texture.repeat.x = -span;
+    texture.offset.x = (index + 1) * span;
+    return;
+  }
+  texture.repeat.x = span;
+  texture.offset.x = index * span;
+}
+
+let orbTexture: Texture | null = null;
+
+export function shotTexture() {
+  if (orbTexture) return orbTexture;
+  const canvas = document.createElement("canvas");
+  canvas.width = 8;
+  canvas.height = 8;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas");
+  const rows = ["..wwww..", ".wyyyww.", "wyyyyyyw", "wyyyyyyw", "wyyyyyyw", "wyyyyyyw", ".wyyyww.", "..wwww.."];
+  const color: Record<string, string> = { w: "#2a241c", y: "#fff6d8" };
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x += 1) {
+      const pixel = color[row[x] ?? ""];
+      if (!pixel) continue;
+      ctx.fillStyle = pixel;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  });
+  orbTexture = new CanvasTexture(canvas);
+  orbTexture.colorSpace = SRGBColorSpace;
+  orbTexture.magFilter = NearestFilter;
+  orbTexture.minFilter = NearestFilter;
+  orbTexture.generateMipmaps = false;
+  orbTexture.needsUpdate = true;
+  return orbTexture;
 }

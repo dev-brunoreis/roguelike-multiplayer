@@ -107,10 +107,33 @@ input[type="text"], input[type="password"], input[type="number"] {
   text-align: right; pointer-events: none;
 }
 .log p { margin: 0 0 2px; }
-.nametag { color: #f3ecdf; font-size: 12px; text-shadow: 0 1px 2px #000; white-space: nowrap; }
-.dmg { color: #f4efe4; font-weight: 700; animation: floatup 0.7s ease-out forwards; text-shadow: 0 1px 2px #000; }
-.dmg.crit { color: #ffcf70; font-size: 18px; }
-@keyframes floatup { to { transform: translateY(-16px); opacity: 0; } }
+.nametag {
+  display: block; color: #f3ecdf; font-size: 12px; line-height: 1;
+  text-shadow: 0 1px 2px #000; white-space: nowrap;
+  transform: translateY(-55%);
+}
+.nametag.mine { font-weight: 800; }
+.nametag.creep { font-size: 8px; font-weight: 500; color: #c9bfb2; }
+.float-anchor { pointer-events: none !important; }
+.dmg {
+  display: block; text-align: center; line-height: 1;
+  color: #f4efe4; font-weight: 800; font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  animation: floatup 0.8s ease-out forwards;
+  text-shadow: 0 1px 0 #1a1410, 0 2px 2px #000;
+  pointer-events: none;
+}
+.dmg.dealt { color: #f7f1e4; }
+.dmg.taken { color: #ff5d4a; }
+.dmg.other { color: #d9cbb8; }
+.dmg.crit { font-size: 20px; }
+.dmg.dealt.crit { color: #ffcf70; }
+.dmg.taken.crit { color: #ff2d2d; }
+.dmg .tag {
+  display: block; margin-top: 1px;
+  font-size: 10px; font-weight: 750; letter-spacing: 0.06em;
+}
+@keyframes floatup { to { transform: translateY(-22px); opacity: 0; } }
 
 .overlay {
   position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%);
