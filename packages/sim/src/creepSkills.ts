@@ -3,7 +3,7 @@ import { dealDamage } from "./damage.js";
 import { getCreepSkill, registerCreepSkill } from "./registry.js";
 import { spawnCreep } from "./spawn.js";
 import type { Entity, Match } from "./types.js";
-import { creepById, dist, emitFx, floatText, roundScale } from "./world.js";
+import { creepById, dist, emitFx, floatText, roundScale, skillOf } from "./world.js";
 
 function heroesNear(match: Match, creep: Entity) {
   return match.entities.filter(
@@ -34,11 +34,12 @@ registerCreepSkill("charge", (match, creep, skill) => {
   if (!found || found.gap <= creep.attackRange || speed <= 0) return false;
   const dx = (found.hero.x - creep.x) / found.gap;
   const dy = (found.hero.y - creep.y) / found.gap;
-  creep.chargeVx = dx * speed;
-  creep.chargeVy = dy * speed;
-  creep.skillLeft = range / speed;
-  creep.skillStep = "charge";
-  creep.chargeHit = false;
+  const state = skillOf(match, creep.id);
+  state.vx = dx * speed;
+  state.vy = dy * speed;
+  state.left = range / speed;
+  state.step = "charge";
+  state.hit = false;
   creep.facing = Math.atan2(dy, dx);
   emitFx(match, {
     kind: "slash",
@@ -56,8 +57,9 @@ registerCreepSkill("burst", (match, creep, skill) => {
   const range = skill.range ?? 0;
   if (!nearestHero(match, creep, range)) return false;
   const windup = creep.attackWindup ?? 0;
-  creep.skillStep = "burst";
-  creep.skillLeft = windup;
+  const state = skillOf(match, creep.id);
+  state.step = "burst";
+  state.left = windup;
   creep.winding = windup;
   if (windup <= 0) popBurst(match, creep, skill);
   return true;
@@ -165,15 +167,16 @@ function popBurst(match: Match, creep: Entity, skill: CreepSkillDef) {
     });
   }
   creep.swing = (creep.swing ?? 0) + 1;
-  creep.skillStep = "";
+  skillOf(match, creep.id).step = "";
   creep.winding = 0;
 }
 
 function tickCharge(match: Match, creep: Entity, dt: number) {
-  creep.skillLeft = Math.max(0, (creep.skillLeft ?? 0) - dt);
-  creep.x += (creep.chargeVx ?? 0) * dt;
-  creep.y += (creep.chargeVy ?? 0) * dt;
-  if (!creep.chargeHit) {
+  const state = skillOf(match, creep.id);
+  state.left = Math.max(0, state.left - dt);
+  creep.x += state.vx * dt;
+  creep.y += state.vy * dt;
+  if (!state.hit) {
     const skill = creepById(match, creep.defId)?.skill;
     for (const hero of heroesNear(match, creep)) {
       if (dist(creep, hero) > creep.radius + hero.radius + 0.12) continue;
@@ -183,40 +186,43 @@ function tickCharge(match: Match, creep: Entity, dt: number) {
         amount: scaledDamage(match, skill?.damage ?? creep.damage),
         abilityId: creep.defId,
       });
-      creep.chargeHit = true;
+      state.hit = true;
       creep.swing = (creep.swing ?? 0) + 1;
       break;
     }
   }
-  if ((creep.skillLeft ?? 0) <= 0) creep.skillStep = "";
+  if (state.left <= 0) state.step = "";
 }
 
 function tickBurst(match: Match, creep: Entity, dt: number) {
-  creep.skillLeft = Math.max(0, (creep.skillLeft ?? 0) - dt);
-  creep.winding = creep.skillLeft;
-  if ((creep.skillLeft ?? 0) > 0) return;
+  const state = skillOf(match, creep.id);
+  state.left = Math.max(0, state.left - dt);
+  creep.winding = state.left;
+  if (state.left > 0) return;
   const skill = creepById(match, creep.defId)?.skill;
   if (skill) popBurst(match, creep, skill);
-  else creep.skillStep = "";
+  else state.step = "";
 }
 
 export function creepSkillBusy(match: Match, creep: Entity, dt: number) {
-  if (creep.skillStep === "charge") {
+  const state = skillOf(match, creep.id);
+  if (state.step === "charge") {
     tickCharge(match, creep, dt);
     return true;
   }
-  if (creep.skillStep === "burst") {
+  if (state.step === "burst") {
     tickBurst(match, creep, dt);
     return true;
   }
   const skill = creepById(match, creep.defId)?.skill;
   if (!skill) return false;
-  creep.skillTimer = Math.max(0, (creep.skillTimer ?? 0) - dt);
-  if ((creep.skillTimer ?? 0) > 0) return false;
+  state.timer = Math.max(0, state.timer - dt);
+  if (state.timer > 0) return false;
   const fn = getCreepSkill(skill.kind);
   if (!fn?.(match, creep, skill)) return false;
-  creep.skillTimer = skill.cooldown;
-  return creep.skillStep === "charge" || creep.skillStep === "burst";
+  state.timer = skill.cooldown;
+  const step = skillOf(match, creep.id).step;
+  return step === "charge" || step === "burst";
 }
 
 export function assertCreepSkills(creeps: { id: string; skill?: CreepSkillDef }[]) {

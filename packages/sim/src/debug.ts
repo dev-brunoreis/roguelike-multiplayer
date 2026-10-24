@@ -1,0 +1,106 @@
+import type { Match } from "./types.js";
+import { addLog, alivePlayers, heroEntity, playerById, pushBanner } from "./world.js";
+import { beginPve } from "./phases/pve.js";
+import { beginHub } from "./phases/hub.js";
+import { dropDuel, duelLive } from "./phases/duel.js";
+import { arenaQuiet, respawnHero, sendHome, sendToHub } from "./phases/move.js";
+
+export function setGodmode(match: Match, playerId: string, on?: boolean): boolean | null {
+  const player = playerById(match, playerId);
+  if (!player || player.isBot) return null;
+  player.godmode = on ?? !player.godmode;
+  return player.godmode;
+}
+
+export function setBotsGodmode(match: Match, on?: boolean): boolean | null {
+  const next = on ?? !match.botsGodmode;
+  match.botsGodmode = next;
+  for (const bot of match.players) {
+    if (bot.isBot) bot.godmode = next;
+  }
+  return next;
+}
+
+export function setDuels(match: Match, on?: boolean): boolean | null {
+  if (match.phase === "ended") return null;
+  match.duelsEnabled = on ?? !match.duelsEnabled;
+  if (!match.duelsEnabled) {
+    const { pending, fighting } = duelLive(match);
+    if (pending || fighting) {
+      dropDuel(match);
+      addLog(match, "Duelos desligados");
+      if (fighting) {
+        if (match.waveDone) match.round += 1;
+        beginPve(match);
+      } else {
+        pushBanner(match, { kind: "info", title: "Duelos desligados", detail: "A onda segue sem duelo", life: 3.2 });
+      }
+    }
+  }
+  return match.duelsEnabled;
+}
+
+export function jumpWave(match: Match, round: number): number | null {
+  if (match.phase === "ended" || !Number.isInteger(round) || round < 1 || round > 99) return null;
+  match.round = round;
+  beginPve(match);
+  pushBanner(match, { kind: "info", title: `Onda ${round}`, detail: "Começou agora", life: 3.2 });
+  return round;
+}
+
+export function skipDuel(match: Match) {
+  if (match.phase === "ended") return false;
+  const { pending, fighting } = duelLive(match);
+  if (!pending && !fighting) return false;
+  dropDuel(match);
+  addLog(match, "Duelo pulado");
+  pushBanner(match, { kind: "info", title: "Duelo pulado", detail: "Ninguém perde vida", life: 3.2 });
+  if (fighting) {
+    if (match.waveDone) match.round += 1;
+    beginPve(match);
+  }
+  return true;
+}
+
+export function revivePlayer(
+  match: Match,
+  playerId: string,
+  targetName?: string,
+): { status: "revived"; name: string } | { status: "alive" | "missing" } {
+  const named = targetName?.trim().toLowerCase();
+  const target = named
+    ? match.players.find((player) => player.name.toLowerCase() === named)
+    : playerById(match, playerId);
+  if (!target) return { status: "missing" };
+  const entity = heroEntity(match, target);
+  const down = target.eliminated || target.lives <= 0 || target.respawnIn > 0 || !entity?.alive;
+  if (!down) return { status: "alive" };
+  const ended = match.phase === "ended";
+  if (target.eliminated || target.lives <= 0) {
+    target.eliminated = false;
+    target.surrendered = false;
+    target.eliminatedAt = null;
+    target.lives = 1;
+    target.ready = false;
+    target.waveClear = false;
+  }
+  target.respawnIn = 0;
+  if (target.isBot && match.botsGodmode) target.godmode = true;
+  if (ended) {
+    match.winnerId = null;
+    match.phase = "hub";
+    beginHub(match);
+  } else if (match.phase === "hub") {
+    const fighters = alivePlayers(match);
+    const index = Math.max(0, fighters.findIndex((player) => player.id === target.id));
+    sendToHub(match, target, index, Math.max(1, fighters.length));
+  } else {
+    const inDuel = match.phase === "duel" && match.duel.some((pair) => pair.a === target.id || pair.b === target.id);
+    if (!inDuel) sendHome(match, target);
+    respawnHero(match, target);
+    if (match.phase === "pve") target.waveClear = arenaQuiet(match, target.arenaId);
+  }
+  addLog(match, `${target.name} reviveu`);
+  pushBanner(match, { kind: "info", title: `${target.name} reviveu`, life: 3.2 });
+  return { status: "revived", name: target.name };
+}

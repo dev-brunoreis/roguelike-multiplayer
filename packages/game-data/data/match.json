@@ -25,6 +25,11 @@
   "respawnSeconds": 2.5,
   "invulnSeconds": 1.2,
   "aimSlack": 0.45,
+  "armorConstant": 50,
+  "executeHpRatio": 0.35,
+  "splashRadius": 2.1,
+  "startCooldown": 0.35,
+  "grantCooldown": 0.2,
   "shadowColors": [
     "#1c1914",
     "#4ea1ff",

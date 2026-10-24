@@ -1,7 +1,7 @@
-import type { AbilityView, CardView, PlayerSnap, Snapshot } from "@game/shared";
-import { isFighter } from "./actions.js";
+import type { AbilityView, CardView, MatchMeta, PlayerSnap, Snapshot, WirePlayer, WireSnapshot } from "@game/shared";
+import { isFighter } from "./queries.js";
 import type { Entity, Match, PlayerState } from "./types.js";
-import { abilityById, cardById, heroEntity, xpToNext } from "./world.js";
+import { abilityById, cardById, heroEntity, playerById, xpToNext } from "./world.js";
 
 function cardView(match: Match, id: string): CardView | null {
   const card = cardById(match, id);
@@ -174,5 +174,192 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
 }
 
 function playerByName(match: Match, id?: string) {
-  return match.players.find((player) => player.id === id)?.name;
+  return playerById(match, id)?.name;
+}
+
+const q = (value: number) => Math.round(value * 100) / 100;
+
+export function interestArenaIds(match: Match, watchId: string) {
+  const ids = new Set<string>();
+  for (const arena of match.arenas) {
+    if (arena.kind === "hub" || arena.kind === "duel") ids.add(arena.id);
+  }
+  const player = playerById(match, watchId);
+  const hero = player ? heroEntity(match, player) : undefined;
+  if (hero?.arenaId) ids.add(hero.arenaId);
+  else if (player) ids.add(player.arenaId);
+  return ids;
+}
+
+export function buildMeta(match: Match, seq = 1): MatchMeta {
+  return {
+    seq,
+    dataVersion: match.data.version,
+    tickRate: match.config.tickRate,
+    arenas: match.arenas.map((arena) => ({
+      id: arena.id,
+      x: q(arena.x),
+      y: q(arena.y),
+      size: q(arena.size),
+      ownerId: arena.ownerId,
+      kind: arena.kind,
+      label: arena.label,
+    })),
+    creeps: match.data.creeps.map((creep) => ({ id: creep.id, nome: creep.nome })),
+    abilities: match.data.abilities.map((ability) => ({
+      id: ability.id,
+      nome: ability.nome,
+      descricao: ability.descricao,
+      color: ability.color,
+      max: ability.levels.length,
+    })),
+    cards: match.data.cards.map((card) => ({
+      id: card.id,
+      nome: card.nome,
+      descricao: card.descricao,
+      rarity: card.rarity,
+    })),
+    roster: match.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      heroId: player.heroId,
+      isBot: player.isBot,
+      color: player.shadowColor,
+    })),
+  };
+}
+
+function arenaIndex(match: Match) {
+  return new Map(match.arenas.map((arena, index) => [arena.id, index]));
+}
+
+function wirePlayer(match: Match, player: PlayerState, youId: string, arenas: Map<string, number>): WirePlayer {
+  const entity = heroEntity(match, player);
+  const mine = player.id === youId;
+  return {
+    id: player.id,
+    lives: player.lives,
+    level: player.level,
+    xp: q(player.xp),
+    xpNext: xpToNext(match, player.level),
+    hp: q(entity?.alive ? entity.hp : 0),
+    maxHp: q(entity?.maxHp ?? 1),
+    respawnIn: q(Math.max(0, player.respawnIn)),
+    eliminated: player.eliminated,
+    choosing: player.pendingCards.length > 0,
+    cardTimer: mine ? q(Math.max(0, player.cardTimer)) : 0,
+    pending: mine ? [...player.pendingCards] : [],
+    cards: [...player.cards],
+    abilities: player.abilities.map((slot) => ({
+      id: slot.abilityId,
+      level: slot.level,
+      cooldown: q(Math.max(0, slot.cooldown)),
+      cooldownMax: q(slot.cooldownMax),
+    })),
+    kills: player.kills,
+    deaths: player.deaths,
+    damageDealt: Math.round(player.damageDealt),
+    ready: player.ready,
+    pauseWant: player.pauseWant,
+    godmode: player.godmode,
+    bet: null,
+    inDuel: isFighter(match, player.id),
+    arena: arenas.get(entity?.arenaId ?? player.arenaId) ?? 0,
+    waveClear: player.waveClear,
+    placement: placementOf(match, player),
+  };
+}
+
+export function buildCommon(match: Match, watchId: string): WireSnapshot {
+  const seen = interestArenaIds(match, watchId);
+  const arenas = arenaIndex(match);
+  return {
+    tick: match.tick,
+    round: match.round,
+    phase: match.phase,
+    phaseTime: q(Math.max(0, match.phaseTime)),
+    winnerId: match.winnerId,
+    paused: match.paused,
+    youId: "",
+    log: match.log.slice(-8),
+    players: match.players.map((player) => wirePlayer(match, player, "", arenas)),
+    entities: match.entities.filter((entity) => entity.alive && seen.has(entity.arenaId)).map((entity) => ({
+      id: entity.id,
+      kind: entity.kind,
+      defId: entity.defId,
+      x: q(entity.x),
+      y: q(entity.y),
+      radius: q(entity.radius),
+      attackRange: q(attackReach(match, entity)),
+      hp: q(entity.hp),
+      maxHp: q(entity.maxHp),
+      color: entity.color,
+      shadowColor: entity.kind === "hero" ? playerById(match, entity.playerId)?.shadowColor : undefined,
+      arena: arenas.get(entity.arenaId) ?? 0,
+      flash: entity.flash,
+      swing: entity.swing ?? 0,
+      strike: entity.winding && entity.attackWindup
+        ? q(Math.min(1, Math.max(0, 1 - entity.winding / entity.attackWindup)))
+        : 0,
+      playerId: entity.playerId,
+      facing: q(entity.facing),
+    })),
+    projectiles: match.projectiles.filter((shot) => seen.has(shot.arenaId)).map((shot) => ({
+      id: shot.id,
+      x: q(shot.x),
+      y: q(shot.y),
+      vx: q(shot.vx),
+      vy: q(shot.vy),
+      arena: arenas.get(shot.arenaId) ?? 0,
+      abilityId: shot.abilityId,
+      color: shot.color,
+    })),
+    fx: match.fx.filter((item) => seen.has(item.arenaId)).map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      x: q(item.x),
+      y: q(item.y),
+      x2: item.x2 == null ? undefined : q(item.x2),
+      y2: item.y2 == null ? undefined : q(item.y2),
+      radius: q(item.radius),
+      color: item.color,
+      arena: arenas.get(item.arenaId) ?? 0,
+      t: q(Math.min(1, (match.time - item.born) / Math.max(0.05, item.life))),
+    })),
+    floats: match.floats.filter((item) => seen.has(item.arenaId)).slice(-40).map((item) => ({
+      id: item.id,
+      x: q(item.x),
+      y: q(item.y),
+      text: item.text,
+      crit: item.crit,
+      arena: arenas.get(item.arenaId) ?? 0,
+      sourcePlayerId: item.sourcePlayerId,
+      targetPlayerId: item.targetPlayerId,
+    })),
+    duel: match.duel.map((pair) => ({
+      a: pair.a,
+      b: pair.b,
+      arena: arenas.get(pair.arenaId) ?? 0,
+      resolved: pair.resolved,
+    })),
+    duelAnnounce: q(Math.max(0, match.duelAnnounce)),
+    announce: match.banner && match.banner.left > 0 ? { ...match.banner, left: q(match.banner.left) } : null,
+  };
+}
+
+export function withYou(common: WireSnapshot, match: Match, youId: string): WireSnapshot {
+  const arenas = arenaIndex(match);
+  const you = playerById(match, youId);
+  return {
+    ...common,
+    youId,
+    players: common.players.map((player) => {
+      if (player.id !== youId || !you) return player;
+      return wirePlayer(match, you, youId, arenas);
+    }),
+  };
+}
+
+export function buildWire(match: Match, youId: string, watchId = youId): WireSnapshot {
+  return withYou(buildCommon(match, watchId), match, youId);
 }

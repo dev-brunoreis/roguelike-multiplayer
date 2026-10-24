@@ -1,6 +1,6 @@
 import type { Match } from "./types.js";
 import { emit } from "./world.js";
-import { arenaById, creepById, roundScale } from "./world.js";
+import { arenaById, creepById, emptySkill, roundScale } from "./world.js";
 
 export function spawnCreep(match: Match, arenaId: string, creepId: string) {
   const def = creepById(match, creepId);
@@ -38,11 +38,11 @@ export function spawnCreep(match: Match, arenaId: string, creepId: string) {
     swing: 0,
     facing: 0,
     behavior: def.behavior,
-    skillTimer: def.skill ? def.skill.cooldown * 0.45 : 0,
-    skillLeft: 0,
-    skillStep: "",
-    chargeHit: false,
   });
+  const skill = emptySkill();
+  if (def.skill) skill.timer = def.skill.cooldown * 0.45;
+  match.skillState.set(match.entities[match.entities.length - 1]!.id, skill);
+  match.entitiesById.set(match.entities[match.entities.length - 1]!.id, match.entities[match.entities.length - 1]!);
 }
 
 export function flushDamage(match: Match) {

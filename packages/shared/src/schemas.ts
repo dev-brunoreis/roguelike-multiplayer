@@ -164,7 +164,42 @@ export const matchConfigSchema = z.object({
   respawnSeconds: z.number().nonnegative(),
   invulnSeconds: z.number().nonnegative(),
   aimSlack: z.number().nonnegative(),
+  armorConstant: z.number().positive().default(50),
+  executeHpRatio: z.number().min(0).max(1).default(0.35),
+  splashRadius: z.number().positive().default(2.1),
+  startCooldown: z.number().nonnegative().default(0.35),
+  grantCooldown: z.number().nonnegative().default(0.2),
   shadowColors: z.array(z.string()).min(1),
+});
+
+export const clientInputSchema = z.object({
+  x: z.number().finite(),
+  y: z.number().finite(),
+  aimX: z.number().finite().optional(),
+  aimY: z.number().finite().optional(),
+});
+
+export const pickSchema = z.object({
+  cardId: z.string().min(1),
+});
+
+export const shopActionSchema = z.object({
+  kind: z.enum(["buy", "upgrade", "reroll", "ready"]),
+  cardId: z.string().min(1).optional(),
+  abilityId: z.string().min(1).optional(),
+});
+
+export const betSchema = z.object({
+  targetId: z.string().min(1),
+  amount: z.number().finite(),
+});
+
+export const pauseSchema = z.object({
+  want: z.boolean(),
+});
+
+export const watchSchema = z.object({
+  playerId: z.string().min(1),
 });
 
 export const matchOptionsSchema = z.object({
@@ -186,3 +221,7 @@ export type BossDef = z.infer<typeof bossSchema>;
 export type SynergyDef = z.infer<typeof synergySchema>;
 export type MatchConfig = z.infer<typeof matchConfigSchema>;
 export type MatchOptions = z.infer<typeof matchOptionsSchema>;
+export type ClientInputMessage = z.infer<typeof clientInputSchema>;
+export type PickMessage = z.infer<typeof pickSchema>;
+export type PauseMessage = z.infer<typeof pauseSchema>;
+export type WatchMessage = z.infer<typeof watchSchema>;

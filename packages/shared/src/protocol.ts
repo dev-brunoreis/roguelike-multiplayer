@@ -11,22 +11,6 @@ export interface FloatEvent {
   targetPlayerId?: string;
 }
 
-export type PersistEvent =
-  | { type: "match_start"; round: number; seed: number; players: { id: string; name: string; heroId: string; isBot: boolean }[] }
-  | { type: "card_offer"; round: number; playerId: string; cards: string[] }
-  | { type: "card_pick"; round: number; playerId: string; cardId: string; auto: boolean }
-  | { type: "level"; round: number; playerId: string; level: number }
-  | { type: "death"; round: number; playerId: string; livesLeft: number }
-  | { type: "eliminate"; round: number; playerId: string; reason: string }
-  | { type: "wave_cleared"; round: number }
-  | { type: "wave_failed"; round: number }
-  | { type: "duel_result"; round: number; winnerId: string; loserId: string; timeout: boolean }
-  | { type: "bet"; round: number; playerId: string; targetId: string; amount: number }
-  | { type: "shop"; round: number; playerId: string; action: string; cardId?: string; abilityId?: string; cost: number }
-  | { type: "damage_summary"; round: number; playerId: string; byAbility: Record<string, number> }
-  | { type: "win"; round: number; playerId: string | null }
-  | { type: "synergy"; round: number; playerId: string; synergyId: string };
-
 export interface CardView {
   id: string;
   nome: string;
@@ -229,4 +213,159 @@ export interface LobbyState {
   heroes: LobbyHero[];
   config: LobbyConfig;
   error: string | null;
+}
+
+export interface MetaCreep {
+  id: string;
+  nome: string;
+}
+
+export interface MetaAbility {
+  id: string;
+  nome: string;
+  descricao: string;
+  color: string;
+  max: number;
+}
+
+export interface MetaCard {
+  id: string;
+  nome: string;
+  descricao: string;
+  rarity: string;
+}
+
+export interface MetaPlayer {
+  id: string;
+  name: string;
+  heroId: string;
+  isBot: boolean;
+  color: string;
+}
+
+export interface MatchMeta {
+  seq: number;
+  dataVersion: string;
+  tickRate: number;
+  arenas: ArenaSnap[];
+  creeps: MetaCreep[];
+  abilities: MetaAbility[];
+  cards: MetaCard[];
+  roster: MetaPlayer[];
+}
+
+export interface WireAbility {
+  id: string;
+  level: number;
+  cooldown: number;
+  cooldownMax: number;
+}
+
+export interface WirePlayer {
+  id: string;
+  lives: number;
+  level: number;
+  xp: number;
+  xpNext: number;
+  hp: number;
+  maxHp: number;
+  respawnIn: number;
+  eliminated: boolean;
+  choosing: boolean;
+  cardTimer: number;
+  pending: string[];
+  cards: string[];
+  abilities: WireAbility[];
+  kills: number;
+  deaths: number;
+  damageDealt: number;
+  ready: boolean;
+  pauseWant: boolean;
+  godmode: boolean;
+  bet: { targetId: string; amount: number } | null;
+  inDuel: boolean;
+  arena: number;
+  waveClear: boolean;
+  placement: number | null;
+}
+
+export interface WireEntity {
+  id: number;
+  kind: "hero" | "creep" | "boss";
+  defId: string;
+  x: number;
+  y: number;
+  radius: number;
+  attackRange: number;
+  hp: number;
+  maxHp: number;
+  color: string;
+  shadowColor?: string;
+  arena: number;
+  flash: number;
+  swing: number;
+  strike: number;
+  playerId?: string;
+  facing: number;
+}
+
+export interface WireProjectile {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  arena: number;
+  abilityId: string;
+  color: string;
+}
+
+export interface WireFx {
+  id: number;
+  kind: "ring" | "slash" | "cone" | "flash" | "bolt";
+  x: number;
+  y: number;
+  x2?: number;
+  y2?: number;
+  radius: number;
+  color: string;
+  arena: number;
+  t: number;
+}
+
+export interface WireFloat {
+  id: number;
+  x: number;
+  y: number;
+  text: string;
+  crit: boolean;
+  arena: number;
+  sourcePlayerId?: string;
+  targetPlayerId?: string;
+}
+
+export interface WireDuel {
+  a: string;
+  b: string;
+  arena: number;
+  resolved: boolean;
+}
+
+export interface WireSnapshot {
+  tick: number;
+  round: number;
+  phase: Phase;
+  phaseTime: number;
+  winnerId: string | null;
+  paused: boolean;
+  youId: string;
+  log: string[];
+  players: WirePlayer[];
+  entities: WireEntity[];
+  projectiles: WireProjectile[];
+  fx: WireFx[];
+  floats: WireFloat[];
+  duel: WireDuel[];
+  duelAnnounce: number;
+  announce: AnnounceSnap | null;
 }

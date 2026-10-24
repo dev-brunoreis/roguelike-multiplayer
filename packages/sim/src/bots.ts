@@ -23,7 +23,7 @@ registerBot("simple", (match, player) => {
 });
 
 function cardRarity(match: Match, id: string) {
-  return match.data.cards.find((card) => card.id === id)?.rarity ?? "";
+  return match.data.byId.cards.get(id)?.rarity ?? "";
 }
 
 function attackPlan(match: Match, player: PlayerState) {

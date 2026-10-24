@@ -1,6 +1,7 @@
 import { applyCard } from "./effects.js";
-import { eliminate, offerCards } from "./damage.js";
-import { checkWinner } from "./phases.js";
+import { eliminate } from "./elimination.js";
+import { offerCards } from "./progression.js";
+import { checkWinner } from "./victory.js";
 import type { Match } from "./types.js";
 import { clamp, emit, playerById } from "./world.js";
 
@@ -44,10 +45,6 @@ export function shopAct(
   if (action.kind === "ready") player.ready = true;
 }
 
-export function isFighter(match: Match, playerId: string) {
-  return match.duel.some((pair) => pair.a === playerId || pair.b === playerId);
-}
-
 export function placeBet(_match: Match, _playerId: string, _targetId: string, _amount: number) {
   return;
 }
@@ -69,22 +66,6 @@ export function setPauseWant(match: Match, playerId: string, want: boolean) {
   if (!player || player.isBot || player.eliminated || match.phase === "ended") return;
   player.pauseWant = want;
   syncPause(match);
-}
-
-export function setGodmode(match: Match, playerId: string, on?: boolean): boolean | null {
-  const player = playerById(match, playerId);
-  if (!player || player.isBot) return null;
-  player.godmode = on ?? !player.godmode;
-  return player.godmode;
-}
-
-export function setBotsGodmode(match: Match, on?: boolean): boolean | null {
-  const next = on ?? !match.botsGodmode;
-  match.botsGodmode = next;
-  for (const bot of match.players) {
-    if (bot.isBot) bot.godmode = next;
-  }
-  return next;
 }
 
 export function surrender(match: Match, playerId: string) {

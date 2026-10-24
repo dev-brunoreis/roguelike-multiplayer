@@ -5,13 +5,13 @@ import type {
   EffectDef,
   FloatEvent,
   MatchConfig,
-  PersistEvent,
   Phase,
   StatName,
 } from "@game/shared";
 import type { Rng } from "@game/shared";
 import type { GameData } from "@game/game-data";
 import type { CreepSkillDef } from "@game/shared";
+import type { SimEvent } from "./events.js";
 
 export interface Stats {
   damagePct: number;
@@ -68,13 +68,16 @@ export interface Entity {
   swing?: number;
   facing: number;
   behavior: string;
-  skillTimer?: number;
-  skillLeft?: number;
-  skillStep?: string;
-  chargeVx?: number;
-  chargeVy?: number;
-  chargeHit?: boolean;
   summonedBy?: number;
+}
+
+export interface SkillState {
+  timer: number;
+  step: "" | "charge" | "burst";
+  left: number;
+  vx: number;
+  vy: number;
+  hit: boolean;
 }
 
 export interface Projectile {
@@ -191,7 +194,11 @@ export interface Match {
   banner: { id: number; kind: AnnounceKind; title: string; detail: string; left: number } | null;
   winnerId: string | null;
   log: string[];
-  events: PersistEvent[];
+  events: SimEvent[];
+  skillState: Map<number, SkillState>;
+  entitiesById: Map<number, Entity>;
+  playersById: Map<string, PlayerState>;
+  arenasById: Map<string, Arena>;
   floats: FloatEvent[];
   fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number }[];
   bossAnnounced: boolean;
@@ -223,6 +230,7 @@ export type EffectHandler = (match: Match, player: PlayerState, effect: EffectDe
 export type CreepBehavior = (match: Match, creep: Entity, dt: number) => void;
 export type CreepSkill = (match: Match, creep: Entity, skill: CreepSkillDef) => boolean;
 export type DamageHook = (ctx: DamageContext) => void;
+export type HitHook = (ctx: DamageContext, value: number, info: { final: number; nested: boolean }) => void;
 export type BotFn = (match: Match, player: PlayerState) => void;
 
 export function emptyStats(): Stats {

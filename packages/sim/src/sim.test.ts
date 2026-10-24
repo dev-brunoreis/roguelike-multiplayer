@@ -1,7 +1,8 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { dealDamage } from "./damage.js";
-import { buildSnapshot, createMatch, grantXp, jumpWave, pickCard, quietMatch, revivePlayer, runTicks, setBotsGodmode, setDuels, setGodmode, setPauseWant, skipDuel, surrender, tick } from "./index.js";
+import { jumpWave, revivePlayer, setBotsGodmode, setDuels, setGodmode, skipDuel } from "./debug.js";
+import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, setPauseWant, surrender, tick } from "./index.js";
 import type { Match } from "./types.js";
 import { arenaCenter } from "./world.js";
 
@@ -951,10 +952,6 @@ function placeCreep(match: Match, defId: string, x: number, y: number) {
     swing: 0,
     facing: 0,
     behavior: def.behavior,
-    skillTimer: 0,
-    skillLeft: 0,
-    skillStep: "",
-    chargeHit: false,
   });
   return id;
 }

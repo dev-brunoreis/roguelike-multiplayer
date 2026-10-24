@@ -30,6 +30,12 @@ export interface GameData {
   bosses: BossDef[];
   synergies: SynergyDef[];
   match: MatchConfig;
+  byId: {
+    heroes: Map<string, HeroDef>;
+    abilities: Map<string, AbilityDef>;
+    cards: Map<string, CardDef>;
+    creeps: Map<string, CreepDef>;
+  };
 }
 
 function dataDir(): string {
@@ -117,6 +123,13 @@ export function loadGameData(dir = dataDir()): GameData {
     bosses: parseFile(dir, "bosses.json", bossSchema.array()),
     synergies: parseFile(dir, "synergies.json", synergySchema.array()),
     match,
+    byId: { heroes: new Map(), abilities: new Map(), cards: new Map(), creeps: new Map() },
+  };
+  data.byId = {
+    heroes: new Map(data.heroes.map((hero) => [hero.id, hero])),
+    abilities: new Map(data.abilities.map((ability) => [ability.id, ability])),
+    cards: new Map(data.cards.map((card) => [card.id, card])),
+    creeps: new Map(data.creeps.map((creep) => [creep.id, creep])),
   };
   checkRefs(data);
   return data;

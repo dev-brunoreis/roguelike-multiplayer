@@ -1,5 +1,5 @@
 import type { EffectDef } from "@game/shared";
-import { tryLevel } from "./damage.js";
+import { tryLevel } from "./progression.js";
 import { getEffect, registerEffect } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { isStat } from "./types.js";
@@ -25,18 +25,23 @@ registerEffect("grantAbility", (match, player, effect) => {
   if (player.abilities.length >= match.config.maxAbilities) {
     const victim = [...player.abilities].sort((a, b) => a.level - b.level || a.abilityId.localeCompare(b.abilityId))[0];
     if (!victim) return;
-    const old = match.data.abilities.find((ability) => ability.id === victim.abilityId);
-    const next = match.data.abilities.find((ability) => ability.id === effect.abilityId);
+    const old = match.data.byId.abilities.get(victim.abilityId);
+    const next = effect.abilityId ? match.data.byId.abilities.get(effect.abilityId) : undefined;
     player.abilities = player.abilities.filter((slot) => slot !== victim);
     addLog(match, `${player.name} trocou ${old?.nome ?? victim.abilityId} por ${next?.nome ?? effect.abilityId}`);
   }
-  player.abilities.push({ abilityId: effect.abilityId, level: 1, cooldown: 0.2, cooldownMax: 0.2 });
+  player.abilities.push({
+    abilityId: effect.abilityId,
+    level: 1,
+    cooldown: match.config.grantCooldown,
+    cooldownMax: match.config.grantCooldown,
+  });
 });
 
 registerEffect("upgradeAbility", (match, player, effect) => {
   if (!effect.abilityId) throw new Error("upgradeAbility precisa de abilityId.");
   const slot = player.abilities.find((item) => item.abilityId === effect.abilityId);
-  const def = match.data.abilities.find((ability) => ability.id === effect.abilityId);
+  const def = match.data.byId.abilities.get(effect.abilityId);
   if (!slot || !def || slot.level >= def.levels.length) return;
   slot.level += 1;
 });
@@ -58,7 +63,7 @@ export function applyEffect(match: Match, player: PlayerState, effect: EffectDef
 }
 
 export function applyCard(match: Match, player: PlayerState, cardId: string) {
-  const card = match.data.cards.find((item) => item.id === cardId);
+  const card = match.data.byId.cards.get(cardId);
   if (!card) return;
   player.cards.push(card.id);
   for (const tag of card.tags) player.tags[tag] = (player.tags[tag] ?? 0) + 1;

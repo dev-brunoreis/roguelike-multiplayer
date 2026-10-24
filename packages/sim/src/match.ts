@@ -3,14 +3,20 @@ import { makeRng, type MatchConfig } from "@game/shared";
 import { pickCard, syncPause } from "./actions.js";
 import { runBots } from "./bots.js";
 import "./content.js";
-import { eliminate, grantXp } from "./damage.js";
-import { beginPve, checkWinner, respawnHero, updateBetting, updateDuel, updateHub, updatePve, updateShop } from "./phases.js";
+import { isPersist, type PersistEvent } from "./events.js";
+import { beginPve, updatePve } from "./phases/pve.js";
+import { updateHub } from "./phases/hub.js";
+import { updateDuel } from "./phases/duel.js";
+import { updateBetting } from "./phases/betting.js";
+import { updateShop } from "./phases/shop.js";
+import { respawnHero } from "./phases/move.js";
+import { checkWinner } from "./victory.js";
 import { simulateCombat, simulateMove } from "./combat.js";
 import { assertCreepSkills } from "./creepSkills.js";
 import { hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
-import { addLog, arenaCenter, dtOf, emit, heroEntity, updateBanner } from "./world.js";
+import { addLog, arenaCenter, dtOf, emit, heroEntity, syncWorld, updateBanner } from "./world.js";
 
 export interface CreatePlayer {
   id: string;
@@ -70,6 +76,10 @@ export function createMatch(options: {
     fx: [],
     bossAnnounced: false,
     paused: false,
+    skillState: new Map(),
+    entitiesById: new Map(),
+    playersById: new Map(),
+    arenasById: new Map(),
   };
 
   match.arenas.push({
@@ -128,7 +138,7 @@ export function createMatch(options: {
       inputY: 0,
       aimX: null,
       aimY: null,
-      abilities: [{ abilityId: hero.startingAbility, level: 1, cooldown: 0.35, cooldownMax: 0.35 }],
+      abilities: [{ abilityId: hero.startingAbility, level: 1, cooldown: config.startCooldown, cooldownMax: config.startCooldown }],
       cards: [],
       tags: {},
       synergies: [],
@@ -178,6 +188,7 @@ export function createMatch(options: {
     });
   });
 
+  syncWorld(match);
   emit(match, {
     type: "match_start",
     round: 1,
@@ -215,10 +226,11 @@ function assertContent(data: GameData) {
   }
 }
 
-export function tick(match: Match) {
+export function tick(match: Match): PersistEvent[] {
   match.events = [];
+  syncWorld(match);
   syncPause(match);
-  if (match.phase === "ended" || match.paused) return [] as typeof match.events;
+  if (match.phase === "ended" || match.paused) return [];
   const dt = dtOf(match);
   match.tick += 1;
   match.time += dt;
@@ -265,7 +277,7 @@ export function tick(match: Match) {
   updateBanner(match, dt);
   if (match.floats.length > 80) match.floats.splice(0, match.floats.length - 80);
   match.fx = match.fx.filter((fx) => match.time - fx.born < fx.life);
-  return match.events.slice();
+  return match.events.filter(isPersist);
 }
 
 export function runTicks(match: Match, count: number) {
@@ -284,11 +296,10 @@ export function quietMatch(match: Match) {
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
   match.projectiles = [];
   match.fx = [];
+  syncWorld(match);
   for (const player of match.players) {
     for (const slot of player.abilities) slot.cooldown = 999;
     const entity = heroEntity(match, player);
     if (entity) entity.invuln = 0;
   }
 }
-
-export { eliminate, grantXp };

@@ -1,26 +1,22 @@
-import type { AnnounceKind, PersistEvent } from "@game/shared";
-import type { Arena, Entity, Match, PlayerState } from "./types.js";
+import type { AnnounceKind } from "@game/shared";
+import type { SimEvent } from "./events.js";
+import { present } from "./present.js";
+import type { Arena, Entity, Match, PlayerState, SkillState } from "./types.js";
 
-export function emit(match: Match, event: PersistEvent) {
+export function emit(match: Match, event: SimEvent) {
   match.events.push(event);
+  present(match, event);
 }
 
 export function addLog(match: Match, text: string) {
-  match.log.push(text);
-  if (match.log.length > 14) match.log.shift();
+  emit(match, { type: "log", text });
 }
 
 export function pushBanner(
   match: Match,
   banner: { kind: AnnounceKind; title: string; detail?: string; life?: number },
 ) {
-  match.banner = {
-    id: match.nextId++,
-    kind: banner.kind,
-    title: banner.title,
-    detail: banner.detail ?? "",
-    left: banner.life ?? 3.4,
-  };
+  emit(match, { type: "banner", kind: banner.kind, title: banner.title, detail: banner.detail, life: banner.life });
 }
 
 export function updateBanner(match: Match, dt: number) {
@@ -33,19 +29,7 @@ export function emitFx(
   match: Match,
   fx: { kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; life?: number },
 ) {
-  match.fx.push({
-    id: match.nextId++,
-    kind: fx.kind,
-    x: fx.x,
-    y: fx.y,
-    x2: fx.x2,
-    y2: fx.y2,
-    radius: fx.radius,
-    color: fx.color,
-    arenaId: fx.arenaId,
-    born: match.time,
-    life: fx.life ?? 0.38,
-  });
+  emit(match, { type: "fx", ...fx });
 }
 
 export function floatText(
@@ -55,8 +39,8 @@ export function floatText(
   crit = false,
   who?: { sourcePlayerId?: string; targetPlayerId?: string },
 ) {
-  match.floats.push({
-    id: match.nextId++,
+  emit(match, {
+    type: "float",
     x: entity.x,
     y: entity.y,
     text,
@@ -67,12 +51,34 @@ export function floatText(
   });
 }
 
+export function emptySkill(): SkillState {
+  return { timer: 0, step: "", left: 0, vx: 0, vy: 0, hit: false };
+}
+
+export function skillOf(match: Match, id: number) {
+  const found = match.skillState.get(id);
+  if (found) return found;
+  const created = emptySkill();
+  match.skillState.set(id, created);
+  return created;
+}
+
+export function syncWorld(match: Match) {
+  match.playersById = new Map(match.players.map((player) => [player.id, player]));
+  match.arenasById = new Map(match.arenas.map((arena) => [arena.id, arena]));
+  match.entitiesById = new Map(match.entities.map((entity) => [entity.id, entity]));
+  for (const id of match.skillState.keys()) {
+    if (!match.entitiesById.has(id)) match.skillState.delete(id);
+  }
+}
+
 export function playerById(match: Match, id: string | undefined) {
-  return match.players.find((player) => player.id === id);
+  if (!id) return undefined;
+  return match.playersById.get(id) ?? match.players.find((player) => player.id === id);
 }
 
 export function entityById(match: Match, id: number) {
-  return match.entities.find((entity) => entity.id === id);
+  return match.entitiesById.get(id) ?? match.entities.find((entity) => entity.id === id);
 }
 
 export function heroEntity(match: Match, player: PlayerState) {
@@ -80,7 +86,7 @@ export function heroEntity(match: Match, player: PlayerState) {
 }
 
 export function arenaById(match: Match, id: string) {
-  return match.arenas.find((arena) => arena.id === id);
+  return match.arenasById.get(id) ?? match.arenas.find((arena) => arena.id === id);
 }
 
 export function arenaCenter(arena: Arena) {
@@ -133,15 +139,15 @@ export function enemiesOf(match: Match, entity: Entity, extraIgnore?: Set<number
 }
 
 export function cardById(match: Match, id: string) {
-  return match.data.cards.find((card) => card.id === id);
+  return match.data.byId.cards.get(id);
 }
 
 export function abilityById(match: Match, id: string) {
-  return match.data.abilities.find((ability) => ability.id === id);
+  return match.data.byId.abilities.get(id);
 }
 
 export function creepById(match: Match, id: string) {
-  return match.data.creeps.find((creep) => creep.id === id);
+  return match.data.byId.creeps.get(id);
 }
 
 export function roundScale(match: Match) {
