@@ -389,68 +389,80 @@ function WaitRoom({
           <button className="btn ghost" onClick={onLeave}>Voltar</button>
         </header>
         {error ? <p className="error">{error}</p> : null}
-        <ul className="roster">
-          {(state?.players ?? []).map((player) => {
-            const hero = state?.heroes.find((item) => item.id === player.heroId);
-            const same = player.id !== mine?.id && player.heroId === mine?.heroId;
-            const sameShade = player.id !== mine?.id && !!player.shadowColor && player.shadowColor.toLowerCase() === (mine?.shadowColor ?? shadowColor).toLowerCase();
-            return (
-              <li key={player.id}>
-                <HeroSprite view={player.heroId} shadow={player.shadowColor} />
-                <div>
-                  <b style={{ color: player.shadowColor || "#f3ecdf" }}>{player.name}</b>
-                  {player.id === state?.hostId ? " · host" : ""}
-                  <small>{hero?.nome ?? "escolhendo"}{same ? " · igual ao seu" : ""}{sameShade ? " · sombra igual" : ""}</small>
-                </div>
-              </li>
-            );
-          })}
-          {(state?.players.length ?? 0) === 0 ? <li className="muted">Entrando na sala...</li> : null}
-        </ul>
-        <div>
-          <ShadowPick colors={colors} value={shadowColor} onPick={(color) => {
-            onPick(color);
-            roomRef.current?.send("shadow", { color });
-          }} />
-          <p className="eyebrow">personagem</p>
-          <div className="heroes">
-            {(state?.heroes ?? []).map((hero) => {
-              const others = (state?.players ?? []).filter((player) => player.heroId === hero.id && player.id !== state?.youId);
-              return (
-              <button
-                key={hero.id}
-                type="button"
-                className={mine?.heroId === hero.id ? "hero-card on" : "hero-card"}
-                style={{ ["--hero" as string]: hero.color }}
-                onClick={() => roomRef.current?.send("hero", { heroId: hero.id })}
-              >
-                <HeroSprite view={hero.id} shadow={shadowColor} />
-                <strong>{hero.nome}</strong>
-                <small>{hero.hp} de vida · velocidade {hero.speed}</small>
-                <span>{hero.descricao}</span>
-                {others.length > 0 ? <em className="taken">{others.map((player) => player.name).join(", ")}</em> : null}
-              </button>
-              );
-            })}
+        <div className="lobby-split">
+          <section className="block">
+            <p className="eyebrow">na sala</p>
+            <h2>Quem entrou</h2>
+            <ul className="roster">
+              {(state?.players ?? []).map((player) => {
+                const hero = state?.heroes.find((item) => item.id === player.heroId);
+                const same = player.id !== mine?.id && player.heroId === mine?.heroId;
+                const sameShade = player.id !== mine?.id && !!player.shadowColor && player.shadowColor.toLowerCase() === (mine?.shadowColor ?? shadowColor).toLowerCase();
+                return (
+                  <li key={player.id}>
+                    <HeroSprite view={player.heroId} shadow={player.shadowColor} />
+                    <div>
+                      <b style={{ color: player.shadowColor || "#f3ecdf" }}>{player.name}</b>
+                      {player.id === state?.hostId ? " · host" : ""}
+                      <small>{hero?.nome ?? "escolhendo"}{same ? " · igual ao seu" : ""}{sameShade ? " · sombra igual" : ""}</small>
+                    </div>
+                  </li>
+                );
+              })}
+              {(state?.players.length ?? 0) === 0 ? <li className="muted">Entrando na sala...</li> : null}
+            </ul>
+          </section>
+          <section className="block">
+            <p className="eyebrow">você</p>
+            <h2>Seu personagem</h2>
+            <ShadowPick colors={colors} value={shadowColor} onPick={(color) => {
+              onPick(color);
+              roomRef.current?.send("shadow", { color });
+            }} />
+            <div className="heroes">
+              {(state?.heroes ?? []).map((hero) => {
+                const others = (state?.players ?? []).filter((player) => player.heroId === hero.id && player.id !== state?.youId);
+                return (
+                <button
+                  key={hero.id}
+                  type="button"
+                  className={mine?.heroId === hero.id ? "hero-card on" : "hero-card"}
+                  style={{ ["--hero" as string]: hero.color }}
+                  onClick={() => roomRef.current?.send("hero", { heroId: hero.id })}
+                >
+                  <HeroSprite view={hero.id} shadow={shadowColor} />
+                  <strong>{hero.nome}</strong>
+                  <small>{hero.hp} de vida · velocidade {hero.speed}</small>
+                  <span>{hero.descricao}</span>
+                  {others.length > 0 ? <em className="taken">{others.map((player) => player.name).join(", ")}</em> : null}
+                </button>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+        <section className="block">
+          <p className="eyebrow">partida</p>
+          <h2>Como vai ser</h2>
+          {host ? null : <p className="muted">Só o host muda isso.</p>}
+          <div className="settings">
+            <label>Lugares
+              <input disabled={!host} type="number" min={2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
+            </label>
+            <label>Vidas
+              <input disabled={!host} type="number" min={1} max={9} value={state?.config.lives ?? 3} onChange={(event) => sendConfig({ lives: Number(event.target.value) })} />
+            </label>
+            <label>Cartas por nível
+              <input disabled={!host} type="number" min={2} max={8} value={state?.config.cardsPerLevelUp ?? 5} onChange={(event) => sendConfig({ cardsPerLevelUp: Number(event.target.value) })} />
+            </label>
+            <label className="check">
+              <input disabled={!host} type="checkbox" checked={state?.config.fillWithBots ?? true} onChange={(event) => sendConfig({ fillWithBots: event.target.checked })} />
+              Preencher com bots
+            </label>
           </div>
-        </div>
-        <div className="settings">
-          <label>Lugares
-            <input disabled={!host} type="number" min={2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
-          </label>
-          <label>Vidas
-            <input disabled={!host} type="number" min={1} max={9} value={state?.config.lives ?? 3} onChange={(event) => sendConfig({ lives: Number(event.target.value) })} />
-          </label>
-          <label>Cartas por nível
-            <input disabled={!host} type="number" min={2} max={8} value={state?.config.cardsPerLevelUp ?? 5} onChange={(event) => sendConfig({ cardsPerLevelUp: Number(event.target.value) })} />
-          </label>
-          <label className="check">
-            <input disabled={!host} type="checkbox" checked={state?.config.fillWithBots ?? true} onChange={(event) => sendConfig({ fillWithBots: event.target.checked })} />
-            Preencher com bots
-          </label>
-        </div>
-        {state?.error ? <p className="error">{state.error}</p> : null}
-        {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}
+          {state?.error ? <p className="error">{state.error}</p> : null}
+          {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}
+        </section>
       </section>
     </main>
   );
