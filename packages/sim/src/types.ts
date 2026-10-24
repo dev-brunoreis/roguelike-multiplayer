@@ -89,7 +89,7 @@ export interface Arena {
   y: number;
   size: number;
   ownerId: string | null;
-  kind: "pve" | "duel";
+  kind: "pve" | "duel" | "hub";
   label: string;
 }
 
@@ -125,6 +125,8 @@ export interface PlayerState {
   paused: boolean;
   cardTimer: number;
   pendingCards: string[];
+  unspentPicks: number;
+  waveClear: boolean;
   inputX: number;
   inputY: number;
   abilities: AbilitySlot[];
@@ -164,6 +166,8 @@ export interface Match {
   arenas: Arena[];
   spawns: SpawnJob[];
   duel: DuelPair[];
+  waveDone: boolean;
+  duelPending: boolean;
   winnerId: string | null;
   log: string[];
   events: PersistEvent[];

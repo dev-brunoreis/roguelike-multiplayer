@@ -14,7 +14,7 @@ registerBot("simple", (match, player) => {
     })[0];
     if (best) pickCard(match, player.id, best, false);
   }
-  if (match.phase === "shop" && !player.botActed) {
+  if ((match.phase === "shop" || match.phase === "hub") && !player.botActed) {
     player.botActed = true;
     for (const slot of player.abilities) {
       const def = match.data.abilities.find((ability) => ability.id === slot.abilityId);
@@ -26,7 +26,11 @@ registerBot("simple", (match, player) => {
     }
     shopAct(match, player.id, { kind: "ready" });
   }
-  if (match.phase === "betting" && !player.bet && !isFighter(match, player.id)) {
+  if (
+    (match.phase === "betting" || (match.phase === "hub" && match.duel.length > 0))
+    && !player.bet
+    && !isFighter(match, player.id)
+  ) {
     const fighters = match.duel.flatMap((pair) => [pair.a, pair.b]);
     if (fighters.length > 0 && player.gold >= match.data.economy.betMin) {
       placeBet(match, player.id, match.rng.pick(fighters), match.data.economy.betMin);

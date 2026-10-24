@@ -1,4 +1,4 @@
-export type Phase = "pve" | "betting" | "duel" | "shop" | "ended";
+export type Phase = "hub" | "pve" | "betting" | "duel" | "shop" | "ended";
 
 export interface FloatEvent {
   id: number;
@@ -76,6 +76,7 @@ export interface PlayerSnap {
   bet: { targetId: string; amount: number } | null;
   inDuel: boolean;
   arenaId: string;
+  waveClear: boolean;
   placement: number | null;
 }
 
@@ -110,7 +111,7 @@ export interface ArenaSnap {
   y: number;
   size: number;
   ownerId: string | null;
-  kind: "pve" | "duel";
+  kind: "pve" | "duel" | "hub";
   label: string;
 }
 

@@ -27,7 +27,7 @@ function abilitiesOf(match: Match, player: PlayerState): AbilityView[] {
 }
 
 function shopOf(match: Match, player: PlayerState): ShopView | null {
-  if (match.phase !== "shop" || player.eliminated) return null;
+  if ((match.phase !== "shop" && match.phase !== "hub") || player.eliminated) return null;
   return {
     offers: player.shopOffers.flatMap((id) => {
       const card = cardView(match, id);
@@ -98,6 +98,7 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     bet: player.bet,
     inDuel: isFighter(match, player.id),
     arenaId: entity?.arenaId ?? player.arenaId,
+    waveClear: player.waveClear,
     placement: placementOf(match, player),
   };
 }

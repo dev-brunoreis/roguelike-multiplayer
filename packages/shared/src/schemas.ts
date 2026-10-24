@@ -144,6 +144,8 @@ export const matchConfigSchema = z.object({
   cardsPerLevelUp: z.number().int().min(1),
   cardPickSeconds: z.number().positive(),
   pveSeconds: z.number().positive(),
+  hubSeconds: z.number().positive(),
+  hubSize: z.number().positive(),
   duelStartRound: z.number().int().min(1),
   duelSeconds: z.number().positive(),
   bettingSeconds: z.number().nonnegative(),

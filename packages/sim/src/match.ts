@@ -2,10 +2,10 @@ import { getGameData, type GameData } from "@game/game-data";
 import { makeRng, type MatchConfig } from "@game/shared";
 import { pickCard } from "./actions.js";
 import { runBots } from "./bots.js";
-import { simulateCombat } from "./combat.js";
 import "./content.js";
 import { eliminate, grantXp } from "./damage.js";
-import { beginPve, checkWinner, respawnHero, updateBetting, updateDuel, updatePve, updateShop } from "./phases.js";
+import { beginPve, checkWinner, respawnHero, updateBetting, updateDuel, updateHub, updatePve, updateShop } from "./phases.js";
+import { simulateCombat, simulateMove } from "./combat.js";
 import { hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
@@ -36,7 +36,7 @@ export function createMatch(options: {
     heroes[i] = heroes[j]!;
     heroes[j] = swap;
   }
-  const cols = Math.max(1, Math.ceil(Math.sqrt(options.players.length)));
+  const hubSize = config.hubSize;
   const match: Match = {
     data,
     config,
@@ -55,6 +55,8 @@ export function createMatch(options: {
     arenas: [],
     spawns: [],
     duel: [],
+    waveDone: false,
+    duelPending: false,
     winnerId: null,
     log: [],
     events: [],
@@ -62,16 +64,29 @@ export function createMatch(options: {
     bossAnnounced: false,
   };
 
+  match.arenas.push({
+    id: "hub",
+    x: -hubSize / 2,
+    y: -hubSize / 2,
+    size: hubSize,
+    ownerId: null,
+    kind: "hub",
+    label: "Salão",
+  });
+  const ring = hubSize / 2 + config.arenaGap + config.arenaSize / 2;
+  const roster = options.players.length;
+
   options.players.forEach((input, index) => {
     const hero = (input.heroId && data.heroes.find((item) => item.id === input.heroId))
       || heroes[index % heroes.length]
       || data.heroes[0]!;
-    const col = index % cols;
-    const row = Math.floor(index / cols);
+    const angle = (index / Math.max(1, roster)) * Math.PI * 2 - Math.PI / 2;
+    const cx = Math.cos(angle) * ring;
+    const cy = Math.sin(angle) * ring;
     const arena = {
       id: `arena-${input.id}`,
-      x: col * (config.arenaSize + config.arenaGap),
-      y: row * (config.arenaSize + config.arenaGap),
+      x: cx - config.arenaSize / 2,
+      y: cy - config.arenaSize / 2,
       size: config.arenaSize,
       ownerId: input.id,
       kind: "pve" as const,
@@ -97,6 +112,8 @@ export function createMatch(options: {
       paused: false,
       cardTimer: 0,
       pendingCards: [],
+      unspentPicks: 0,
+      waveClear: false,
       inputX: 0,
       inputY: 0,
       abilities: [{ abilityId: hero.startingAbility, level: 1, cooldown: 0.35, cooldownMax: 0.35 }],
@@ -214,13 +231,18 @@ export function tick(match: Match) {
     simulateCombat(match, dt);
     checkWinner(match);
     if (match.phase === "pve") updatePve(match, dt);
+  } else if (match.phase === "hub") {
+    simulateMove(match, dt);
+    updateHub(match, dt);
   } else if (match.phase === "betting") {
+    simulateMove(match, dt);
     updateBetting(match, dt);
   } else if (match.phase === "duel") {
     simulateCombat(match, dt);
     checkWinner(match);
     if (match.phase === "duel") updateDuel(match, dt);
   } else if (match.phase === "shop") {
+    simulateMove(match, dt);
     updateShop(match, dt);
   }
   checkWinner(match);

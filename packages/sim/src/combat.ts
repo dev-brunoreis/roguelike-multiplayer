@@ -11,15 +11,25 @@ import {
   heroEntity,
 } from "./world.js";
 
-export function simulateCombat(match: Match, dt: number) {
-  moveHeroes(match, dt);
-  moveCreeps(match, dt);
-  separate(match);
+function clampAll(match: Match) {
   for (const entity of match.entities) {
     if (!entity.alive) continue;
     const arena = arenaById(match, entity.arenaId);
     if (arena) clampToArena(entity, arena);
   }
+}
+
+export function simulateMove(match: Match, dt: number) {
+  moveHeroes(match, dt);
+  separate(match);
+  clampAll(match);
+}
+
+export function simulateCombat(match: Match, dt: number) {
+  moveHeroes(match, dt);
+  moveCreeps(match, dt);
+  separate(match);
+  clampAll(match);
   castAbilities(match);
   moveProjectiles(match, dt);
 }

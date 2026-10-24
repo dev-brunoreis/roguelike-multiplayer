@@ -28,7 +28,7 @@ describe("simulação", () => {
     player.abilities[0]!.cooldown = 0;
     player.stats.critChance = 0;
     const hero = match.entities.find((entity) => entity.kind === "hero")!;
-    const arena = match.arenas[0]!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
     const center = arenaCenter(arena);
     hero.x = center.x;
     hero.y = center.y;
@@ -83,6 +83,10 @@ describe("simulação", () => {
     const player = match.players[0]!;
     grantXp(match, player, match.config.xpBase);
     expect(player.level).toBe(2);
+    expect(player.unspentPicks).toBe(1);
+    expect(player.pendingCards).toHaveLength(0);
+    tick(match);
+    expect(match.phase).toBe("hub");
     expect(player.pendingCards).toHaveLength(5);
     expect(new Set(player.pendingCards).size).toBe(5);
   });
@@ -95,14 +99,87 @@ describe("simulação", () => {
     });
     quietMatch(match);
     const player = match.players[0]!;
-    match.spawns.push({ arenaId: player.arenaId, creepId: "slime", left: 4, interval: 9, acc: 0 });
     grantXp(match, player, match.config.xpBase);
+    tick(match);
+    expect(match.phase).toBe("hub");
     const hero = match.entities.find((entity) => entity.kind === "hero")!;
     const before = hero.x;
     player.inputX = 1;
     tick(match);
     expect(hero.x).toBeGreaterThan(before);
     expect(player.pendingCards.length).toBeGreaterThan(0);
+  });
+
+  it("espera o último limpar antes de ir ao salão", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+      ],
+      seed: 6,
+      data,
+    });
+    quietMatch(match);
+    const ana = match.players[0]!;
+    const bia = match.players[1]!;
+    const creepDef = data.creeps.find((creep) => creep.id === "slime")!;
+    match.entities.push({
+      id: match.nextId++,
+      kind: "creep",
+      defId: "slime",
+      arenaId: bia.arenaId,
+      x: 0,
+      y: 0,
+      radius: creepDef.radius,
+      hp: 40,
+      maxHp: 40,
+      speed: 0,
+      damage: 0,
+      attackCooldown: 10,
+      attackTimer: 10,
+      attackRange: 0.2,
+      armor: 0,
+      xp: 0,
+      gold: 0,
+      color: "#f00",
+      team: "enemy",
+      alive: true,
+      invuln: 0,
+      flash: 0,
+      facing: 0,
+      behavior: "chase",
+    });
+    tick(match);
+    expect(match.phase).toBe("pve");
+    expect(ana.waveClear).toBe(true);
+    expect(bia.waveClear).toBe(false);
+    const leftover = match.entities.find((entity) => entity.kind === "creep")!;
+    leftover.alive = false;
+    leftover.hp = 0;
+    tick(match);
+    expect(match.phase).toBe("hub");
+    expect(match.entities.every((entity) => entity.arenaId === "hub" || entity.kind !== "hero")).toBe(true);
+  });
+
+  it("no salão os heróis não se batem", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+      ],
+      seed: 7,
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    expect(match.phase).toBe("hub");
+    const ana = match.entities.find((entity) => entity.playerId === "a")!;
+    const bia = match.entities.find((entity) => entity.playerId === "b")!;
+    ana.x = bia.x;
+    ana.y = bia.y;
+    const before = bia.hp;
+    tick(match);
+    expect(bia.hp).toBe(before);
   });
 
   it("armadura reduz o dano do creep", () => {
@@ -193,6 +270,7 @@ describe("simulação", () => {
       seed: 9,
       config: {
         pveSeconds: 1,
+        hubSeconds: 0.25,
         bettingSeconds: 0.2,
         duelSeconds: 0.4,
         shopSeconds: 0.25,
@@ -204,6 +282,6 @@ describe("simulação", () => {
     const events = runTicks(match, 500);
     expect(events.length + match.tick).toBeGreaterThan(0);
     expect(match.round).toBeGreaterThan(1);
-    expect(["pve", "betting", "duel", "shop", "ended"]).toContain(match.phase);
+    expect(["hub", "pve", "betting", "duel", "shop", "ended"]).toContain(match.phase);
   });
 });

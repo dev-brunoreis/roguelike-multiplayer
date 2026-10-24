@@ -1,6 +1,6 @@
 import { damagePipeline } from "./registry.js";
 import type { DamageContext, Entity, Match, PlayerState } from "./types.js";
-import { floatText, heroEntity, playerById } from "./world.js";
+import { arenaById, floatText, heroEntity, playerById } from "./world.js";
 
 export interface HitInput {
   source?: Entity;
@@ -14,6 +14,9 @@ export interface HitInput {
 export function dealDamage(match: Match, hit: HitInput): number {
   const target = hit.target;
   if (!target.alive || target.invuln > 0) return 0;
+  if (match.phase === "hub") return 0;
+  const arena = arenaById(match, target.arenaId);
+  if (arena?.kind === "hub") return 0;
   const targetPlayer = target.playerId ? playerById(match, target.playerId) : undefined;
   if (targetPlayer?.eliminated) return 0;
 
@@ -107,6 +110,8 @@ export function eliminate(match: Match, player: PlayerState, reason: string) {
   player.lives = 0;
   player.paused = false;
   player.pendingCards = [];
+  player.unspentPicks = 0;
+  player.waveClear = true;
   player.eliminatedAt = match.time;
   player.ready = true;
   const entity = heroEntity(match, player);
@@ -133,9 +138,11 @@ export function tryLevel(match: Match, player: PlayerState) {
   if (player.xp < need) return;
   player.xp -= need;
   player.level += 1;
+  player.unspentPicks += 1;
   match.events.push({ type: "level", round: match.round, playerId: player.id, level: player.level });
   addLogSafe(match, `${player.name} subiu para o nível ${player.level}`);
-  offerCards(match, player);
+  if (match.phase === "hub") offerCards(match, player);
+  else tryLevel(match, player);
 }
 
 export function offerCards(match: Match, player: PlayerState) {

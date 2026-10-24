@@ -1,4 +1,5 @@
-import { eligible } from "./damage.js";
+import { eligible, offerCards } from "./damage.js";
+import { applyCard } from "./effects.js";
 import { flushDamage, spawnCreep } from "./spawn.js";
 import type { Match, PlayerState } from "./types.js";
 import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity } from "./world.js";
@@ -38,6 +39,42 @@ export function bossForRound(match: Match) {
   return due[0] ?? null;
 }
 
+function sendHome(match: Match, player: PlayerState) {
+  const home = match.arenas.find((arena) => arena.ownerId === player.id && arena.kind === "pve");
+  if (!home) return;
+  player.arenaId = home.id;
+  const entity = heroEntity(match, player);
+  if (entity) {
+    entity.arenaId = home.id;
+    entity.team = "player";
+  }
+}
+
+function sendToHub(match: Match, player: PlayerState, index: number, total: number) {
+  const hub = match.arenas.find((arena) => arena.kind === "hub");
+  if (!hub) return;
+  const center = arenaCenter(hub);
+  const angle = total > 0 ? (index / total) * Math.PI * 2 : 0;
+  const radius = Math.min(6, hub.size * 0.22);
+  player.arenaId = hub.id;
+  const entity = heroEntity(match, player);
+  if (!entity) return;
+  entity.arenaId = hub.id;
+  entity.team = "player";
+  entity.alive = true;
+  entity.hp = entity.maxHp;
+  entity.invuln = 0.4;
+  entity.x = center.x + Math.cos(angle) * radius;
+  entity.y = center.y + Math.sin(angle) * radius;
+  player.respawnIn = 0;
+}
+
+function arenaQuiet(match: Match, arenaId: string) {
+  const spawning = match.spawns.some((job) => job.arenaId === arenaId && job.left > 0);
+  const creeps = match.entities.some((entity) => entity.alive && entity.kind !== "hero" && entity.arenaId === arenaId);
+  return !spawning && !creeps;
+}
+
 export function beginPve(match: Match) {
   if (match.phase === "ended") return;
   flushDamage(match);
@@ -45,21 +82,25 @@ export function beginPve(match: Match) {
   match.phaseTime = match.config.pveSeconds;
   match.spawns = [];
   match.duel = [];
+  match.duelPending = false;
   match.projectiles = [];
   match.bossAnnounced = false;
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
-  match.arenas = match.arenas.filter((arena) => arena.kind === "pve");
+  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
   const wave = waveFor(match);
   const boss = bossForRound(match);
   if (boss && !match.bossAnnounced) {
     match.bossAnnounced = true;
     addLog(match, `Boss: ${boss.nome}`);
   }
-  for (const player of alivePlayers(match)) {
+  for (const player of match.players) {
     player.ready = false;
     player.botActed = false;
     player.bet = null;
     player.shopOffers = [];
+    player.waveClear = player.eliminated;
+    if (player.eliminated) continue;
+    sendHome(match, player);
     revive(match, player);
     for (const group of wave.spawns) {
       match.spawns.push({
@@ -80,6 +121,7 @@ export function beginPve(match: Match) {
       });
     }
   }
+  addLog(match, `Onda ${match.round}`);
 }
 
 export function revive(match: Match, player: PlayerState) {
@@ -105,6 +147,7 @@ export function respawnHero(match: Match, player: PlayerState) {
 
 function endPve(match: Match, cleared: boolean) {
   flushDamage(match);
+  match.waveDone = true;
   if (cleared) {
     emit(match, { type: "wave_cleared", round: match.round });
     addLog(match, `Onda ${match.round} limpa`);
@@ -120,9 +163,7 @@ function endPve(match: Match, cleared: boolean) {
   match.projectiles = [];
   checkWinner(match);
   if (match.phase === "ended") return;
-  const fighters = alivePlayers(match);
-  if (match.round >= match.config.duelStartRound && fighters.length >= 2) beginBetting(match);
-  else beginShop(match);
+  beginHub(match);
 }
 
 export function updatePve(match: Match, dt: number) {
@@ -136,14 +177,78 @@ export function updatePve(match: Match, dt: number) {
     job.left -= 1;
     spawnCreep(match, job.arenaId, job.creepId);
   }
-  const spawning = match.spawns.some((job) => job.left > 0);
-  const creeps = match.entities.some((entity) => entity.alive && entity.kind !== "hero");
+  for (const player of alivePlayers(match)) {
+    if (player.waveClear) continue;
+    if (!arenaQuiet(match, player.arenaId)) continue;
+    player.waveClear = true;
+    addLog(match, `${player.name} limpou a arena`);
+  }
   match.phaseTime = Math.max(0, match.phaseTime - dt);
-  if (!spawning && !creeps) {
+  if (alivePlayers(match).every((player) => player.waveClear)) {
     endPve(match, true);
     return;
   }
   if (match.phaseTime <= 0) endPve(match, false);
+}
+
+export function beginHub(match: Match) {
+  if (match.phase === "ended") return;
+  flushDamage(match);
+  match.phase = "hub";
+  match.phaseTime = match.config.hubSeconds;
+  match.projectiles = [];
+  match.spawns = [];
+  match.entities = match.entities.filter((entity) => entity.kind === "hero");
+  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
+  match.duel = [];
+  match.duelPending = false;
+  const fighters = alivePlayers(match);
+  if (match.waveDone && match.round >= match.config.duelStartRound && fighters.length >= 2) {
+    match.duel = pairPlayers(match);
+    match.duelPending = match.duel.length > 0;
+  }
+  for (const player of match.players) {
+    player.botActed = false;
+    player.ready = player.eliminated;
+    player.shopOffers = [];
+    player.waveClear = false;
+  }
+  fighters.forEach((player, index) => {
+    sendToHub(match, player, index, fighters.length);
+    if (match.waveDone) player.shopOffers = rollShop(match, player);
+    if (player.unspentPicks > 0 && player.pendingCards.length === 0) offerCards(match, player);
+  });
+  addLog(match, match.waveDone ? "Salão aberto: cartas, loja e um respiro" : "Salão aberto");
+  if (match.duelPending) addLog(match, "Duelo em seguida. Quem não luta pode apostar.");
+}
+
+function forcePick(match: Match, player: PlayerState) {
+  while (player.pendingCards.length > 0) {
+    const cardId = match.rng.pick(player.pendingCards);
+    player.pendingCards = [];
+    player.cardTimer = 0;
+    player.unspentPicks = Math.max(0, player.unspentPicks - 1);
+    applyCard(match, player, cardId);
+    emit(match, { type: "card_pick", round: match.round, playerId: player.id, cardId, auto: true });
+  }
+}
+
+function leaveHub(match: Match) {
+  for (const player of alivePlayers(match)) forcePick(match, player);
+  checkWinner(match);
+  if (match.phase === "ended") return;
+  if (match.duelPending && match.duel.length > 0) {
+    beginDuel(match);
+    return;
+  }
+  if (match.waveDone) match.round += 1;
+  beginPve(match);
+}
+
+export function updateHub(match: Match, dt: number) {
+  match.phaseTime = Math.max(0, match.phaseTime - dt);
+  const waiting = alivePlayers(match).some((player) => !player.ready);
+  if (!waiting || match.phaseTime <= 0) leaveHub(match);
 }
 
 export function beginBetting(match: Match) {
@@ -177,19 +282,25 @@ function pairPlayers(match: Match) {
     const b = ids[i + 1];
     if (!a || !b) continue;
     n += 1;
-    const arenaId = `duel-${match.round}-${n}`;
-    match.arenas.push({
-      id: arenaId,
-      x: n * (match.config.arenaSize + match.config.arenaGap),
-      y: -match.config.arenaSize - match.config.arenaGap,
-      size: match.config.arenaSize,
-      ownerId: null,
-      kind: "duel",
-      label: "Duelo",
-    });
-    pairs.push({ a, b, arenaId, resolved: false });
+    pairs.push({ a, b, arenaId: `duel-${match.round}-${n}`, resolved: false });
   }
   return pairs;
+}
+
+function placeDuelArena(match: Match, arenaId: string, slot: number) {
+  const hub = match.arenas.find((arena) => arena.kind === "hub");
+  const hubExtent = (hub?.size ?? match.config.hubSize) / 2;
+  const size = match.config.arenaSize;
+  const gap = match.config.arenaGap;
+  match.arenas.push({
+    id: arenaId,
+    x: (slot - 1) * (size + gap) - size / 2,
+    y: -(hubExtent + gap + size),
+    size,
+    ownerId: null,
+    kind: "duel",
+    label: "Duelo",
+  });
 }
 
 export function beginDuel(match: Match) {
@@ -197,10 +308,11 @@ export function beginDuel(match: Match) {
   match.phase = "duel";
   match.phaseTime = match.config.duelSeconds;
   match.projectiles = [];
-  for (const pair of match.duel) {
+  match.duel.forEach((pair, index) => {
+    if (!arenaById(match, pair.arenaId)) placeDuelArena(match, pair.arenaId, index + 1);
     sendToDuel(match, pair.a, pair.arenaId, "red", 0.28);
     sendToDuel(match, pair.b, pair.arenaId, "blue", 0.72);
-  }
+  });
   addLog(match, "Duelo!");
 }
 
@@ -235,7 +347,10 @@ export function updateDuel(match: Match, dt: number) {
       if (!pair.resolved) resolvePair(match, pair.a, pair.b, pair, true);
     }
     checkWinner(match);
-    if (match.phase !== "ended") beginShop(match);
+    if (match.phase !== "ended") {
+      match.round += 1;
+      beginPve(match);
+    }
   }
 }
 
@@ -309,30 +424,7 @@ function refundBets(match: Match, ids: string[]) {
 }
 
 export function beginShop(match: Match) {
-  if (match.phase === "ended") return;
-  flushDamage(match);
-  match.phase = "shop";
-  match.phaseTime = match.config.shopSeconds;
-  match.projectiles = [];
-  match.entities = match.entities.filter((entity) => entity.kind === "hero");
-  for (const player of match.players) {
-    player.botActed = false;
-    player.shopOffers = [];
-    player.ready = player.eliminated;
-    if (player.eliminated) continue;
-    const home = match.arenas.find((arena) => arena.ownerId === player.id && arena.kind === "pve");
-    if (home) {
-      player.arenaId = home.id;
-      const entity = heroEntity(match, player);
-      if (entity) {
-        entity.arenaId = home.id;
-        entity.team = "player";
-      }
-    }
-    revive(match, player);
-    player.shopOffers = rollShop(match, player);
-  }
-  addLog(match, "Loja aberta");
+  beginHub(match);
 }
 
 export function rollShop(match: Match, player: PlayerState) {
@@ -362,10 +454,5 @@ export function updateBetting(match: Match, dt: number) {
 }
 
 export function updateShop(match: Match, dt: number) {
-  match.phaseTime = Math.max(0, match.phaseTime - dt);
-  const pending = alivePlayers(match).some((player) => !player.ready);
-  if (!pending || match.phaseTime <= 0) {
-    match.round += 1;
-    beginPve(match);
-  }
+  updateHub(match, dt);
 }

@@ -1,5 +1,5 @@
 import { applyCard } from "./effects.js";
-import { eligible } from "./damage.js";
+import { eligible, offerCards } from "./damage.js";
 import { eliminate } from "./damage.js";
 import { checkWinner, rollShop } from "./phases.js";
 import type { Match } from "./types.js";
@@ -23,8 +23,12 @@ export function pickCard(match: Match, playerId: string, cardId: string, auto = 
   if (!player.pendingCards.includes(cardId)) return;
   player.pendingCards = [];
   player.cardTimer = 0;
+  player.unspentPicks = Math.max(0, player.unspentPicks - 1);
   applyCard(match, player, cardId);
   emit(match, { type: "card_pick", round: match.round, playerId, cardId, auto });
+  if (player.unspentPicks > 0 && match.phase === "hub" && player.pendingCards.length === 0) {
+    offerCards(match, player);
+  }
 }
 
 export function upgradeCost(match: Match, level: number) {
@@ -41,7 +45,7 @@ export function shopAct(
   action: { kind: "buy" | "upgrade" | "reroll" | "ready"; cardId?: string; abilityId?: string },
 ) {
   const player = playerById(match, playerId);
-  if (!player || player.eliminated || match.phase !== "shop") return;
+  if (!player || player.eliminated || (match.phase !== "shop" && match.phase !== "hub")) return;
   if (action.kind === "ready") {
     player.ready = true;
     return;
@@ -84,7 +88,8 @@ export function isFighter(match: Match, playerId: string) {
 
 export function placeBet(match: Match, playerId: string, targetId: string, amount: number) {
   const player = playerById(match, playerId);
-  if (!player || player.eliminated || player.bet || match.phase !== "betting") return;
+  if (!player || player.eliminated || player.bet) return;
+  if (match.phase !== "betting" && match.phase !== "hub") return;
   if (isFighter(match, playerId)) return;
   const fighters = match.duel.flatMap((pair) => [pair.a, pair.b]);
   if (!fighters.includes(targetId)) return;
