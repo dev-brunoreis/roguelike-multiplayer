@@ -257,6 +257,11 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           <span>{Math.ceil(snap.announce?.kind === "duel" ? snap.announce.left : snap.phaseTime)}s</span>
           {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
         </div>
+        <button className="btn danger" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
+          if (confirm("Desistir elimina você agora.")) send("surrender");
+        }}>Desistir</button>
+      </header>
+      <aside className="hud side">
         <div className="board">
           {snap.players.map((player) => (
             <button key={player.id} className={player.eliminated ? "out" : ""} onClick={() => setWatchId(player.id)}>
@@ -275,10 +280,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
             </button>
           ))}
         </div>
-        <button className="btn danger" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
-          if (confirm("Desistir elimina você agora.")) send("surrender");
-        }}>Desistir</button>
-      </header>
+      </aside>
       <footer className="hud abilities">
         {me?.abilities.map((ability, index) => {
           const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;

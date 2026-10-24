@@ -64,9 +64,15 @@ input[type="text"], input[type="password"], input[type="number"] {
   pointer-events: none;
 }
 .hud.top > * { pointer-events: auto; background: #1c1914cc; padding: 8px 12px; border: 1px solid #3a3228; display: flex; gap: 10px; align-items: center; }
-.board { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; flex: 1; background: transparent !important; border: 0 !important; padding: 0 !important; }
+.hud.side {
+  top: 68px; left: 12px; width: 188px;
+  max-height: calc(100% - 176px);
+  overflow: auto;
+  pointer-events: none;
+}
+.board { display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
 .board button {
-  min-width: 110px; text-align: left; background: #1c1914cc; border: 1px solid #3a3228; padding: 6px 8px; cursor: pointer;
+  width: 100%; text-align: left; background: #1c1914cc; border: 1px solid #3a3228; padding: 6px 8px; cursor: pointer;
   display: grid; gap: 3px;
 }
 .board button.out { opacity: 0.4; }
@@ -91,8 +97,9 @@ input[type="text"], input[type="password"], input[type="number"] {
 }
 .ability strong, .ability small { display: block; }
 .log {
-  position: absolute; left: 12px; bottom: 92px; z-index: 2;
+  position: absolute; right: 12px; bottom: 16px; z-index: 2;
   color: #d9d0c3; font-size: 13px; text-shadow: 0 1px 2px #000;
+  text-align: right; pointer-events: none;
 }
 .log p { margin: 0 0 2px; }
 .nametag { color: #f3ecdf; font-size: 12px; text-shadow: 0 1px 2px #000; white-space: nowrap; }
@@ -152,6 +159,6 @@ input[type="text"], input[type="password"], input[type="number"] {
 
 @media (max-width: 800px) {
   .settings { grid-template-columns: 1fr; }
-  .roster-side { display: none; }
+  .hud.side { width: 148px; }
   .card { width: 140px; }
 }
