@@ -1,6 +1,6 @@
 import "./content.js";
 
-export { pickCard, placeBet, setInput, shopAct, surrender } from "./actions.js";
+export { pickCard, placeBet, setInput, setPauseWant, shopAct, surrender } from "./actions.js";
 export { runBots } from "./bots.js";
 export { dealDamage } from "./damage.js";
 export { createMatch, grantXp, quietMatch, runTicks, tick } from "./match.js";

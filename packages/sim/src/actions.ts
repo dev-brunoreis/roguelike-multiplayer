@@ -48,6 +48,25 @@ export function placeBet(_match: Match, _playerId: string, _targetId: string, _a
   return;
 }
 
+export function syncPause(match: Match) {
+  for (const player of match.players) {
+    if (player.eliminated || player.isBot) player.pauseWant = false;
+  }
+  if (match.phase === "ended") {
+    match.paused = false;
+    return;
+  }
+  const humans = match.players.filter((player) => !player.isBot && !player.eliminated);
+  match.paused = humans.length > 0 && humans.every((player) => player.pauseWant);
+}
+
+export function setPauseWant(match: Match, playerId: string, want: boolean) {
+  const player = playerById(match, playerId);
+  if (!player || player.isBot || player.eliminated || match.phase === "ended") return;
+  player.pauseWant = want;
+  syncPause(match);
+}
+
 export function surrender(match: Match, playerId: string) {
   const player = playerById(match, playerId);
   if (!player || player.eliminated || match.phase === "ended") return;

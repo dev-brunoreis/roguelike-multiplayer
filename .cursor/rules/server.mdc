@@ -10,7 +10,7 @@ alwaysApply: false
 
 - Cada sala de espera é uma `LobbyRoom` criada pelo host. A entrada lista as abertas em `GET /api/rooms`. Não use `joinOrCreate` para o lobby.
 - Auth é JWT no body HTTP e de novo em `onAuth` da room. Não confie em nome vindo do cliente.
-- Input, pick, ready no salão e surrender passam pelas funções de `packages/sim`. `ping` só ecoa `pong` para o cliente medir a ida e volta.
+- Input, pick, ready no salão, pausa e surrender passam pelas funções de `packages/sim`. `pause` guarda o pedido; a partida só congela quando todo humano vivo pediu. `ping` só ecoa `pong` para o cliente medir a ida e volta.
 - `StatsWriter` grava eventos persistentes. Não grave cada número de dano solto; o resumo vai em `damage_summary`.
 - Banco em `data/game.sqlite` via Drizzle e `node:sqlite`.
 - Em produção o Express serve `apps/client/dist`.

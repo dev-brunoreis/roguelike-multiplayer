@@ -1,6 +1,6 @@
 import { getGameData, type GameData } from "@game/game-data";
 import { makeRng, type MatchConfig } from "@game/shared";
-import { pickCard } from "./actions.js";
+import { pickCard, syncPause } from "./actions.js";
 import { runBots } from "./bots.js";
 import "./content.js";
 import { eliminate, grantXp } from "./damage.js";
@@ -66,6 +66,7 @@ export function createMatch(options: {
     floats: [],
     fx: [],
     bossAnnounced: false,
+    paused: false,
   };
 
   match.arenas.push({
@@ -115,6 +116,7 @@ export function createMatch(options: {
       eliminated: false,
       surrendered: false,
       paused: false,
+      pauseWant: false,
       cardTimer: 0,
       pendingCards: [],
       unspentPicks: 0,
@@ -208,7 +210,8 @@ function assertContent(data: GameData) {
 
 export function tick(match: Match) {
   match.events = [];
-  if (match.phase === "ended") return [] as typeof match.events;
+  syncPause(match);
+  if (match.phase === "ended" || match.paused) return [] as typeof match.events;
   const dt = dtOf(match);
   match.tick += 1;
   match.time += dt;

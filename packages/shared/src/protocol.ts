@@ -76,6 +76,7 @@ export interface PlayerSnap {
   deaths: number;
   damageDealt: number;
   ready: boolean;
+  pauseWant: boolean;
   bet: { targetId: string; amount: number } | null;
   inDuel: boolean;
   arenaId: string;
@@ -159,6 +160,7 @@ export interface Snapshot {
   phase: Phase;
   phaseTime: number;
   winnerId: string | null;
+  paused: boolean;
   youId: string;
   dataVersion: string;
   log: string[];

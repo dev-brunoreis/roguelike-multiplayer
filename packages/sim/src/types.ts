@@ -127,6 +127,7 @@ export interface PlayerState {
   eliminated: boolean;
   surrendered: boolean;
   paused: boolean;
+  pauseWant: boolean;
   cardTimer: number;
   pendingCards: string[];
   unspentPicks: number;
@@ -180,6 +181,7 @@ export interface Match {
   floats: FloatEvent[];
   fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number }[];
   bossAnnounced: boolean;
+  paused: boolean;
 }
 
 export interface AbilityContext {

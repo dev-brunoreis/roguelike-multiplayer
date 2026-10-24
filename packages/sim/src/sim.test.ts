@@ -1,7 +1,7 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { dealDamage } from "./damage.js";
-import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, surrender, tick } from "./index.js";
+import { buildSnapshot, createMatch, grantXp, pickCard, quietMatch, runTicks, setPauseWant, surrender, tick } from "./index.js";
 import { arenaCenter } from "./world.js";
 
 const data = loadGameData();
@@ -391,5 +391,38 @@ describe("simulação", () => {
     expect(snap.players[0]?.respawnIn).toBe(match.config.respawnSeconds);
     runTicks(match, 1);
     expect(snap.players[0] && buildSnapshot(match, "p").players[0]?.respawnIn).toBeLessThan(match.config.respawnSeconds);
+  });
+
+  it("só pausa quando todo humano vivo pede", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+        { id: "c", name: "Bot", isBot: true },
+      ],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    setPauseWant(match, "c", true);
+    setPauseWant(match, "a", true);
+    const moving = match.tick;
+    tick(match);
+    expect(match.paused).toBe(false);
+    expect(match.tick).toBe(moving + 1);
+    setPauseWant(match, "b", true);
+    const frozen = match.tick;
+    const frozenTime = match.time;
+    tick(match);
+    expect(match.paused).toBe(true);
+    expect(match.tick).toBe(frozen);
+    expect(match.time).toBe(frozenTime);
+    setPauseWant(match, "a", false);
+    tick(match);
+    expect(match.paused).toBe(false);
+    expect(match.tick).toBe(frozen + 1);
+    const snap = buildSnapshot(match, "a");
+    expect(snap.paused).toBe(false);
+    expect(snap.players.find((player) => player.id === "b")?.pauseWant).toBe(true);
   });
 });

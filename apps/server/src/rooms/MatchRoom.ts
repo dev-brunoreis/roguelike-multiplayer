@@ -5,6 +5,7 @@ import {
   pickCard,
   placeBet,
   setInput,
+  setPauseWant,
   shopAct,
   surrender,
   tick,
@@ -90,6 +91,11 @@ export class MatchRoom extends Room {
     this.onMessage("ping", (client, sent: number) => {
       if (typeof sent !== "number" || !Number.isFinite(sent)) return;
       client.send("pong", sent);
+    });
+    this.onMessage("pause", (client, message: { want?: boolean }) => {
+      const id = this.users.get(client.sessionId);
+      if (!id || typeof message?.want !== "boolean") return;
+      setPauseWant(this.match, id, message.want);
     });
     this.onMessage("surrender", (client) => {
       const id = this.users.get(client.sessionId);
