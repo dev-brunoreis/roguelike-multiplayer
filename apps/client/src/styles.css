@@ -29,7 +29,21 @@ h1, h2 { font-weight: 650; margin: 0; letter-spacing: -0.02em; }
   gap: 14px;
 }
 
-.lobby { width: min(680px, 100%); }
+.lobby { width: min(860px, 100%); }
+.rooms { display: grid; gap: 8px; }
+.room {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: #14120f; padding: 10px 12px;
+}
+.room small, .roster small, .hero-card small { display: block; color: #a39886; font-size: 12px; }
+.heroes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.hero-card {
+  text-align: left; background: #14120f; border: 1px solid #3a3228; padding: 10px; cursor: pointer;
+  display: grid; gap: 4px;
+}
+.hero-card.on { border-color: var(--hero); }
+.hero-card strong { color: var(--hero); }
+.hero-card span { color: #d9d0c3; font-size: 13px; }
 .eyebrow { letter-spacing: 0.16em; text-transform: uppercase; color: #e07a3d; font-size: 12px; margin: 0; }
 .muted { color: #a39886; }
 .error { color: #ff8d7a; margin: 0; }
@@ -81,6 +95,13 @@ input[type="text"], input[type="password"], input[type="number"] {
   display: grid; gap: 3px;
 }
 .board button.out { opacity: 0.4; }
+.board button.me { border-color: #6f8a62; }
+.who { color: #8fdb67; font-style: normal; font-weight: 700; font-size: 12px; }
+.board button.on {
+  border-color: #e6c15a;
+  background: #2c2616;
+  box-shadow: inset 4px 0 0 #e6c15a;
+}
 .pips { display: flex; gap: 4px; height: 22px; align-items: center; }
 .pips .skill-glyph { width: 22px; height: 22px; display: block; border-radius: 2px; }
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }

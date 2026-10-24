@@ -18,6 +18,7 @@ import { StatsWriter } from "../stats.js";
 interface Seat {
   id: string;
   name: string;
+  heroId?: string;
 }
 
 interface JoinOptions {
@@ -46,7 +47,7 @@ export class MatchRoom extends Room {
       seed: options.seed,
       config: options.config,
       players: [
-        ...humans.map((seat) => ({ id: seat.id, name: seat.name, isBot: false })),
+        ...humans.map((seat) => ({ id: seat.id, name: seat.name, isBot: false, heroId: seat.heroId })),
         ...bots.map((seat) => ({ id: seat.id, name: seat.name, isBot: true })),
       ],
     });

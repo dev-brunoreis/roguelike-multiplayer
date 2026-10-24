@@ -181,6 +181,21 @@ export interface ShopAction {
   abilityId?: string;
 }
 
+export interface LobbyPlayer {
+  id: string;
+  name: string;
+  heroId: string;
+}
+
+export interface LobbyHero {
+  id: string;
+  nome: string;
+  descricao: string;
+  color: string;
+  hp: number;
+  speed: number;
+}
+
 export interface LobbyConfig {
   slots: number;
   fillWithBots: boolean;
@@ -191,7 +206,8 @@ export interface LobbyConfig {
 export interface LobbyState {
   hostId: string;
   youId: string;
-  players: { id: string; name: string }[];
+  players: LobbyPlayer[];
+  heroes: LobbyHero[];
   config: LobbyConfig;
   error: string | null;
 }

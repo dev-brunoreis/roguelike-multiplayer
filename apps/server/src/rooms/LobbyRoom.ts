@@ -9,6 +9,7 @@ const BOT_NAMES = ["Bram", "Lira", "Kas", "Nox", "Vesper", "Ivo", "Sena"];
 interface Seat {
   id: string;
   name: string;
+  heroId: string;
 }
 
 export class LobbyRoom extends Room {
@@ -16,10 +17,12 @@ export class LobbyRoom extends Room {
   private sessions = new Map<string, Seat>();
   private config: LobbyConfig;
   private error: string | null = null;
+  private heroIds: string[] = [];
 
   constructor() {
     super();
     const data = getGameData();
+    this.heroIds = data.heroes.map((hero) => hero.id);
     this.config = {
       slots: 4,
       fillWithBots: true,
@@ -29,12 +32,24 @@ export class LobbyRoom extends Room {
   }
 
   onCreate() {
+    this.maxClients = this.config.slots;
     this.onMessage("config", (client, raw: unknown) => {
       if (!this.isHost(client)) return;
       const parsed = matchOptionsSchema.safeParse(raw);
       if (!parsed.success) return;
       this.config = { ...this.config, ...strip(parsed.data) };
+      this.maxClients = Math.max(this.config.slots, this.seats.length);
       this.error = null;
+      this.push();
+    });
+
+    this.onMessage("hero", (client, raw: unknown) => {
+      const heroId = typeof raw === "object" && raw && "heroId" in raw ? String((raw as { heroId?: string }).heroId ?? "") : "";
+      if (!this.heroIds.includes(heroId)) return;
+      const auth = this.sessions.get(client.sessionId);
+      const seat = this.seats.find((item) => item.id === auth?.id);
+      if (!seat) return;
+      seat.heroId = heroId;
       this.push();
     });
 
@@ -52,9 +67,10 @@ export class LobbyRoom extends Room {
 
   onJoin(client: Client, _options: unknown, auth?: { id: string; username: string }) {
     if (!auth) return;
-    this.sessions.set(client.sessionId, { id: auth.id, name: auth.username });
+    this.sessions.set(client.sessionId, { id: auth.id, name: auth.username, heroId: this.heroIds[0] ?? "guerreiro" });
     this.seats = this.seats.filter((seat) => seat.id !== auth.id);
-    this.seats.push({ id: auth.id, name: auth.username });
+    this.seats.push({ id: auth.id, name: auth.username, heroId: this.heroIds[0] ?? "guerreiro" });
+    this.maxClients = Math.max(this.config.slots, this.seats.length);
     this.push();
   }
 
@@ -76,12 +92,25 @@ export class LobbyRoom extends Room {
       const state: LobbyState = {
         hostId: this.seats[0]?.id ?? "",
         youId,
-        players: this.seats.map((seat) => ({ id: seat.id, name: seat.name })),
+        players: this.seats.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId })),
+        heroes: getGameData().heroes.map((hero) => ({
+          id: hero.id,
+          nome: hero.nome,
+          descricao: hero.descricao,
+          color: hero.color,
+          hp: hero.hp,
+          speed: hero.speed,
+        })),
         config: this.config,
         error: this.error,
       };
       client.send("lobby", state);
     }
+    this.setMetadata({
+      host: this.seats[0]?.name ?? "",
+      names: this.seats.map((seat) => seat.name),
+      slots: this.config.slots,
+    });
   }
 
   private async start() {
@@ -101,13 +130,14 @@ export class LobbyRoom extends Room {
     }
     try {
       const room = await matchMaker.createRoom("match", {
-        humans: humans.map((seat) => ({ id: seat.id, name: seat.name })),
+        humans: humans.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId })),
         bots,
         config: { lives: this.config.lives, cardsPerLevelUp: this.config.cardsPerLevelUp },
         seed: Math.floor(Math.random() * 1_000_000_000),
       });
       this.error = null;
       this.broadcast("go", { roomId: room.roomId });
+      await this.lock();
     } catch (error) {
       console.error("start", error);
       this.error = error instanceof Error ? error.message : "Não deu pra abrir a partida.";

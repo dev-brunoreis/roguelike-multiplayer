@@ -18,7 +18,8 @@ export function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN));
   const [user, setUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
-  const leaveMatch = useCallback(() => setRoomId(null), []);
+  const [seat, setSeat] = useState<null | { roomId?: string }>(null);
+  const leaveMatch = useCallback(() => { setRoomId(null); setSeat(null); }, []);
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
@@ -42,11 +43,22 @@ export function App() {
   if (roomId) {
     return <Match token={token} roomId={roomId} onLeave={leaveMatch} />;
   }
+  if (seat) {
+    return (
+      <WaitRoom
+        token={token}
+        roomId={seat.roomId}
+        onLeave={() => setSeat(null)}
+        onStart={(id) => { setSeat(null); setRoomId(id); }}
+      />
+    );
+  }
   return (
-    <Lobby
+    <Home
       token={token}
       onLogout={() => { localStorage.removeItem(TOKEN); setToken(null); setUser(null); }}
-      onStart={setRoomId}
+      onCreate={() => setSeat({})}
+      onJoin={(id) => setSeat({ roomId: id })}
     />
   );
 }
@@ -89,15 +101,102 @@ function Login({ onAuth }: { onAuth: (token: string, user: User) => void }) {
   );
 }
 
-function Lobby({ token, onLogout, onStart }: { token: string; onLogout: () => void; onStart: (roomId: string) => void }) {
+interface OpenRoom {
+  roomId: string;
+  clients: number;
+  maxClients: number;
+  host: string;
+  names: string[];
+  slots: number;
+}
+
+function Home({
+  token,
+  onLogout,
+  onCreate,
+  onJoin,
+}: {
+  token: string;
+  onLogout: () => void;
+  onCreate: () => void;
+  onJoin: (roomId: string) => void;
+}) {
+  const [rooms, setRooms] = useState<OpenRoom[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let stop = false;
+    const load = () => {
+      api<{ rooms: OpenRoom[] }>("/api/rooms", {}, token).then((data) => {
+        if (!stop) setRooms(data.rooms);
+      }).catch(() => {
+        if (!stop) setError("Não achei as salas.");
+      });
+    };
+    load();
+    const timer = window.setInterval(load, 2000);
+    return () => {
+      stop = true;
+      window.clearInterval(timer);
+    };
+  }, [token]);
+
+  return (
+    <main className="screen">
+      <section className="panel lobby">
+        <header className="row">
+          <div>
+            <p className="eyebrow">entrada</p>
+            <h1>Caos</h1>
+          </div>
+          <button className="btn ghost" onClick={onLogout}>Sair</button>
+        </header>
+        <p className="muted">Cria uma sala e espera o pessoal, ou entra numa que já está aberta.</p>
+        <button className="btn primary" onClick={onCreate}>Criar sala</button>
+        {error ? <p className="error">{error}</p> : null}
+        <div className="rooms">
+          {rooms.length === 0 ? <p className="muted">Nenhuma sala aberta.</p> : null}
+          {rooms.map((room) => {
+            const names = room.names;
+            const slots = room.slots || room.maxClients;
+            const full = room.clients >= slots;
+            return (
+              <article key={room.roomId} className="room">
+                <div>
+                  <strong>{room.host || "Sala"}</strong>
+                  <small>{room.clients}/{slots} · {names.join(", ") || "vazia"}</small>
+                </div>
+                <button className="btn" disabled={full} onClick={() => onJoin(room.roomId)}>{full ? "Cheia" : "Entrar"}</button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function WaitRoom({
+  token,
+  roomId,
+  onLeave,
+  onStart,
+}: {
+  token: string;
+  roomId?: string;
+  onLeave: () => void;
+  onStart: (roomId: string) => void;
+}) {
   const [state, setState] = useState<LobbyState | null>(null);
+  const [error, setError] = useState("");
   const roomRef = useRef<Room | null>(null);
 
   useEffect(() => {
     const client = new Client(wsBase());
     let room: Room | null = null;
     let closed = false;
-    client.joinOrCreate("lobby", { token }).then((joined) => {
+    const joining = roomId ? client.joinById(roomId, { token }) : client.create("lobby", { token });
+    void joining.then((joined) => {
       if (closed) {
         void joined.leave();
         return;
@@ -106,16 +205,17 @@ function Lobby({ token, onLogout, onStart }: { token: string; onLogout: () => vo
       roomRef.current = joined;
       joined.onMessage("lobby", (next: LobbyState) => setState(next));
       joined.onMessage("go", (message: { roomId: string }) => onStart(message.roomId));
-    }).catch((error: unknown) => {
-      console.error(error);
+    }).catch((err: unknown) => {
+      if (!closed) setError(err instanceof Error ? err.message : "Não entrei na sala.");
     });
     return () => {
       closed = true;
       void room?.leave();
     };
-  }, [token, onStart]);
+  }, [token, roomId, onStart]);
 
   const host = state?.hostId === state?.youId;
+  const mine = state?.players.find((player) => player.id === state.youId);
   function sendConfig(patch: Partial<LobbyState["config"]>) {
     if (!state) return;
     roomRef.current?.send("config", { ...state.config, ...patch });
@@ -126,16 +226,43 @@ function Lobby({ token, onLogout, onStart }: { token: string; onLogout: () => vo
       <section className="panel lobby">
         <header className="row">
           <div>
-            <p className="eyebrow">sala</p>
-            <h1>Quem entra no caos</h1>
+            <p className="eyebrow">{host ? "sua sala" : "sala"}</p>
+            <h1>{host ? "Esperando jogadores" : "Na sala"}</h1>
           </div>
-          <button className="btn ghost" onClick={onLogout}>Sair</button>
+          <button className="btn ghost" onClick={onLeave}>Voltar</button>
         </header>
+        {error ? <p className="error">{error}</p> : null}
         <ul className="roster">
-          {(state?.players ?? []).map((player) => (
-            <li key={player.id}>{player.name}{player.id === state?.hostId ? " · host" : ""}</li>
-          ))}
+          {(state?.players ?? []).map((player) => {
+            const hero = state?.heroes.find((item) => item.id === player.heroId);
+            return (
+              <li key={player.id}>
+                <b style={{ color: hero?.color }}>{player.name}</b>
+                {player.id === state?.hostId ? " · host" : ""}
+                <small>{hero?.nome ?? "escolhendo"}</small>
+              </li>
+            );
+          })}
+          {(state?.players.length ?? 0) === 0 ? <li className="muted">Entrando na sala...</li> : null}
         </ul>
+        <div>
+          <p className="eyebrow">personagem</p>
+          <div className="heroes">
+            {(state?.heroes ?? []).map((hero) => (
+              <button
+                key={hero.id}
+                type="button"
+                className={mine?.heroId === hero.id ? "hero-card on" : "hero-card"}
+                style={{ ["--hero" as string]: hero.color }}
+                onClick={() => roomRef.current?.send("hero", { heroId: hero.id })}
+              >
+                <strong>{hero.nome}</strong>
+                <small>{hero.hp} de vida · velocidade {hero.speed}</small>
+                <span>{hero.descricao}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="settings">
           <label>Lugares
             <input disabled={!host} type="number" min={2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
@@ -152,11 +279,29 @@ function Lobby({ token, onLogout, onStart }: { token: string; onLogout: () => vo
           </label>
         </div>
         {state?.error ? <p className="error">{state.error}</p> : null}
-        <button className="btn primary" disabled={!host} onClick={() => roomRef.current?.send("start")}>Começar</button>
-        {!host ? <p className="muted">Esperando o host começar.</p> : null}
+        {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}
       </section>
     </main>
   );
+}
+
+function cycleWatch(players: { id: string }[], youId: string, current: string | null) {
+  if (players.length === 0) return null;
+  const id = current ?? youId;
+  const start = Math.max(0, players.findIndex((player) => player.id === id));
+  const next = players[(start + 1) % players.length];
+  if (!next || next.id === youId) return null;
+  return next.id;
+}
+
+function nextWatch(snap: Snapshot, fromId: string) {
+  const start = Math.max(0, snap.players.findIndex((player) => player.id === fromId));
+  for (let step = 1; step <= snap.players.length; step += 1) {
+    const player = snap.players[(start + step) % snap.players.length];
+    if (!player || player.eliminated) continue;
+    if (snap.entities.some((entity) => entity.playerId === player.id)) return player.id;
+  }
+  return fromId;
 }
 
 const PHASE: Record<string, string> = {
@@ -173,6 +318,8 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
   const [watchId, setWatchId] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
   const hpRef = useRef<number | null>(null);
+  const phaseRef = useRef<string | null>(null);
+  const mePlace = useRef<{ x: number; y: number } | null>(null);
   const snapRef = useRef<Snapshot | null>(null);
   const shakeRef = useRef(0);
   const netRef = useRef({ ping: -1, arrivals: [] as number[] });
@@ -214,6 +361,16 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.code === "Tab") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.type !== "keydown" || event.repeat || isTypingTarget(event.target)) return;
+        const current = snapRef.current;
+        if (!current) return;
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        setWatchId((watch) => cycleWatch(current.players, current.youId, watch));
+        return;
+      }
       if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
       if (isTypingTarget(event.target)) return;
       const snap = snapRef.current;
@@ -230,13 +387,13 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
       }
       roomRef.current?.send("input", cameraMove());
     };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("keyup", onKey);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKey, true);
     const pulse = setInterval(() => roomRef.current?.send("input", cameraMove()), 50);
     const ping = setInterval(() => roomRef.current?.send("ping", performance.now()), 1000);
     return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keyup", onKey, true);
       clearInterval(pulse);
       clearInterval(ping);
     };
@@ -252,6 +409,25 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
     }
     if (snap.floats.some((item) => item.crit)) blip(620, 0.05, "square", 0.025);
     hpRef.current = me.hp;
+    const mine = snap.entities.find((entity) => entity.playerId === snap.youId);
+    const phaseChanged = phaseRef.current !== null && phaseRef.current !== snap.phase;
+    const jumped = mine && mePlace.current
+      ? Math.hypot(mine.x - mePlace.current.x, mine.y - mePlace.current.y) > 14
+      : false;
+    const cameBack = mine !== undefined && mePlace.current === null && phaseRef.current !== null;
+    if (!me.eliminated && (phaseChanged || jumped || cameBack)) setWatchId(null);
+    const followId = (!me.eliminated && (phaseChanged || jumped || cameBack) ? null : watchId) ?? snap.youId;
+    const followAlive = snap.entities.some((entity) => entity.playerId === followId);
+    if (me.lives <= 0) {
+      if (!followAlive) {
+        const next = nextWatch(snap, followId);
+        if (next !== followId) setWatchId(next === snap.youId ? null : next);
+      }
+    } else if (watchId && watchId !== snap.youId && !followAlive) {
+      setWatchId(null);
+    }
+    phaseRef.current = snap.phase;
+    mePlace.current = mine ? { x: mine.x, y: mine.y } : null;
   }, [snap]);
 
   if (!snap) return <main className="screen"><p>Abrindo a arena...</p></main>;
@@ -268,16 +444,19 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           <span>{Math.ceil(snap.announce?.kind === "duel" ? snap.announce.left : snap.phaseTime)}s</span>
           {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
         </div>
-        <button className="btn danger" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
+        <button className="btn danger" tabIndex={-1} disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
           if (confirm("Desistir elimina você agora.")) send("surrender");
         }}>Desistir</button>
       </header>
       <aside className="hud side">
         <div className="board">
-          {snap.players.map((player) => (
-            <button key={player.id} className={player.eliminated ? "out" : ""} onClick={() => setWatchId(player.id)}>
-              <b style={{ color: player.color }}>{player.name}</b>
-              <small>{"♥".repeat(Math.max(0, player.lives))}{player.eliminated ? " fora" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}</small>
+          {snap.players.map((player) => {
+            const mine = player.id === snap.youId;
+            const followed = (watchId ?? snap.youId) === player.id;
+            return (
+            <button key={player.id} tabIndex={-1} className={[player.eliminated ? "out" : "", mine ? "me" : "", followed ? "on" : ""].filter(Boolean).join(" ")} onClick={() => setWatchId(player.id === snap.youId ? null : player.id)}>
+              <b style={{ color: player.color }}>{player.name}{mine ? <em className="who"> você</em> : null}</b>
+              <small>{"♥".repeat(Math.max(0, player.lives))}{player.eliminated ? " fora" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
               <span className="pips">
                 {player.abilities.map((ability) => {
                   const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;
@@ -289,7 +468,8 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
                 })}
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </aside>
       <footer className="hud abilities">
@@ -314,7 +494,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           {me.luck > 0 ? <p className="muted">Sorte {(me.luck * 100).toFixed(0)}% — cartas melhores aparecem mais.</p> : null}
           <div className="cards">
             {me.pending.map((card, index) => (
-              <button key={card.id} className={`card rarity-${card.rarity}`} onClick={() => send("pick", { cardId: card.id })}>
+              <button key={card.id} tabIndex={-1} className={`card rarity-${card.rarity}`} onClick={() => send("pick", { cardId: card.id })}>
                 <em>{index + 1} · {card.rarity}</em>
                 <strong>{card.nome}</strong>
                 <span>{card.descricao}</span>
@@ -328,7 +508,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         <section className="overlay dock shop">
           <h2>Salão <small>{Math.ceil(snap.phaseTime)}s</small></h2>
           {snap.duel.length > 0 ? <p className="muted">Um duelo vem aí. Espaço para seguir.</p> : <p className="muted">Espaço para seguir.</p>}
-          <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
+          <button className="btn primary" tabIndex={-1} onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
         </section>
       ) : null}
       {snap.phase === "pve" && me?.waveClear && !me.eliminated ? (
@@ -351,11 +531,11 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
               ))}
             </tbody>
           </table>
-          <button className="btn primary" onClick={onLeave}>Voltar ao lobby</button>
+          <button className="btn primary" tabIndex={-1} onClick={onLeave}>Voltar ao lobby</button>
         </section>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
-        <p className="hint">W sobe na tela. 1–6 escolhe carta. Espaço segue no salão.</p>
+        <p className="hint">W sobe na tela. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
       )}
     </main>
   );

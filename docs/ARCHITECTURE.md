@@ -13,7 +13,7 @@ Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servido
 ## Fluxo
 
 1. Login JWT (HMAC). O token vai no join do Colyseus.
-2. Lobby único. O host define vagas, vidas, cartas por nível e bots, e dá start.
+2. A entrada lista salas de espera abertas. Quem cria vira host e fica na sala vendo quem entra. Cada um escolhe o herói. O host define vagas, vidas, cartas por nível e bots, e dá start.
 3. O servidor cria uma `MatchRoom` com `createMatch()`. Humanos e bots entram na mesma simulação.
 4. Cada tick chama `tick()`. PvE e duelo simulam combate. No salão só tem movimento. O snapshot sai a 10 Hz, filtrado por jogador (cartas só para quem escolhe). Sem ouro: a oferta de carta usa `luck`.
 5. O mapa tem um salão no centro (`hub`) e um quadrado PvE por jogador em anel. A onda espera o último vivo. Depois todos voltam ao salão. Duelo é um par só. O snapshot manda um `announce` reutilizável (duelo, vitória, morte, desistência) e `duelAnnounce` só controla o timer do 1v1.

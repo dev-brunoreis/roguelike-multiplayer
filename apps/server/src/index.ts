@@ -1,4 +1,4 @@
-import { Server } from "colyseus";
+import { Server, matchMaker } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import cors from "cors";
 import express from "express";
@@ -61,6 +61,22 @@ app.get("/api/me", (req, res) => {
     return;
   }
   res.json({ user });
+});
+
+app.get("/api/rooms", async (_req, res) => {
+  const rooms = await matchMaker.query({ name: "lobby" });
+  res.json({
+    rooms: rooms.filter((room) => !room.locked && !room.private && room.clients > 0).map((room) => ({
+      roomId: room.roomId,
+      clients: room.clients,
+      maxClients: room.maxClients,
+      host: typeof room.metadata?.host === "string" ? room.metadata.host : "",
+      names: Array.isArray(room.metadata?.names)
+        ? room.metadata.names.flatMap((name: unknown) => typeof name === "string" ? [name] : [])
+        : [],
+      slots: typeof room.metadata?.slots === "number" ? room.metadata.slots : room.maxClients,
+    })),
+  });
 });
 
 app.get("/api/matches", (_req, res) => {
