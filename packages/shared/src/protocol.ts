@@ -7,6 +7,8 @@ export interface FloatEvent {
   text: string;
   crit: boolean;
   arenaId: string;
+  sourcePlayerId?: string;
+  targetPlayerId?: string;
 }
 
 export type PersistEvent =

@@ -71,6 +71,7 @@ describe("simulação", () => {
     const b = match.entities.find((entity) => entity.id === second)!;
     expect(a.hp).toBeCloseTo(1000 - level.damage * level.falloff![0]!, 5);
     expect(b.hp).toBeCloseTo(1000 - level.damage * level.falloff![1]!, 5);
+    expect(match.floats.filter((item) => item.sourcePlayerId === "mago" && !item.targetPlayerId).length).toBe(2);
   });
 
   it("oferece a quantidade configurada de cartas ao subir de nível", () => {

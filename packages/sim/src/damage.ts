@@ -44,7 +44,10 @@ export function dealDamage(match: Match, hit: HitInput, nested = false): number 
   const final = Math.max(1, mitigated);
   target.hp -= final;
   target.flash += 1;
-  floatText(match, target, `${Math.round(final)}${ctx.crit ? "!" : ""}`, ctx.crit);
+  floatText(match, target, String(Math.round(final)), ctx.crit, {
+    sourcePlayerId: ctx.sourcePlayer?.id,
+    targetPlayerId: target.playerId,
+  });
 
   if (ctx.sourcePlayer) {
     ctx.sourcePlayer.damageDealt += final;

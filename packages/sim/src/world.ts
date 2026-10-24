@@ -48,7 +48,13 @@ export function emitFx(
   });
 }
 
-export function floatText(match: Match, entity: { x: number; y: number; arenaId: string }, text: string, crit = false) {
+export function floatText(
+  match: Match,
+  entity: { x: number; y: number; arenaId: string },
+  text: string,
+  crit = false,
+  who?: { sourcePlayerId?: string; targetPlayerId?: string },
+) {
   match.floats.push({
     id: match.nextId++,
     x: entity.x,
@@ -56,6 +62,8 @@ export function floatText(match: Match, entity: { x: number; y: number; arenaId:
     text,
     crit,
     arenaId: entity.arenaId,
+    sourcePlayerId: who?.sourcePlayerId,
+    targetPlayerId: who?.targetPlayerId,
   });
 }
 
