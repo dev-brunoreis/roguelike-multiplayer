@@ -109,9 +109,9 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
     const moving = speed > 0.55 && speed < 24;
     const mine = entity.playerId != null && entity.playerId === snap.youId;
     const aim = mine ? worldAim() : null;
-    let right = vx - vz;
-    if (aim) right = aim.x - placed.x - (aim.y - placed.y);
-    else if (entity.kind === "hero") right = Math.cos(entity.facing) - Math.sin(entity.facing);
+    const right = aim
+      ? aim.x - placed.x - (aim.y - placed.y)
+      : Math.cos(entity.facing) - Math.sin(entity.facing);
     if (Math.abs(right) > 0.0008) anim.current.flip = right > 0 ? 1 : -1;
 
     if (!anim.current.ready) {
