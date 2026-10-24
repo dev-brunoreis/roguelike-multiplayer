@@ -6,7 +6,20 @@ import { Scene } from "../game/Scene.js";
 import { loadIdle } from "../game/sprites.js";
 import { cameraMove, isTypingTarget } from "../game/input.js";
 import { api, ServerDown, serverReachable, wsBase } from "../net.js";
-import { blip, unlockAudio } from "../audio.js";
+import {
+  hearWorld,
+  readMix,
+  resetHear,
+  setMood,
+  setMusicVolume,
+  setSfxVolume,
+  sfxCrit,
+  sfxHurt,
+  sfxPick,
+  sfxUi,
+  unlockAudio,
+  type Mood,
+} from "../audio.js";
 
 interface User {
   id: string;
@@ -48,6 +61,16 @@ export function App() {
     setNotice(SERVER_DOWN);
   }, []);
   const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    const wake = () => unlockAudio();
+    window.addEventListener("pointerdown", wake);
+    window.addEventListener("keydown", wake);
+    return () => {
+      window.removeEventListener("pointerdown", wake);
+      window.removeEventListener("keydown", wake);
+    };
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -141,6 +164,7 @@ function Login({ onAuth }: { onAuth: (token: string, user: User) => void }) {
         <p className="eyebrow">último vivo vence</p>
         <h1>Caos</h1>
         <p className="muted">Ondas, cartas e duelos com os amigos. Fecha o jogo e a partida fica pra trás.</p>
+        <SoundMix />
         <label>Nome<input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" /></label>
         <label>Senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" /></label>
         {error ? <p className="error">{error}</p> : null}
@@ -277,6 +301,7 @@ function Home({
           <button className="btn ghost" onClick={onLogout}>Sair</button>
         </header>
         <p className="muted">Cria uma sala e espera o pessoal, ou entra numa que já está aberta.</p>
+        <SoundMix />
         <button className="btn primary" onClick={onCreate}>Criar sala</button>
         {error || notice ? <p className="error">{error || notice}</p> : null}
         <div className="rooms">
@@ -463,9 +488,43 @@ function WaitRoom({
           {state?.error ? <p className="error">{state.error}</p> : null}
           {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}
         </section>
+        <SoundMix />
       </section>
     </main>
   );
+}
+
+function SoundMix() {
+  const [music, setMusic] = useState(() => Math.round(readMix().music * 100));
+  const [sfx, setSfx] = useState(() => Math.round(readMix().sfx * 100));
+  return (
+    <div className="mix">
+      <label>Música
+        <input type="range" min={0} max={100} value={music} onChange={(event) => {
+          const next = Number(event.target.value);
+          setMusic(next);
+          setMusicVolume(next / 100);
+          unlockAudio();
+        }} />
+      </label>
+      <label>Efeitos
+        <small>Ataques, dano e interface. A música fica à parte.</small>
+        <input type="range" min={0} max={100} value={sfx} onChange={(event) => {
+          const next = Number(event.target.value);
+          setSfx(next);
+          setSfxVolume(next / 100);
+          unlockAudio();
+        }} />
+      </label>
+    </div>
+  );
+}
+
+function moodOf(phase: string): Mood {
+  if (phase === "duel") return "duel";
+  if (phase === "pve") return "wild";
+  if (phase === "ended") return "end";
+  return "calm";
 }
 
 function stillIn(player: { eliminated: boolean; lives: number }) {
@@ -511,6 +570,12 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
   const snapRef = useRef<Snapshot | null>(null);
   const shakeRef = useRef(0);
   const netRef = useRef({ ping: -1, arrivals: [] as number[] });
+  const pendingRef = useRef(0);
+  const pauseRef = useRef(false);
+  const menuRef = useRef(false);
+  const askRef = useRef<null | "leave" | "giveup">(null);
+  const [menu, setMenu] = useState(false);
+  const [ask, setAsk] = useState<null | "leave" | "giveup">(null);
   snapRef.current = snap;
 
   useEffect(() => {
@@ -561,12 +626,36 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       closed = true;
       window.clearInterval(beat);
       window.removeEventListener("beforeunload", beforeUnload);
+      resetHear();
+      setMood("calm");
       void room?.leave();
     };
   }, [roomId, token, onDown]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.code === "Escape" && event.type === "keydown" && !event.repeat) {
+        event.preventDefault();
+        if (askRef.current) {
+          askRef.current = null;
+          setAsk(null);
+          return;
+        }
+        const next = !menuRef.current;
+        menuRef.current = next;
+        askRef.current = null;
+        setMenu(next);
+        setAsk(null);
+        if (next) {
+          roomRef.current?.send("input", { x: 0, y: 0 });
+          sfxUi();
+        }
+        return;
+      }
+      if (menuRef.current) {
+        if (event.code === "Tab" || event.code === "Space" || event.code.startsWith("Arrow")) event.preventDefault();
+        return;
+      }
       if (event.code === "Tab") {
         event.preventDefault();
         event.stopPropagation();
@@ -595,7 +684,10 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
     };
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("keyup", onKey, true);
-    const pulse = setInterval(() => roomRef.current?.send("input", cameraMove()), 50);
+    const pulse = setInterval(() => {
+      if (menuRef.current) roomRef.current?.send("input", { x: 0, y: 0 });
+      else roomRef.current?.send("input", cameraMove());
+    }, 50);
     const ping = setInterval(() => roomRef.current?.send("ping", performance.now()), 1000);
     return () => {
       window.removeEventListener("keydown", onKey, true);
@@ -607,13 +699,20 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
 
   useEffect(() => {
     if (!snap) return;
+    setMood(moodOf(snap.phase));
     const me = snap.players.find((player) => player.id === snap.youId);
     if (!me) return;
+    const body = snap.entities.find((entity) => entity.playerId === snap.youId);
+    hearWorld(snap.fx, snap.projectiles, body ? { x: body.x, y: body.y } : null);
+    if (pendingRef.current > 0 && me.pending.length === 0) sfxPick();
+    pendingRef.current = me.pending.length;
+    if (phaseRef.current !== null && pauseRef.current !== snap.paused && snap.paused) sfxUi();
+    pauseRef.current = snap.paused;
     if (hpRef.current !== null && me.hp < hpRef.current) {
-      blip(140, 0.08, "sawtooth", 0.04);
+      sfxHurt();
       shakeRef.current = 1;
     }
-    if (snap.floats.some((item) => item.crit)) blip(620, 0.05, "square", 0.025);
+    if (snap.floats.some((item) => item.crit && (item.sourcePlayerId === snap.youId || item.targetPlayerId === snap.youId))) sfxCrit();
     hpRef.current = me.hp;
     const mine = snap.entities.find((entity) => entity.playerId === snap.youId);
     const phaseChanged = phaseRef.current !== null && phaseRef.current !== snap.phase;
@@ -639,6 +738,14 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
   if (!snap) return <main className="screen"><p>Abrindo a arena...</p></main>;
   const me = snap.players.find((player) => player.id === snap.youId);
   const send = (type: string, payload?: unknown) => roomRef.current?.send(type, payload);
+  const humans = snap.players.filter((player) => !player.isBot && !player.eliminated);
+  const asking = humans.filter((player) => player.pauseWant);
+  const closeMenu = () => {
+    menuRef.current = false;
+    askRef.current = null;
+    setMenu(false);
+    setAsk(null);
+  };
 
   return (
     <main className="match" onPointerDown={unlockAudio}>
@@ -649,10 +756,9 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
           <span>{Math.ceil(snap.announce?.kind === "duel" ? snap.announce.left : snap.phaseTime)}s</span>
           {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
+          {snap.paused ? <em className="flag">pausado</em> : null}
+          {!snap.paused && asking.length > 0 ? <em className="flag">{asking.length}/{humans.length} pausa</em> : null}
         </div>
-        <button className="btn danger" tabIndex={-1} disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
-          if (confirm("Desistir elimina você agora.")) send("surrender");
-        }}>Desistir</button>
       </header>
       <aside className="hud side">
         <div className="board">
@@ -665,7 +771,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
               <span className="life" title={`${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`}>
                 <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / Math.max(1, player.maxHp)) * 100))}%` }} />
               </span>
-              <small>{"♥".repeat(Math.max(0, player.lives))}{player.respawnIn > 0 && player.lives > 0 ? ` · ${Math.ceil(player.respawnIn)}s` : ""}{player.eliminated ? " fora" : ""}{player.inDuel ? " · duelo" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
+              <small>{"♥".repeat(Math.max(0, player.lives))}{player.respawnIn > 0 && player.lives > 0 ? ` · ${Math.ceil(player.respawnIn)}s` : ""}{player.eliminated ? " fora" : ""}{player.inDuel ? " · duelo" : ""}{player.pauseWant ? " · pausa" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
               <span className="pips">
                 {player.abilities.map((ability) => {
                   const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;
@@ -747,8 +853,44 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         <p className="respawn">Renasce em <strong>{Math.ceil(me.respawnIn)}s</strong></p>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
-        <p className="hint">W sobe na tela. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
+        <p className="hint">W sobe na tela. Esc abre o menu. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
       )}
+      {snap.paused && !menu ? <p className="paused-flag">Pausado</p> : null}
+      {menu ? (
+        <div className="menu-back">
+          <section className="menu" role="dialog" aria-label="Menu">
+            <p className="eyebrow">esc</p>
+            <h2>Menu</h2>
+            {ask === "giveup" ? (
+              <>
+                <p>Desistir elimina você agora.</p>
+                <button className="btn danger" type="button" onClick={() => send("surrender")}>Confirmar desistência</button>
+                <button className="btn ghost" type="button" onClick={() => { askRef.current = null; setAsk(null); }}>Voltar</button>
+              </>
+            ) : null}
+            {ask === "leave" ? (
+              <>
+                <p>Se você não voltar em 8 segundos, a saída conta como desistência.</p>
+                <button className="btn danger" type="button" onClick={onLeave}>Sair agora</button>
+                <button className="btn ghost" type="button" onClick={() => { askRef.current = null; setAsk(null); }}>Voltar</button>
+              </>
+            ) : null}
+            {ask == null ? (
+              <>
+                <button className="btn primary" type="button" onClick={closeMenu}>Continuar</button>
+                <button className="btn" type="button" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => send("pause", { want: !me?.pauseWant })}>
+                  {me?.pauseWant ? (snap.paused ? "Retomar" : "Cancelar pedido") : "Pedir pausa"}
+                </button>
+                <p className="muted">A partida congela quando todo humano vivo pede. Bots não votam.</p>
+                {asking.length > 0 ? <p className="muted">{asking.map((player) => player.name).join(", ")} {asking.length === 1 ? "pediu" : "pediram"} pausa.</p> : null}
+                <SoundMix />
+                <button className="btn danger" type="button" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => { askRef.current = "giveup"; setAsk("giveup"); }}>Desistir</button>
+                <button className="btn ghost" type="button" onClick={() => { askRef.current = "leave"; setAsk("leave"); }}>Sair da partida</button>
+              </>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
