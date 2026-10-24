@@ -117,6 +117,7 @@ export interface PlayerState {
   isBot: boolean;
   heroId: string;
   color: string;
+  shadowColor: string;
   entityId: number;
   arenaId: string;
   lives: number;

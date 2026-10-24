@@ -152,7 +152,7 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       shadow.current.visible = show;
       if (show) {
         shadow.current.scale.set(wide * 0.42, wide * 0.24, 1);
-        (shadow.current.material as MeshBasicMaterial).color.set(entity.color);
+        (shadow.current.material as MeshBasicMaterial).color.set(entity.shadowColor || entity.color);
       }
     }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
@@ -262,6 +262,8 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
   const [label, setLabel] = useState("");
   const [yours, setYours] = useState(false);
   const [hero, setHero] = useState(false);
+  const [ink, setInk] = useState("#f3ecdf");
+  const inkRef = useRef("");
 
   useFrame((state) => {
     const entity = snapRef.current?.entities.find((item) => item.id === id);
@@ -295,6 +297,11 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
       setHero(entity.kind === "hero");
       setYours(entity.playerId === snapRef.current?.youId);
     }
+    const nextInk = entity.kind === "hero" ? (entity.shadowColor || "#f3ecdf") : "#c9bfb2";
+    if (nextInk !== inkRef.current) {
+      inkRef.current = nextInk;
+      setInk(nextInk);
+    }
   });
 
   return (
@@ -308,7 +315,7 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
       <group ref={tag}>
         {label ? (
           <Html center sprite wrapperClass="float-anchor" zIndexRange={[3, 0]}>
-            <span className={hero ? (yours ? "nametag mine" : "nametag") : "nametag creep"}>{label}</span>
+            <span className={hero ? (yours ? "nametag mine" : "nametag") : "nametag creep"} style={{ color: ink }}>{label}</span>
           </Html>
         ) : null}
       </group>

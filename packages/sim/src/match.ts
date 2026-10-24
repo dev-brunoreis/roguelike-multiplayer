@@ -16,6 +16,7 @@ export interface CreatePlayer {
   name: string;
   isBot: boolean;
   heroId?: string;
+  shadowColor?: string;
 }
 
 export function createMatch(options: {
@@ -104,6 +105,7 @@ export function createMatch(options: {
       isBot: input.isBot,
       heroId: hero.id,
       color: hero.color,
+      shadowColor: listedColor(data.match.shadowColors, input.shadowColor) ?? hero.color,
       entityId,
       arenaId: arena.id,
       lives: config.lives,
@@ -260,6 +262,11 @@ export function runTicks(match: Match, count: number) {
   const events = [];
   for (let i = 0; i < count; i += 1) events.push(...tick(match));
   return events;
+}
+
+function listedColor(colors: string[], raw?: string) {
+  const wanted = raw?.toLowerCase();
+  return colors.find((color) => color.toLowerCase() === wanted);
 }
 
 export function quietMatch(match: Match) {

@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { hashPassword, signToken, verifyPassword, verifyToken } from "./auth.js";
 import { dbFile, findUserByName, insertUser, recentMatches } from "./db.js";
+import { getGameData } from "@game/game-data";
 import { LobbyRoom } from "./rooms/LobbyRoom.js";
 import { MatchRoom } from "./rooms/MatchRoom.js";
 
@@ -76,6 +77,7 @@ app.get("/api/rooms", async (_req, res) => {
         : [],
       slots: typeof room.metadata?.slots === "number" ? room.metadata.slots : room.maxClients,
     })),
+    shadowColors: getGameData().match.shadowColors,
   });
 });
 

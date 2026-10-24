@@ -10,6 +10,7 @@ interface Seat {
   id: string;
   name: string;
   heroId: string;
+  shadowColor?: string;
 }
 
 export class LobbyRoom extends Room {
@@ -18,11 +19,13 @@ export class LobbyRoom extends Room {
   private config: LobbyConfig;
   private error: string | null = null;
   private heroIds: string[] = [];
+  private shadowColors: string[] = [];
 
   constructor() {
     super();
     const data = getGameData();
     this.heroIds = data.heroes.map((hero) => hero.id);
+    this.shadowColors = data.match.shadowColors;
     this.config = {
       slots: 4,
       fillWithBots: true,
@@ -53,6 +56,16 @@ export class LobbyRoom extends Room {
       this.push();
     });
 
+    this.onMessage("shadow", (client, raw: unknown) => {
+      const color = this.shadowOf(typeof raw === "object" && raw && "color" in raw ? (raw as { color?: unknown }).color : "");
+      if (!color) return;
+      const auth = this.sessions.get(client.sessionId);
+      const seat = this.seats.find((item) => item.id === auth?.id);
+      if (!seat) return;
+      seat.shadowColor = color;
+      this.push();
+    });
+
     this.onMessage("start", (client) => {
       if (!this.isHost(client)) return;
       void this.start();
@@ -65,11 +78,13 @@ export class LobbyRoom extends Room {
     return user;
   }
 
-  onJoin(client: Client, _options: unknown, auth?: { id: string; username: string }) {
+  onJoin(client: Client, options: { shadowColor?: unknown }, auth?: { id: string; username: string }) {
     if (!auth) return;
-    this.sessions.set(client.sessionId, { id: auth.id, name: auth.username, heroId: this.heroIds[0] ?? "guerreiro" });
-    this.seats = this.seats.filter((seat) => seat.id !== auth.id);
-    this.seats.push({ id: auth.id, name: auth.username, heroId: this.heroIds[0] ?? "guerreiro" });
+    const shadowColor = this.shadowOf(options?.shadowColor);
+    const seat = { id: auth.id, name: auth.username, heroId: this.heroIds[0] ?? "guerreiro", shadowColor };
+    this.sessions.set(client.sessionId, seat);
+    this.seats = this.seats.filter((item) => item.id !== auth.id);
+    this.seats.push({ ...seat });
     this.maxClients = Math.max(this.config.slots, this.seats.length);
     this.push();
   }
@@ -92,7 +107,12 @@ export class LobbyRoom extends Room {
       const state: LobbyState = {
         hostId: this.seats[0]?.id ?? "",
         youId,
-        players: this.seats.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId })),
+        players: this.seats.map((seat) => ({
+          id: seat.id,
+          name: seat.name,
+          heroId: seat.heroId,
+          shadowColor: seat.shadowColor,
+        })),
         heroes: getGameData().heroes.map((hero) => ({
           id: hero.id,
           nome: hero.nome,
@@ -130,7 +150,7 @@ export class LobbyRoom extends Room {
     }
     try {
       const room = await matchMaker.createRoom("match", {
-        humans: humans.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId })),
+        humans: humans.map((seat) => ({ id: seat.id, name: seat.name, heroId: seat.heroId, shadowColor: seat.shadowColor })),
         bots,
         config: { lives: this.config.lives, cardsPerLevelUp: this.config.cardsPerLevelUp },
         seed: Math.floor(Math.random() * 1_000_000_000),
@@ -143,6 +163,11 @@ export class LobbyRoom extends Room {
       this.error = error instanceof Error ? error.message : "Não deu pra abrir a partida.";
       this.push();
     }
+  }
+
+  private shadowOf(raw: unknown) {
+    const wanted = typeof raw === "string" ? raw.toLowerCase() : "";
+    return this.shadowColors.find((color) => color.toLowerCase() === wanted);
   }
 }
 

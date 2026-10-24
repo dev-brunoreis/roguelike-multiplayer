@@ -50,7 +50,7 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     name: player.name,
     isBot: player.isBot,
     heroId: player.heroId,
-    color: player.color,
+    color: player.shadowColor,
     lives: player.lives,
     level: player.level,
     xp: player.xp,
@@ -111,6 +111,9 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       hp: entity.hp,
       maxHp: entity.maxHp,
       color: entity.color,
+      shadowColor: entity.kind === "hero"
+        ? match.players.find((player) => player.id === entity.playerId)?.shadowColor
+        : undefined,
       arenaId: entity.arenaId,
       flash: entity.flash,
       swing: entity.swing ?? 0,

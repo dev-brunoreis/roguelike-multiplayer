@@ -19,6 +19,7 @@ interface Seat {
   id: string;
   name: string;
   heroId?: string;
+  shadowColor?: string;
 }
 
 interface JoinOptions {
@@ -47,7 +48,7 @@ export class MatchRoom extends Room {
       seed: options.seed,
       config: options.config,
       players: [
-        ...humans.map((seat) => ({ id: seat.id, name: seat.name, isBot: false, heroId: seat.heroId })),
+        ...humans.map((seat) => ({ id: seat.id, name: seat.name, isBot: false, heroId: seat.heroId, shadowColor: seat.shadowColor })),
         ...bots.map((seat) => ({ id: seat.id, name: seat.name, isBot: true })),
       ],
     });

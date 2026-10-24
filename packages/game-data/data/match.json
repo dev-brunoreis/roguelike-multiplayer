@@ -23,5 +23,6 @@
   "xpPower": 1.35,
   "levelCap": 99,
   "respawnSeconds": 2.5,
-  "invulnSeconds": 1.2
+  "invulnSeconds": 1.2,
+  "shadowColors": ["#1c1914", "#4ea1ff", "#b07cff", "#7dce6a", "#e07a3d", "#e6c15a", "#e23d3d", "#f4efe4"]
 }

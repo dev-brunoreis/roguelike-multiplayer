@@ -93,6 +93,7 @@ export interface EntitySnap {
   hp: number;
   maxHp: number;
   color: string;
+  shadowColor?: string;
   arenaId: string;
   flash: number;
   swing: number;
@@ -185,6 +186,7 @@ export interface LobbyPlayer {
   id: string;
   name: string;
   heroId: string;
+  shadowColor?: string;
 }
 
 export interface LobbyHero {
