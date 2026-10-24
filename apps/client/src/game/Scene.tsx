@@ -2,6 +2,7 @@ import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { forgetMotion, motionAt, trackMotion } from "./motion.js";
 import { EntityPuppet, HpLayer } from "./views.js";
 
 const VIEW_RANGE = 92;
@@ -81,10 +82,21 @@ function World({
     };
   }, [gl]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const snap = snapRef.current;
     if (!snap) return;
-    const focus = focusOf(snap, watchId);
+    const now = state.clock.elapsedTime;
+    const alive = new Set<number>();
+    for (const entity of snap.entities) {
+      alive.add(entity.id);
+      trackMotion(entity.id, entity.x, entity.y, now);
+    }
+    for (const shot of snap.projectiles) {
+      alive.add(shot.id);
+      trackMotion(shot.id, shot.x, shot.y, now);
+    }
+    forgetMotion(alive);
+    const focus = smoothFocus(snap, watchId, now);
     const edge = 0.07;
     const speed = 28 * delta;
     if (mouse.current.x < edge) {
@@ -118,7 +130,7 @@ function World({
     if (!follow.current.ready) {
       follow.current = { x: lookX, z: lookZ, ready: true };
     }
-    const smear = Math.min(1, delta * 8);
+    const smear = Math.min(1, delta * 18);
     follow.current.x += (lookX - follow.current.x) * smear;
     follow.current.z += (lookZ - follow.current.z) * smear;
     shakeRef.current *= 0.86;
@@ -139,7 +151,7 @@ function World({
         entities: entities.map((entity) => entity.id),
       });
     }
-  });
+  }, -1);
 
   const snap = snapRef.current;
   return (
@@ -237,25 +249,16 @@ function Shots({
 
 function Shot({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
   const mesh = useRef<import("three").Mesh>(null);
-  const pos = useRef({ x: 0, z: 0, ready: false });
-  useFrame((_, delta) => {
+  useFrame((state) => {
     const shot = snapRef.current?.projectiles.find((item) => item.id === id);
+    const placed = motionAt(id, state.clock.elapsedTime);
     if (!mesh.current) return;
-    if (!shot) {
+    if (!shot || !placed) {
       mesh.current.visible = false;
-      pos.current.ready = false;
       return;
     }
     mesh.current.visible = true;
-    if (!pos.current.ready) {
-      pos.current = { x: shot.x, z: shot.y, ready: true };
-    }
-    pos.current.x += shot.vx * delta;
-    pos.current.z += shot.vy * delta;
-    const smear = Math.min(1, delta * 16);
-    pos.current.x += (shot.x - pos.current.x) * smear;
-    pos.current.z += (shot.y - pos.current.z) * smear;
-    mesh.current.position.set(pos.current.x, 0.5, pos.current.z);
+    mesh.current.position.set(placed.x, 0.5, placed.y);
     mesh.current.scale.setScalar(1.35);
     const mat = mesh.current.material as import("three").MeshBasicMaterial;
     if (mat.color) mat.color.set(shot.color);
@@ -348,6 +351,16 @@ function arenaOnScreen(arena: { x: number; y: number; size: number }, look: { x:
   const cx = arena.x + arena.size / 2;
   const cz = arena.y + arena.size / 2;
   return Math.hypot(cx - look.x, cz - look.z) < VIEW_RANGE + arena.size * 0.75;
+}
+
+function smoothFocus(snap: Snapshot, watchId: string | null, now: number): [number, number] {
+  const raw = focusOf(snap, watchId);
+  const you = snap.players.find((player) => player.id === snap.youId);
+  const watch = snap.players.find((player) => player.id === (watchId ?? you?.id)) ?? you;
+  const entity = snap.entities.find((item) => item.playerId === watch?.id);
+  if (!entity) return raw;
+  const placed = motionAt(entity.id, now);
+  return placed ? [placed.x, placed.y] : raw;
 }
 
 function focusOf(snap: Snapshot, watchId: string | null): [number, number] {

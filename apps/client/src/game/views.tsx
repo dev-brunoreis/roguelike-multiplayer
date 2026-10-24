@@ -2,6 +2,7 @@ import type { EntitySnap, Snapshot } from "@game/shared/protocol";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
 import { Sprite, SpriteMaterial, type Group, type Texture } from "three";
+import { motionAt } from "./motion.js";
 import { cloneSheet, setSpriteFrame } from "./sprites.js";
 
 export type ViewProps = { entity: EntitySnap };
@@ -24,7 +25,6 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const group = useRef<Group>(null);
   const sprite = useRef<Sprite>(null);
   const material = useRef<SpriteMaterial>(null);
-  const pos = useRef({ x: 0, z: 0, ready: false });
   const anim = useRef({ frame: 0, acc: 0, flip: 1, swing: 0, attack: 0 });
   const flash = useRef(0);
   const glow = useRef(0);
@@ -39,28 +39,24 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
     return () => sheet.dispose();
   }, [sheet]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const entity = snapRef.current?.entities.find((item) => item.id === id);
     const root = group.current;
     if (!entity || !root) {
       if (root) root.visible = false;
       return;
     }
+    const placed = motionAt(id, state.clock.elapsedTime);
+    if (!placed) return;
     root.visible = true;
-    if (!pos.current.ready) {
-      pos.current = { x: entity.x, z: entity.y, ready: true };
-    }
-    const prevX = pos.current.x;
-    const prevZ = pos.current.z;
-    const smear = Math.min(1, delta * 14);
-    pos.current.x += (entity.x - pos.current.x) * smear;
-    pos.current.z += (entity.y - pos.current.z) * smear;
-    root.position.set(pos.current.x, 0, pos.current.z);
+    const prevX = root.position.x;
+    const prevZ = root.position.z;
+    root.position.set(placed.x, 0, placed.y);
 
-    const vx = pos.current.x - prevX;
-    const vz = pos.current.z - prevZ;
+    const vx = placed.x - prevX;
+    const vz = placed.y - prevZ;
     const speed = Math.hypot(vx, vz) / Math.max(delta, 0.0001);
-    const moving = speed > 0.55;
+    const moving = speed > 0.55 && speed < 24;
     const right = vx - vz;
     if (Math.abs(right) > 0.0008) anim.current.flip = right > 0 ? 1 : -1;
 
@@ -121,25 +117,28 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
   const bar = useRef<Sprite>(null);
   const fill = useRef<Sprite>(null);
 
-  useFrame(() => {
+  useFrame((state) => {
     const entity = snapRef.current?.entities.find((item) => item.id === id);
     const root = group.current;
-    if (!entity || !root || entity.hp <= 0) {
+    if (!entity || !root || entity.hp <= 0 || entity.maxHp <= 0) {
       if (root) root.visible = false;
       return;
     }
+    const placed = motionAt(id, state.clock.elapsedTime);
+    if (!placed) return;
     root.visible = true;
-    const tall = tallOf(entity);
-    root.position.set(entity.x, 0, entity.y);
-    const barY = tall + 0.62;
+    root.position.set(placed.x, 0, placed.y);
+    const barY = tallOf(entity) + 0.62;
+    const hp = Math.max(0.04, Math.min(1, entity.hp / entity.maxHp));
     if (bar.current) {
       bar.current.position.set(0, barY, 0);
-      bar.current.scale.set(1.15, 0.18, 1);
+      bar.current.scale.set(1.15, 0.16, 1);
+      bar.current.center.set(0.5, 0.5);
     }
-    const hp = Math.max(0.05, entity.hp / entity.maxHp);
     if (fill.current) {
-      fill.current.position.set((hp - 1) * 0.55, barY, 0);
-      fill.current.scale.set(1.08 * hp, 0.12, 1);
+      fill.current.position.set(0, barY, 0);
+      fill.current.scale.set(1.05 * hp, 0.1, 1);
+      fill.current.center.set(0.5 / hp, 0.5);
       const mat = fill.current.material as SpriteMaterial;
       mat.color.set(entity.kind === "hero" ? "#8fdb67" : "#e23d3d");
     }
