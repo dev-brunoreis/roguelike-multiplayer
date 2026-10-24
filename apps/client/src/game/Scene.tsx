@@ -128,12 +128,9 @@ function World({
     camera.position.set(follow.current.x + 16 + jx, 20, follow.current.z + 16 + jz);
     camera.lookAt(follow.current.x, 0, follow.current.z);
 
-    const arenas = snap.arenas.filter((arena) => {
-      const cx = arena.x + arena.size / 2;
-      const cz = arena.y + arena.size / 2;
-      return Math.hypot(cx - follow.current.x, cz - follow.current.z) < VIEW_RANGE + arena.size * 0.6;
-    });
-    const entities = snap.entities.filter((entity) => Math.hypot(entity.x - follow.current.x, entity.y - follow.current.z) < VIEW_RANGE);
+    const arenas = snap.arenas.filter((arena) => arenaOnScreen(arena, follow.current));
+    const shown = new Set(arenas.map((arena) => arena.id));
+    const entities = snap.entities.filter((entity) => shown.has(entity.arenaId) || nearLook(entity.x, entity.y, follow.current));
     const key = `${arenas.map((arena) => arena.id).join(",")}|${entities.map((entity) => entity.id).join(",")}`;
     if (key !== idsKey.current) {
       idsKey.current = key;
@@ -223,7 +220,8 @@ function Shots({
   useFrame(() => {
     const snap = snapRef.current;
     if (!snap) return;
-    const near = snap.projectiles.filter((shot) => Math.hypot(shot.x - follow.current.x, shot.y - follow.current.z) < VIEW_RANGE);
+    const shown = new Set(snap.arenas.filter((arena) => arenaOnScreen(arena, follow.current)).map((arena) => arena.id));
+    const near = snap.projectiles.filter((shot) => shown.has(shot.arenaId) || nearLook(shot.x, shot.y, follow.current));
     const next = near.map((shot) => shot.id).join(",");
     if (next !== key.current) {
       key.current = next;
@@ -282,7 +280,8 @@ function FxLayer({
   useFrame(() => {
     const snap = snapRef.current;
     if (!snap) return;
-    const near = snap.fx.filter((item) => Math.hypot(item.x - follow.current.x, item.y - follow.current.z) < VIEW_RANGE);
+    const shown = new Set(snap.arenas.filter((arena) => arenaOnScreen(arena, follow.current)).map((arena) => arena.id));
+    const near = snap.fx.filter((item) => shown.has(item.arenaId) || nearLook(item.x, item.y, follow.current));
     const next = near.map((item) => item.id).join(",");
     if (next !== key.current) {
       key.current = next;
@@ -339,6 +338,16 @@ function FxBurst({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapsh
       </mesh>
     </group>
   );
+}
+
+function nearLook(x: number, y: number, look: { x: number; z: number }) {
+  return Math.hypot(x - look.x, y - look.z) < VIEW_RANGE + 36;
+}
+
+function arenaOnScreen(arena: { x: number; y: number; size: number }, look: { x: number; z: number }) {
+  const cx = arena.x + arena.size / 2;
+  const cz = arena.y + arena.size / 2;
+  return Math.hypot(cx - look.x, cz - look.z) < VIEW_RANGE + arena.size * 0.75;
 }
 
 function focusOf(snap: Snapshot, watchId: string | null): [number, number] {

@@ -9,7 +9,7 @@ import { simulateCombat, simulateMove } from "./combat.js";
 import { hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
-import { addLog, arenaCenter, dtOf, emit, heroEntity } from "./world.js";
+import { addLog, arenaCenter, dtOf, emit, heroEntity, updateBanner } from "./world.js";
 
 export interface CreatePlayer {
   id: string;
@@ -58,6 +58,7 @@ export function createMatch(options: {
     waveDone: false,
     duelPending: false,
     duelAnnounce: 0,
+    banner: null,
     winnerId: null,
     log: [],
     events: [],
@@ -249,6 +250,7 @@ export function tick(match: Match) {
     updateShop(match, dt);
   }
   checkWinner(match);
+  updateBanner(match, dt);
   if (match.floats.length > 80) match.floats.splice(0, match.floats.length - 80);
   match.fx = match.fx.filter((fx) => match.time - fx.born < fx.life);
   return match.events.slice();

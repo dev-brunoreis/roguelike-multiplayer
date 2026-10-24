@@ -1,6 +1,7 @@
 import type {
   AbilityDef,
   AbilityLevel,
+  AnnounceKind,
   EffectDef,
   FloatEvent,
   MatchConfig,
@@ -171,6 +172,7 @@ export interface Match {
   waveDone: boolean;
   duelPending: boolean;
   duelAnnounce: number;
+  banner: { id: number; kind: AnnounceKind; title: string; detail: string; left: number } | null;
   winnerId: string | null;
   log: string[];
   events: PersistEvent[];

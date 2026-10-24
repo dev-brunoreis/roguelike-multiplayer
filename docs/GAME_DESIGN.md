@@ -13,7 +13,7 @@ Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `pr
 1. PvE. Cada jogador vai para o próprio quadrado. A onda é a mesma, os bichos são cópias. A partida não tem rodada final: a última onda do JSON se repete mais densa e os bichos ganham vida/dano. Quem limpa espera. A onda só fecha quando o último vivo termina, ou estoura o timer.
 2. Salão no centro do mapa. Sem dano, sem mob, sem PvP. Aqui sobe de nível vira escolha de carta (`cardPickSeconds`). Andar continua liberado. `Seguir` ou o fim de `hubSeconds` manda o próximo passo.
 3. Morrer na onda custa uma vida e respawna no mesmo quadrado. Sem vidas, vira espectador.
-4. A partir da rodada `duelStartRound`, o salão escolhe **um** par. Os nomes ficam no meio da tela por `duelAnnounceSeconds` (10s) antes do 1v1. Só esses dois teleportam. O perdedor perde uma vida. Depois do duelo já vai a próxima onda.
+4. A partir da rodada `duelStartRound`, o salão escolhe **um** par. Um banner no topo anuncia o par por `duelAnnounceSeconds` (10s), depois o vencedor, morte e desistência. Só os dois teleportam. O perdedor perde uma vida. Depois do duelo já vai a próxima onda.
 5. Nível durante a onda só guarda a escolha (`unspentPicks`). A carta abre no salão. Se o tempo acaba, uma carta sai sozinha.
 
 Um herói cabe até `maxAbilities` skills (padrão 6). Skill nova vem de carta `grantAbility`. Se a barra estiver cheia, a nova troca a mais fraca. Upgrade vem de carta `upgradeAbility`. Mob pode dropar item (`dropChance`) e isso vira mais uma escolha no salão.

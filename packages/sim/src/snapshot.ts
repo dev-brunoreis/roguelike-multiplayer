@@ -141,6 +141,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
     floats: match.floats.slice(-40),
     duel: match.duel.map((pair) => ({ ...pair })),
     duelAnnounce: Math.max(0, match.duelAnnounce),
+    announce: match.banner && match.banner.left > 0 ? { ...match.banner } : null,
   };
 }
 

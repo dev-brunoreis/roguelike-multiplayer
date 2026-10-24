@@ -138,6 +138,16 @@ export interface DuelPairSnap {
   resolved: boolean;
 }
 
+export type AnnounceKind = "duel" | "duel_result" | "death" | "surrender" | "eliminate" | "info";
+
+export interface AnnounceSnap {
+  id: number;
+  kind: AnnounceKind;
+  title: string;
+  detail: string;
+  left: number;
+}
+
 export interface Snapshot {
   tick: number;
   round: number;
@@ -155,6 +165,7 @@ export interface Snapshot {
   floats: FloatEvent[];
   duel: DuelPairSnap[];
   duelAnnounce: number;
+  announce: AnnounceSnap | null;
 }
 
 export interface ClientInput {

@@ -10,6 +10,6 @@ React + React Three Fiber. A câmera é ortográfica, deslocada em +X+Z. O 3D l�
 
 `registerEntityView` guarda o visual por id. O default é `EntityPuppet`: sprite de pixel (folha gerada em canvas, nearest, sem luz). Barras de vida ficam numa camada depois dos sprites (`HpLayer`) para não sumirem atrás do bicho. Animação idle/walk/ataque por UV. Ícone de skill é SVG (`SkillGlyph`), não canvas. Visual novo: desenho em `sprites.ts` ou `registerEntityView`.
 
-WASD é relativo à câmera: W sobe na tela, D vai pra direita. Converte antes de mandar `{ x, y }` no mundo. Botão direito arrasta a câmera; encostar o mouse na borda também. Só desenha arena perto do olhar.
+WASD é relativo à câmera: W sobe na tela, D vai pra direita. Converte antes de mandar `{ x, y }` no mundo. Botão direito arrasta a câmera; encostar o mouse na borda também. Arena visível inclui os bichos dela. Banner de anúncio fica no topo (`announce` do snapshot).
 
 Carta não pausa o herói. No salão o overlay fica embaixo; dá pra andar. Loja, aposta e desistir são mensagens. Textos em português.

@@ -2,7 +2,7 @@ import { eligible, offerCards } from "./damage.js";
 import { applyCard } from "./effects.js";
 import { flushDamage, spawnCreep } from "./spawn.js";
 import type { DuelPair, Match, PlayerState } from "./types.js";
-import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity } from "./world.js";
+import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity, pushBanner } from "./world.js";
 
 export function checkWinner(match: Match) {
   if (match.phase === "ended") return;
@@ -263,6 +263,12 @@ export function updateHub(match: Match, dt: number) {
       const a = match.players.find((player) => player.id === pair.a);
       const b = match.players.find((player) => player.id === pair.b);
       addLog(match, `Duelo: ${a?.name ?? "?"} vs ${b?.name ?? "?"}`);
+      pushBanner(match, {
+        kind: "duel",
+        title: `${a?.name ?? "?"} vs ${b?.name ?? "?"}`,
+        detail: "Duelo",
+        life: announceFor,
+      });
     }
     if (match.duelAnnounce > 0) {
       match.duelAnnounce = Math.max(0, match.duelAnnounce - dt);
@@ -390,11 +396,13 @@ function resolvePair(
   if (timeout && aAlive && bAlive && Math.abs(aRatio - bRatio) < 0.01) {
     refundBets(match, [aId, bId]);
     addLog(match, `Duelo empatado: ${a.name} e ${b.name}`);
+    pushBanner(match, { kind: "duel_result", title: "Duelo empatado", detail: `${a.name} e ${b.name}`, life: 4 });
     return;
   }
   if (!aAlive && !bAlive) {
     refundBets(match, [aId, bId]);
     addLog(match, `Duelo nocaute duplo: ${a.name} e ${b.name}`);
+    pushBanner(match, { kind: "duel_result", title: "Nocaute duplo", detail: `${a.name} e ${b.name}`, life: 4 });
     return;
   }
   const winner = !aAlive || bRatio > aRatio ? b : a;
@@ -417,6 +425,12 @@ function resolvePair(
   payBets(match, winner.id, aId, bId);
   emit(match, { type: "duel_result", round: match.round, winnerId: winner.id, loserId: loser.id, timeout });
   addLog(match, `${winner.name} venceu o duelo contra ${loser.name}`);
+  pushBanner(match, {
+    kind: "duel_result",
+    title: `${winner.name} venceu`,
+    detail: `Duelo contra ${loser.name}`,
+    life: 4.2,
+  });
 }
 
 function payBets(match: Match, winnerId: string, aId: string, bId: string) {

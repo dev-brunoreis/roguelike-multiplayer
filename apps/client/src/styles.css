@@ -116,15 +116,21 @@ input[type="text"], input[type="password"], input[type="number"] {
 .overlay.dock button,
 .overlay.dock input { pointer-events: auto; }
 .overlay.dock.bet { bottom: 280px; width: min(420px, calc(100% - 40px)); }
-.overlay.announce {
-  width: min(520px, calc(100% - 40px));
-  text-align: center;
-  background: #16130ff0;
-  border-color: #c46a3a;
-  pointer-events: none;
+.banner {
+  position: absolute; z-index: 3; top: 74px; left: 50%; transform: translateX(-50%);
+  width: min(360px, calc(100% - 48px));
+  background: #16130fee; border: 1px solid #6a573f; padding: 8px 14px 10px;
+  text-align: center; pointer-events: none;
+  display: grid; gap: 2px; justify-items: center;
 }
-.overlay.announce h2 { margin: 0; font-size: 32px; }
-.overlay.announce strong { font-size: 64px; line-height: 1; color: #f0a202; }
+.banner em { font-style: normal; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #c4b6a3; }
+.banner h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.banner p { margin: 0; font-size: 13px; color: #d9d0c3; }
+.banner span { color: #f0a202; font-size: 20px; font-weight: 700; }
+.banner.kind-duel { border-color: #c46a3a; }
+.banner.kind-duel_result { border-color: #f0a202; }
+.banner.kind-death, .banner.kind-eliminate { border-color: #c44a3a; }
+.banner.kind-surrender { border-color: #8a7a68; }
 .cards { display: flex; gap: 10px; flex-wrap: wrap; }
 .card {
   width: 160px; min-height: 140px; text-align: left; padding: 10px;

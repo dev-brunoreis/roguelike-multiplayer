@@ -1,6 +1,6 @@
 import { damagePipeline } from "./registry.js";
 import type { DamageContext, Entity, Match, PlayerState } from "./types.js";
-import { arenaById, dist, emitFx, floatText, heroEntity, playerById } from "./world.js";
+import { arenaById, dist, emitFx, floatText, heroEntity, playerById, pushBanner } from "./world.js";
 
 export interface HitInput {
   source?: Entity;
@@ -134,8 +134,19 @@ export function loseLife(match: Match, player: PlayerState) {
     entity.hp = 0;
   }
   match.events.push({ type: "death", round: match.round, playerId: player.id, livesLeft: Math.max(0, player.lives) });
-  if (player.lives <= 0) eliminate(match, player, "sem vidas");
-  else if (match.phase === "pve") player.respawnIn = match.config.respawnSeconds;
+  if (player.lives <= 0) {
+    eliminate(match, player, "sem vidas");
+    return;
+  }
+  addLogSafe(match, `${player.name} morreu`);
+  if (match.phase !== "duel") {
+    pushBanner(match, {
+      kind: "death",
+      title: `${player.name} morreu`,
+      detail: player.lives === 1 ? "Resta 1 vida" : `Restam ${player.lives} vidas`,
+    });
+  }
+  if (match.phase === "pve") player.respawnIn = match.config.respawnSeconds;
 }
 
 export function eliminate(match: Match, player: PlayerState, reason: string) {
@@ -151,7 +162,15 @@ export function eliminate(match: Match, player: PlayerState, reason: string) {
   const entity = heroEntity(match, player);
   if (entity) entity.alive = false;
   match.events.push({ type: "eliminate", round: match.round, playerId: player.id, reason });
+  if (reason === "desistiu") {
+    addLogSafe(match, `${player.name} desistiu`);
+    pushBanner(match, { kind: "surrender", title: `${player.name} desistiu`, detail: "Fora da partida", life: 4 });
+    return;
+  }
   addLogSafe(match, `${player.name} foi eliminado`);
+  if (reason !== "duelo") {
+    pushBanner(match, { kind: "eliminate", title: `${player.name} foi eliminado`, life: 4 });
+  }
 }
 
 function addLogSafe(match: Match, text: string) {

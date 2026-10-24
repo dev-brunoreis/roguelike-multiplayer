@@ -1,6 +1,6 @@
 import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import type { LobbyState, Snapshot } from "@game/shared/protocol";
+import type { AnnounceSnap, LobbyState, Snapshot } from "@game/shared/protocol";
 import { SkillGlyph } from "../game/icons.js";
 import { Scene } from "../game/Scene.js";
 import { cameraMove, isTypingTarget } from "../game/input.js";
@@ -254,7 +254,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
       <header className="hud top">
         <div>
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
-          <span>{Math.ceil(snap.duelAnnounce > 0 ? snap.duelAnnounce : snap.phaseTime)}s</span>
+          <span>{Math.ceil(snap.announce?.kind === "duel" ? snap.announce.left : snap.phaseTime)}s</span>
           {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
         </div>
         <div className="board">
@@ -310,17 +310,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           </div>
         </section>
       ) : null}
-      {snap.duelAnnounce > 0 && snap.duel[0] ? (
-        <section className="overlay announce">
-          <p className="eyebrow">Próximo duelo</p>
-          <h2>
-            {snap.players.find((player) => player.id === snap.duel[0]!.a)?.name ?? "?"}
-            {" vs "}
-            {snap.players.find((player) => player.id === snap.duel[0]!.b)?.name ?? "?"}
-          </h2>
-          <strong>{Math.ceil(snap.duelAnnounce)}</strong>
-        </section>
-      ) : null}
+      {snap.announce ? <Banner announce={snap.announce} /> : null}
       {snap.phase === "hub" && snap.duelAnnounce <= 0 && me && !me.eliminated && me.pending.length === 0 ? (
         <section className="overlay dock shop">
           <h2>Salão <small>{Math.ceil(snap.phaseTime)}s</small></h2>
@@ -355,6 +345,26 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         <p className="hint">W sobe na tela. 1–6 escolhe carta. Espaço segue no salão.</p>
       )}
     </main>
+  );
+}
+
+const BANNER_KIND: Record<string, string> = {
+  duel: "Duelo",
+  duel_result: "Duelo",
+  death: "Queda",
+  surrender: "Desistência",
+  eliminate: "Fora",
+  info: "Aviso",
+};
+
+function Banner({ announce }: { announce: AnnounceSnap }) {
+  return (
+    <section className={`banner kind-${announce.kind}`}>
+      <em>{BANNER_KIND[announce.kind] ?? "Aviso"}</em>
+      <h2>{announce.title}</h2>
+      {announce.detail ? <p>{announce.detail}</p> : null}
+      {announce.kind === "duel" ? <span>{Math.ceil(announce.left)}</span> : null}
+    </section>
   );
 }
 

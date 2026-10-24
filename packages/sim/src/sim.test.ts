@@ -258,6 +258,8 @@ describe("simulação", () => {
     expect(match.phase).toBe("ended");
     expect(match.winnerId).toBe("a");
     expect(match.players.find((player) => player.id === "b")?.eliminated).toBe(true);
+    expect(match.banner?.kind).toBe("surrender");
+    expect(match.banner?.title).toContain("Bia");
   });
 
   it("bots atravessam fases sem quebrar", () => {
@@ -309,5 +311,7 @@ describe("simulação", () => {
     tick(match);
     expect(match.phase).toBe("hub");
     expect(match.duelAnnounce).toBeGreaterThan(9);
+    expect(match.banner?.kind).toBe("duel");
+    expect(match.banner?.title).toMatch(/ vs /);
   });
 });

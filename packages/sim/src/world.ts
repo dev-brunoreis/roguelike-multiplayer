@@ -1,4 +1,4 @@
-import type { PersistEvent } from "@game/shared";
+import type { AnnounceKind, PersistEvent } from "@game/shared";
 import type { Arena, Entity, Match, PlayerState } from "./types.js";
 
 export function emit(match: Match, event: PersistEvent) {
@@ -8,6 +8,25 @@ export function emit(match: Match, event: PersistEvent) {
 export function addLog(match: Match, text: string) {
   match.log.push(text);
   if (match.log.length > 14) match.log.shift();
+}
+
+export function pushBanner(
+  match: Match,
+  banner: { kind: AnnounceKind; title: string; detail?: string; life?: number },
+) {
+  match.banner = {
+    id: match.nextId++,
+    kind: banner.kind,
+    title: banner.title,
+    detail: banner.detail ?? "",
+    left: banner.life ?? 3.4,
+  };
+}
+
+export function updateBanner(match: Match, dt: number) {
+  if (!match.banner) return;
+  match.banner.left = Math.max(0, match.banner.left - dt);
+  if (match.banner.left <= 0) match.banner = null;
 }
 
 export function emitFx(
