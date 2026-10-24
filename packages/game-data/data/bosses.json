@@ -1,4 +1,5 @@
 [
   { "id": "golem", "creepId": "boss_golem", "nome": "Golem", "everyRounds": 3 },
-  { "id": "olho", "creepId": "boss_olho", "nome": "Olho", "everyRounds": 6 }
+  { "id": "olho", "creepId": "boss_olho", "nome": "Olho", "everyRounds": 6 },
+  { "id": "matriarca", "creepId": "boss_matriarca", "nome": "Matriarca", "everyRounds": 9 }
 ]

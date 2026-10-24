@@ -38,5 +38,17 @@ function glyph(id: string, color: string) {
       </>
     );
   }
+  if (id === "martelo") {
+    return <path fill={color} d="M6 4h12v6H6zm4 6h4v12H10z" />;
+  }
+  if (id === "lanca") {
+    return <path fill={color} d="M14 2h3v3h-3zM13 5h2l-7 12H6L13 5zm-6 13h3v4H7z" />;
+  }
+  if (id === "gelo") {
+    return <path fill={color} d="M11 2h2v6h6v2h-6v6h5v2h-5v4h-2v-4H6v-2h5V10H5V8h6V2z" />;
+  }
+  if (id === "dardo") {
+    return <path fill={color} d="M4 11h12v2H4zm12-3 5 4-5 4v-2h-1v-4h1z" />;
+  }
   return <rect x="7" y="7" width="10" height="10" fill={color} />;
 }

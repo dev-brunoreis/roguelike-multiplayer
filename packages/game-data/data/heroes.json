@@ -38,5 +38,15 @@
     "speed": 4.1,
     "radius": 0.46,
     "startingAbility": "explosao"
+  },
+  {
+    "id": "lanceiro",
+    "nome": "Lanceiro",
+    "descricao": "Arremessa longe e segura a linha.",
+    "color": "#e6c15a",
+    "hp": 120,
+    "speed": 4.5,
+    "radius": 0.46,
+    "startingAbility": "lanca"
   }
 ]

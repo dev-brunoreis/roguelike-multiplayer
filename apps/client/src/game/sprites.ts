@@ -222,6 +222,74 @@ function olho(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   }
 }
 
+function lanceiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  humanoid(ctx, frame, pal);
+  const y = 3 - bob(frame);
+  px(ctx, 8, 9 + y, pal.dark, 8, 2);
+  if (frame === 6) {
+    px(ctx, 12, 2, pal.metal, 2, 16);
+    px(ctx, 11, 2, pal.light, 4, 3);
+    return;
+  }
+  if (frame === 7) {
+    px(ctx, 16, 10 + y, pal.metal, 8, 2);
+    px(ctx, 22, 9 + y, pal.light, 2, 4);
+    return;
+  }
+  px(ctx, 16, 4 + y, pal.metal, 2, 16);
+  px(ctx, 15, 4 + y, pal.light, 4, 2);
+}
+
+function morcego(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  const flap = frame % 2 === 0 ? 0 : 2;
+  const y = 6 - bob(frame);
+  px(ctx, 2, 8 + y + flap, pal.dark, 6, 3);
+  px(ctx, 16, 8 + y + flap, pal.dark, 6, 3);
+  px(ctx, 8, 8 + y, pal.fill, 8, 6);
+  px(ctx, 9, 9 + y, pal.light, 6, 2);
+  px(ctx, 10, 10 + y, pal.ink);
+  px(ctx, 13, 10 + y, pal.ink);
+}
+
+function guarda(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  const y = 3 - bob(frame);
+  px(ctx, 8, 16 + y, pal.dark, 3, 5);
+  px(ctx, 13, 16 + y, pal.dark, 3, 5);
+  px(ctx, 7, 9 + y, pal.fill, 10, 8);
+  px(ctx, 8, 4 + y, pal.skin, 8, 6);
+  px(ctx, 10, 6 + y, pal.ink);
+  px(ctx, 13, 6 + y, pal.ink);
+  px(ctx, 2, 8 + y, pal.metal, 5, 8);
+  px(ctx, 3, 9 + y, pal.light, 3, 3);
+  if (frame >= 6) px(ctx, 17, 10 + y, pal.metal, 5, 2);
+}
+
+function aranha(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  const y = 8 - (frame % 2);
+  px(ctx, 3, 12 + y, pal.dark, 4, 1);
+  px(ctx, 17, 12 + y, pal.dark, 4, 1);
+  px(ctx, 4, 16 + y, pal.dark, 3, 1);
+  px(ctx, 17, 16 + y, pal.dark, 3, 1);
+  px(ctx, 7, 8 + y, pal.ink, 10, 8);
+  px(ctx, 8, 9 + y, pal.fill, 8, 6);
+  px(ctx, 9, 10 + y, pal.ink);
+  px(ctx, 14, 10 + y, pal.ink);
+  if (frame >= 6) px(ctx, 16, 10 + y, pal.light, 4, 2);
+}
+
+function matriarca(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  const y = 4 - (frame % 2);
+  px(ctx, 2, 14 + y, pal.dark, 6, 2);
+  px(ctx, 16, 14 + y, pal.dark, 6, 2);
+  px(ctx, 4, 18 + y, pal.dark, 4, 2);
+  px(ctx, 16, 18 + y, pal.dark, 4, 2);
+  px(ctx, 5, 6 + y, pal.ink, 14, 12);
+  px(ctx, 6, 7 + y, pal.fill, 12, 10);
+  px(ctx, 7, 8 + y, pal.light, 6, 3);
+  px(ctx, 8, 10 + y, pal.ink, 2, 2);
+  px(ctx, 14, 10 + y, pal.ink, 2, 2);
+}
+
 function atirador(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   arqueiro(ctx, frame, pal);
   const y = 3 - bob(frame);
@@ -233,12 +301,17 @@ const DRAWS: Record<string, Draw> = {
   mago,
   arqueiro,
   piromante,
+  lanceiro,
   slime,
   bruto,
   corredor,
   atirador,
+  morcego,
+  guarda,
+  aranha,
   boss_golem: golem,
   boss_olho: olho,
+  boss_matriarca: matriarca,
 };
 
 function paint(id: string, color: string) {

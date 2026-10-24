@@ -22,5 +22,45 @@
     "tag": "area",
     "count": 3,
     "effects": [{ "type": "stat", "stat": "areaPct", "value": 0.25 }]
+  },
+  {
+    "id": "braco",
+    "nome": "Braço",
+    "descricao": "3 cartas de força: +12% de dano.",
+    "tag": "forca",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "damagePct", "value": 0.12 }]
+  },
+  {
+    "id": "vento",
+    "nome": "Vento",
+    "descricao": "3 cartas de agilidade: +15% de velocidade de ataque.",
+    "tag": "agilidade",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "attackSpeedPct", "value": 0.15 }]
+  },
+  {
+    "id": "academia",
+    "nome": "Academia",
+    "descricao": "3 cartas de magia: -10% de recarga.",
+    "tag": "magia",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "cooldownPct", "value": 0.1 }]
+  },
+  {
+    "id": "nevasca",
+    "nome": "Nevasca",
+    "descricao": "3 cartas de gelo: +18% de área.",
+    "tag": "gelo",
+    "count": 3,
+    "effects": [{ "type": "stat", "stat": "areaPct", "value": 0.18 }]
+  },
+  {
+    "id": "peconha",
+    "nome": "Peçonha",
+    "descricao": "3 cartas de veneno: ataques causam +3 de dano.",
+    "tag": "veneno",
+    "count": 3,
+    "effects": [{ "type": "onHit", "hook": "burn", "value": 3 }]
   }
 ]
