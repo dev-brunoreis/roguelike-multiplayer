@@ -8,7 +8,7 @@ Em `abilities.json`. `behavior` e `targeting` precisam já estar registrados.
 
 Behaviors atuais: `single`, `chain`, `aoe`, `projectile`, `cone`.
 
-Targeting atual: `nearest`, `lowestHp`, `random`, `densest`. Com mira do mouse, `single`, `projectile` e o primeiro salto do `chain` usam a linha até o ponto; `aoe` estoura no ponto e gasta cooldown mesmo vazio. O targeting do JSON vale enquanto `aimX`/`aimY` ainda são nulos.
+Targeting atual: `nearest`, `lowestHp`, `random`, `densest`. Com mira do mouse, `single`, `projectile` e o primeiro salto do `chain` usam a linha até o ponto; `aoe` estoura no ponto só se tem inimigo no raio; vazio, não gasta cooldown. O targeting do JSON vale enquanto `aimX`/`aimY` ainda são nulos.
 
 `levels` é a progressão. Nível 1 usa o primeiro item. `chain` lê `targets` e `falloff`.
 
@@ -41,6 +41,10 @@ registerEntityView("guerreiro", GuerreiroModel);
 ```
 
 O componente só posiciona o visual. Dano, vida e cooldown continuam na simulação.
+
+## Masmorra
+
+`dungeon.json` define salas, portais, coleira, reviver e os encontros. `encounters` escolhe o grupo de maior `depth` que ainda cabe na sala. `elites` e `bosses` citam `creepId`. `aggro` opcional no creep sobrescreve `aggroRadius` e `leashRadius`.
 
 ## Bot
 

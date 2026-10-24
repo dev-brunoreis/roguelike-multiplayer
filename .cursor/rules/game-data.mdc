@@ -14,6 +14,7 @@ alwaysApply: false
 - Creep corpo a corpo leva `attackWindup`: tempo parado em que a sombra vermelha cresce no chão antes do dano. Atirador fica em `0`.
 - `skill` no creep é opcional. `cooldown` e os números da skill (`damage`, `range`, `radius`, `speed`, `amount`, `creepId`, `count`) ficam nesse objeto. O `kind` precisa de `registerCreepSkill`.
 - `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`), `hubSize`, `aimSlack` e `version`.
+- `dungeon.json` manda salas, portais, coleira, reviver, escala por profundidade e os encontros da masmorra. `aggro` no creep é opcional.
 - A oferta de carta usa o `weight` do JSON. Não existe stat de sorte.
 - Não duplique esses números no servidor ou no cliente.
 
