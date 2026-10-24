@@ -279,8 +279,11 @@ function sheetDrawn(
     const local = frame >= 12 ? 0 : frame % 4;
     draw(ctx, frame * cellW, 0, attack ? frame - 8 : local, attack);
     if (frame >= 12) {
+      ctx.save();
+      ctx.globalCompositeOperation = "source-atop";
       ctx.fillStyle = "rgba(255,246,216,0.45)";
       ctx.fillRect(frame * cellW, 0, cellW, cellH);
+      ctx.restore();
     }
   }
   return finish(canvas, frames, clips);
