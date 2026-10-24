@@ -1,8 +1,9 @@
 import type { EntitySnap, FloatEvent, Snapshot } from "@game/shared/protocol";
-import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
 import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
+import { inView, type SnapIndex } from "./frame.js";
+import { floatTexture, labelTexture } from "./glyphs.js";
 import { worldAim } from "./input.js";
 import { motionAt } from "./motion.js";
 import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
@@ -53,7 +54,15 @@ export function takeDeaths(alive: Set<number>, now: number): Death[] {
   return born;
 }
 
-export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
+export function EntityPuppet({
+  id,
+  snapRef,
+  indexRef,
+}: {
+  id: number;
+  snapRef: MutableRefObject<Snapshot | null>;
+  indexRef: MutableRefObject<SnapIndex>;
+}) {
   const group = useRef<Group>(null);
   const sprite = useRef<Sprite>(null);
   const shadow = useRef<Mesh>(null);
@@ -67,7 +76,7 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
-  const view = useRef(snapRef.current?.entities.find((item) => item.id === id)?.view ?? "slime");
+  const view = useRef(indexRef.current.entities.get(id)?.view ?? "slime");
 
   useEffect(() => {
     let live = true;
@@ -88,14 +97,14 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
 
   useFrame((state, delta) => {
     const snap = snapRef.current;
-    const entity = snap?.entities.find((item) => item.id === id);
+    const entity = indexRef.current.entities.get(id);
     const root = group.current;
     const sheet = actor.current;
     if (!snap || !entity || !root || !sheet) {
       if (root) root.visible = false;
       return;
     }
-    const placed = motionAt(id, state.clock.elapsedTime);
+    const placed = motionAt(id, performance.now() / 1000);
     if (!placed) return;
     root.visible = true;
     const prevX = root.position.x;
@@ -171,7 +180,7 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       }
     }
     const span = entity.attackRange;
-    const arena = snap.arenas.find((item) => item.id === entity.arenaId);
+    const arena = indexRef.current.arenas.get(entity.arenaId);
     const fighting = arena != null && arena.kind !== "hub";
     const mark = mine && fighting && span > 0.05;
     const tint = entity.color;
@@ -334,34 +343,41 @@ function DeathSprite({ item, onDone }: { item: Death; onDone: (key: string) => v
   );
 }
 
-export function HpLayer({ ids, snapRef }: { ids: number[]; snapRef: MutableRefObject<Snapshot | null> }) {
+export function HpLayer({
+  ids,
+  indexRef,
+}: {
+  ids: number[];
+  indexRef: MutableRefObject<SnapIndex>;
+}) {
   return (
     <>
-      {ids.map((id) => <HpBar key={id} id={id} snapRef={snapRef} />)}
+      {ids.map((id) => <HpBar key={id} id={id} indexRef={indexRef} />)}
     </>
   );
 }
 
-function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
+function HpBar({
+  id,
+  indexRef,
+}: {
+  id: number;
+  indexRef: MutableRefObject<SnapIndex>;
+}) {
   const group = useRef<Group>(null);
   const bar = useRef<Sprite>(null);
   const fill = useRef<Sprite>(null);
-  const tag = useRef<Group>(null);
+  const name = useRef<Sprite>(null);
   const labelRef = useRef("");
-  const [label, setLabel] = useState("");
-  const [yours, setYours] = useState(false);
-  const [hero, setHero] = useState(false);
-  const [ink, setInk] = useState("#f3ecdf");
-  const inkRef = useRef("");
 
-  useFrame((state) => {
-    const entity = snapRef.current?.entities.find((item) => item.id === id);
+  useFrame(() => {
+    const entity = indexRef.current.entities.get(id);
     const root = group.current;
     if (!entity || !root || entity.hp <= 0 || entity.maxHp <= 0) {
       if (root) root.visible = false;
       return;
     }
-    const placed = motionAt(id, state.clock.elapsedTime);
+    const placed = motionAt(id, performance.now() / 1000);
     if (!placed) return;
     root.visible = true;
     root.position.set(placed.x, 0, placed.y);
@@ -379,17 +395,20 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
       const mat = fill.current.material as SpriteMaterial;
       mat.color.set(entity.kind === "hero" ? "#8fdb67" : "#e23d3d");
     }
-    if (tag.current) tag.current.position.set(0, barY + 0.22, 0);
-    if (entity.label && entity.label !== labelRef.current) {
-      labelRef.current = entity.label;
-      setLabel(entity.label);
-      setHero(entity.kind === "hero");
-      setYours(entity.playerId === snapRef.current?.youId);
-    }
-    const nextInk = entity.kind === "hero" ? (entity.shadowColor || "#f3ecdf") : "#c9bfb2";
-    if (nextInk !== inkRef.current) {
-      inkRef.current = nextInk;
-      setInk(nextInk);
+    if (name.current) {
+      const ink = entity.kind === "hero" ? (entity.shadowColor || "#f3ecdf") : "#c9bfb2";
+      const text = entity.label ?? "";
+      const hero = entity.kind === "hero";
+      const key = `${hero}|${ink}|${text}`;
+      name.current.visible = text.length > 0;
+      name.current.position.set(0, barY + 0.36, 0);
+      name.current.scale.set(hero ? 1.8 : 1.25, 0.34, 1);
+      if (text && key !== labelRef.current) {
+        labelRef.current = key;
+        const mat = name.current.material as SpriteMaterial;
+        mat.map = labelTexture(text, ink, hero);
+        mat.needsUpdate = true;
+      }
     }
   });
 
@@ -401,13 +420,9 @@ function HpBar({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot
       <sprite ref={fill} renderOrder={801}>
         <spriteMaterial color="#8fdb67" depthTest={false} depthWrite={false} transparent />
       </sprite>
-      <group ref={tag}>
-        {label ? (
-          <Html center sprite wrapperClass="float-anchor" zIndexRange={[3, 0]}>
-            <span className={hero ? (yours ? "nametag mine" : "nametag") : "nametag creep"} style={{ color: ink }}>{label}</span>
-          </Html>
-        ) : null}
-      </group>
+      <sprite ref={name} renderOrder={802} center={[0.5, 0.5]}>
+        <spriteMaterial transparent depthTest={false} depthWrite={false} />
+      </sprite>
     </group>
   );
 }
@@ -425,19 +440,22 @@ function toneOf(item: FloatEvent, youId: string): LiveFloat["tone"] {
   return "other";
 }
 
+const FLOAT_POOL = 40;
+
 export function FloatLayer({ snapRef }: { snapRef: MutableRefObject<Snapshot | null> }) {
   const seen = useRef(new Set<number>());
-  const [items, setItems] = useState<LiveFloat[]>([]);
+  const live = useRef<LiveFloat[]>([]);
+  const sprites = useRef<(Sprite | null)[]>([]);
+  const maps = useRef<string[]>([]);
 
-  useFrame((state) => {
+  useFrame(() => {
     const snap = snapRef.current;
     if (!snap) return;
-    const now = state.clock.elapsedTime;
-    const fresh: LiveFloat[] = [];
+    const now = performance.now() / 1000;
     for (const item of snap.floats) {
-      if (seen.current.has(item.id)) continue;
+      if (seen.current.has(item.id) || !inView(item.x, item.y)) continue;
       seen.current.add(item.id);
-      fresh.push({ ...item, born: now, tone: toneOf(item, snap.youId) });
+      live.current.push({ ...item, born: now, tone: toneOf(item, snap.youId) });
     }
     if (seen.current.size > 400) {
       const keep = new Set(snap.floats.map((item) => item.id));
@@ -445,34 +463,45 @@ export function FloatLayer({ snapRef }: { snapRef: MutableRefObject<Snapshot | n
         if (!keep.has(id)) seen.current.delete(id);
       }
     }
-    setItems((prev) => {
-      const alive = prev.filter((item) => now - item.born < FLOAT_LIFE);
-      if (fresh.length === 0 && alive.length === prev.length) return prev;
-      return [...alive, ...fresh];
-    });
+    live.current = live.current.filter((item) => now - item.born < FLOAT_LIFE).slice(-FLOAT_POOL);
+    for (let i = 0; i < FLOAT_POOL; i += 1) {
+      const sprite = sprites.current[i];
+      const item = live.current[i];
+      if (!sprite) continue;
+      if (!item) {
+        sprite.visible = false;
+        continue;
+      }
+      const age = now - item.born;
+      const jitter = ((item.id % 5) - 2) * 0.22;
+      sprite.visible = true;
+      sprite.position.set(item.x + jitter, 2.1 + age * 0.7, item.y);
+      const mat = sprite.material as SpriteMaterial;
+      const shown = item.tone === "taken" ? `−${item.text}` : item.text;
+      const key = `${item.tone}|${item.crit}|${shown}`;
+      if (maps.current[i] !== key) {
+        maps.current[i] = key;
+        mat.map = floatTexture(shown, item.tone, item.crit);
+      }
+      mat.opacity = Math.max(0, 1 - age / FLOAT_LIFE);
+    }
   });
 
   return (
-    <>
-      {items.map((item) => {
-        const jitter = ((item.id % 5) - 2) * 0.22;
-        return (
-          <Html
-            key={item.id}
-            position={[item.x + jitter, 2.4, item.y]}
-            center
-            sprite
-            zIndexRange={[4, 0]}
-            wrapperClass="float-anchor"
-          >
-            <span className={`dmg ${item.tone}${item.crit ? " crit" : ""}`}>
-              {item.tone === "taken" ? `−${item.text}` : item.text}
-              {item.crit ? <small className="tag">crítico</small> : null}
-            </span>
-          </Html>
-        );
-      })}
-    </>
+    <group>
+      {Array.from({ length: FLOAT_POOL }, (_, i) => (
+        <sprite
+          key={i}
+          ref={(node) => { sprites.current[i] = node; }}
+          visible={false}
+          center={[0.5, 0.5]}
+          scale={[1.4, 0.46, 1]}
+          renderOrder={900}
+        >
+          <spriteMaterial transparent depthTest={false} depthWrite={false} />
+        </sprite>
+      ))}
+    </group>
   );
 }
 
