@@ -8,7 +8,7 @@ Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servido
 - `packages/game-data`: JSON de heróis, habilidades, cartas, creeps, ondas, bosses, economia, partida e sinergias. `loadGameData()` valida e checa referências.
 - `packages/sim`: simulação pura, tick fixo (`match.json` → `tickRate`, padrão 20). Não importa Colyseus nem React.
 - `apps/server`: Express (login, estáticos, `/api/matches`) e Colyseus (`lobby`, `match`).
-- `apps/client`: React + React Three Fiber. Câmera ortográfica inclinada. O 3D lê `snapRef` no frame, sem re-render a cada snapshot. Esferas hoje, modelos `.glb` depois pelo registro de visuais.
+- `apps/client`: React + React Three Fiber. Câmera ortográfica inclinada. O 3D lê `snapRef` no frame, sem re-render a cada snapshot. Heróis e bichos são sprites de pixel (sem luz). Modelo `.glb` entra pelo registro de visuais se alguém quiser.
 
 ## Fluxo
 

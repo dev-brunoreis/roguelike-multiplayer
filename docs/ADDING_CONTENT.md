@@ -28,15 +28,17 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 IA nova: `registerCreepBehavior`.
 
-## Visual 3D
+## Visual
 
-O snapshot manda `view` = id do herói ou do creep. O padrão é uma esfera.
+O snapshot manda `view` = id do herói ou do creep. O padrão é um sprite de pixel em `apps/client/src/game/sprites.ts` (idle + walk, uma folha por tipo).
+
+Sprite novo: função de desenho no mapa `DRAWS`. Modelo 3D no lugar do sprite:
 
 ```tsx
 registerEntityView("guerreiro", GuerreiroModel);
 ```
 
-O componente só posiciona o modelo. Dano, vida e cooldown continuam na simulação.
+O componente só posiciona o visual. Dano, vida e cooldown continuam na simulação.
 
 ## Bot
 

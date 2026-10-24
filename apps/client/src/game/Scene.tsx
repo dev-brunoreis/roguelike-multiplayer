@@ -16,11 +16,9 @@ export const Scene = memo(function Scene({
   shakeRef: MutableRefObject<number>;
 }) {
   return (
-    <Canvas className="scene" dpr={1} gl={{ antialias: true, powerPreference: "high-performance" }}>
+    <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
       <color attach="background" args={["#12100d"]} />
       <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={280} />
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[10, 22, 8]} intensity={1.05} />
       <World snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
   );
@@ -166,7 +164,7 @@ function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: 
     <group position={[cx, 0, cz]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[arena.size, arena.size]} />
-        <meshStandardMaterial color={arena.kind === "hub" ? "#3d4a3a" : arena.kind === "duel" ? "#6a3d28" : "#4a4034"} />
+        <meshBasicMaterial color={arena.kind === "hub" ? "#3d4a3a" : arena.kind === "duel" ? "#6a3d28" : "#4a4034"} />
       </mesh>
       <lineSegments>
         <bufferGeometry>
