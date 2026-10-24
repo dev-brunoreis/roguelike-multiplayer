@@ -100,10 +100,9 @@ export class LobbyRoom extends Room {
   }
 
   onLeave(client: Client) {
-    const auth = this.sessions.get(client.sessionId);
-    this.sessions.delete(client.sessionId);
-    if (!auth) return;
-    this.seats = this.seats.filter((seat) => seat.id !== auth.id);
+    const next = forgetSession(this.sessions, this.seats, client.sessionId);
+    if (next === this.seats) return;
+    this.seats = next;
     this.push();
   }
 
@@ -179,6 +178,16 @@ export class LobbyRoom extends Room {
     const wanted = typeof raw === "string" ? raw.toLowerCase() : "";
     return this.shadowColors.find((color) => color.toLowerCase() === wanted);
   }
+}
+
+export function forgetSession<T extends { id: string }>(sessions: Map<string, T>, seats: T[], sessionId: string): T[] {
+  const auth = sessions.get(sessionId);
+  sessions.delete(sessionId);
+  if (!auth) return seats;
+  for (const seat of sessions.values()) {
+    if (seat.id === auth.id) return seats;
+  }
+  return seats.filter((seat) => seat.id !== auth.id);
 }
 
 function strip(input: { slots?: number; fillWithBots?: boolean; lives?: number; cardsPerLevelUp?: number }): Partial<LobbyConfig> {

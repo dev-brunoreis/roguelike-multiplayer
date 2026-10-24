@@ -8,7 +8,7 @@ alwaysApply: false
 
 `src/index.ts` sobe Express e Colyseus na mesma porta. `LobbyRoom` cria a partida com `matchMaker.createRoom`. `MatchRoom` chama `tick` e manda `snapshot`.
 
-- Cada sala de espera é uma `LobbyRoom` criada pelo host. A entrada lista as abertas em `GET /api/rooms`. Não use `joinOrCreate` para o lobby.
+- Cada sala de espera é uma `LobbyRoom` criada pelo host. A entrada lista as abertas em `GET /api/rooms`. Não use `joinOrCreate` para o lobby. Uma conta ocupa um assento. Outra conexão da mesma conta não duplica o personagem; o assento só sai quando a última sessão dela cai.
 - Auth é JWT no body HTTP e de novo em `onAuth` da room. Não confie em nome vindo do cliente.
 - Input, pick, ready no salão, pausa e surrender passam pelas funções de `packages/sim`. `pause` guarda o pedido; a partida só congela quando todo humano vivo pediu. `ping` só ecoa `pong` para o cliente medir a ida e volta.
 - `chat` vale no lobby e na partida. O nome vem da conta. Texto vazio, caractere de controle e rajada curta são ignorados. O histórico recente vai para quem entra. Não grava no banco e não entra no tick.
