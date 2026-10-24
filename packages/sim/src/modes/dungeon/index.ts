@@ -1,7 +1,7 @@
 import { simulateCombat } from "../../combat.js";
 import { registerMode } from "../../registry.js";
 import { spawnCreep } from "../../spawn.js";
-import type { DungeonPortal, DungeonState, GameMode, Match, PlayerState } from "../../types.js";
+import type { Arena, DungeonPortal, DungeonState, GameMode, Match, PlayerState } from "../../types.js";
 import { addLog, alivePlayers, arenaById, arenaCenter, dist, emit, heroEntity, pushBanner, syncWorld } from "../../world.js";
 import "./bot.js";
 import { generateDungeon } from "./generate.js";
@@ -44,6 +44,17 @@ function revealAround(match: Match, arenaId: string) {
   }
 }
 
+function landInside(portal: { x: number; y: number }, arena: Arena, distance: number) {
+  const center = arenaCenter(arena);
+  const vx = center.x - portal.x;
+  const vy = center.y - portal.y;
+  const len = Math.hypot(vx, vy) || 1;
+  return {
+    x: portal.x + (vx / len) * distance,
+    y: portal.y + (vy / len) * distance,
+  };
+}
+
 function linkPortals(match: Match, aId: string, bId: string, index: number): DungeonPortal[] {
   const a = arenaById(match, aId);
   const b = arenaById(match, bId);
@@ -64,6 +75,8 @@ function linkPortals(match: Match, aId: string, bId: string, index: number): Dun
     x: bx - dx * (b.size / 2 - inset),
     y: by - dy * (b.size / 2 - inset),
   };
+  const aLand = landInside(aPortal, a, land);
+  const bLand = landInside(bPortal, b, land);
   return [
     {
       id: `portal-${index}-a`,
@@ -71,8 +84,8 @@ function linkPortals(match: Match, aId: string, bId: string, index: number): Dun
       x: aPortal.x,
       y: aPortal.y,
       toArenaId: bId,
-      toX: bPortal.x - dx * land,
-      toY: bPortal.y - dy * land,
+      toX: bLand.x,
+      toY: bLand.y,
     },
     {
       id: `portal-${index}-b`,
@@ -80,8 +93,8 @@ function linkPortals(match: Match, aId: string, bId: string, index: number): Dun
       x: bPortal.x,
       y: bPortal.y,
       toArenaId: aId,
-      toX: aPortal.x + dx * land,
-      toY: aPortal.y + dy * land,
+      toX: aLand.x,
+      toY: aLand.y,
     },
   ];
 }
@@ -164,15 +177,14 @@ function crossPortals(match: Match, dt: number) {
   const radius = match.data.dungeon.portalRadius;
   for (const player of alivePlayers(match)) {
     if (player.downed) continue;
-    if (player.portalCd > 0) {
-      player.portalCd = Math.max(0, player.portalCd - dt);
-      continue;
-    }
     const entity = heroEntity(match, player);
     if (!entity?.alive) continue;
-    if (roomHasCreeps(match, entity.arenaId)) continue;
     const portal = state.portals.find((item) => item.arenaId === entity.arenaId && dist(entity, item) <= radius);
-    if (!portal) continue;
+    if (player.portalCd > 0) {
+      if (!portal) player.portalCd = Math.max(0, player.portalCd - dt);
+      continue;
+    }
+    if (!portal || roomHasCreeps(match, entity.arenaId)) continue;
     entity.arenaId = portal.toArenaId;
     entity.x = portal.toX;
     entity.y = portal.toY;

@@ -5,7 +5,7 @@ import { dealDamage } from "../../damage.js";
 import { createMatch, runTicks, tick } from "../../index.js";
 import { spawnCreep } from "../../spawn.js";
 import type { DungeonPortal } from "../../types.js";
-import { arenaCenter, heroEntity } from "../../world.js";
+import { arenaById, arenaCenter, dist, heroEntity } from "../../world.js";
 import { generateDungeon } from "./generate.js";
 
 const data = loadGameData();
@@ -89,6 +89,56 @@ describe("masmorra", () => {
     const stayed = entity.arenaId;
     tick(match);
     expect(entity.arenaId).toBe(stayed);
+  });
+
+  it("pousa fora do portal de volta e não fica quicando", () => {
+    const match = createMatch({ players: party(), seed: 11, data, mode: "masmorra" });
+    const rooms = new Map(match.dungeon!.rooms.map((room) => [room.id, room]));
+    const door = match.dungeon!.portals.find((portal) => {
+      const from = rooms.get(portal.arenaId)?.role;
+      const to = rooms.get(portal.toArenaId)?.role;
+      return from === "entrance" && to !== "boss";
+    });
+    expect(door).toBeTruthy();
+    const player = match.players[0]!;
+    const entity = heroEntity(match, player)!;
+    entity.arenaId = door!.arenaId;
+    entity.x = door!.x;
+    entity.y = door!.y;
+    player.arenaId = door!.arenaId;
+    player.portalCd = 0;
+    tick(match);
+    expect(entity.arenaId).toBe(door!.toArenaId);
+    for (const creep of match.entities) {
+      if (creep.kind === "hero" || creep.arenaId !== entity.arenaId) continue;
+      creep.alive = false;
+      creep.hp = 0;
+    }
+    tick(match);
+    const arena = arenaById(match, entity.arenaId)!;
+    const back = match.dungeon!.portals.find((portal) => portal.arenaId === entity.arenaId && portal.toArenaId === door!.arenaId)!;
+    expect(entity.x).toBeGreaterThan(arena.x + entity.radius);
+    expect(entity.x).toBeLessThan(arena.x + arena.size - entity.radius);
+    expect(entity.y).toBeGreaterThan(arena.y + entity.radius);
+    expect(entity.y).toBeLessThan(arena.y + arena.size - entity.radius);
+    expect(dist(entity, back)).toBeGreaterThan(data.dungeon.portalRadius);
+    const arrived = entity.arenaId;
+    entity.x = back.x;
+    entity.y = back.y;
+    runTicks(match, Math.ceil(data.dungeon.portalCooldown * data.match.tickRate) + 8);
+    expect(entity.arenaId).toBe(arrived);
+    const center = arenaCenter(arena);
+    const vx = center.x - back.x;
+    const vy = center.y - back.y;
+    const len = Math.hypot(vx, vy) || 1;
+    const clear = data.dungeon.portalRadius + 0.35;
+    entity.x = back.x + (vx / len) * clear;
+    entity.y = back.y + (vy / len) * clear;
+    runTicks(match, Math.ceil(data.dungeon.portalCooldown * data.match.tickRate) + 2);
+    entity.x = back.x;
+    entity.y = back.y;
+    tick(match);
+    expect(entity.arenaId).toBe(door!.arenaId);
   });
 
   it("o bicho larga o herói e volta para casa", () => {
