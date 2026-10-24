@@ -9,9 +9,20 @@ export function worldAim() {
   return aim;
 }
 
+export function isTypingTarget(target: EventTarget | null) {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+}
+
 if (typeof window !== "undefined") {
-  window.addEventListener("keydown", (event) => keys.add(event.code));
+  window.addEventListener("keydown", (event) => {
+    if (isTypingTarget(event.target)) return;
+    keys.add(event.code);
+  });
   window.addEventListener("keyup", (event) => keys.delete(event.code));
+}
+
+export function clearMove() {
+  keys.clear();
 }
 
 /** WASD in screen space: W goes away from the +X+Z camera, D goes right. */
@@ -27,8 +38,4 @@ export function cameraMove() {
     y /= len;
   }
   return { x, y };
-}
-
-export function isTypingTarget(target: EventTarget | null) {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 }

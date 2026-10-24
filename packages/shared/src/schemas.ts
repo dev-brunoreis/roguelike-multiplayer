@@ -93,7 +93,6 @@ export const creepSchema = z.object({
   armor: z.number().nonnegative().default(0),
   behavior: z.string().min(1),
   kind: z.enum(["creep", "boss"]).default("creep"),
-  dropChance: z.number().min(0).max(1).default(0),
 });
 
 export const waveSchema = z.object({

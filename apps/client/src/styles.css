@@ -163,10 +163,24 @@ input[type="text"], input[type="password"], input[type="number"] {
 }
 .ability strong, .ability small { display: block; }
 .log {
-  position: absolute; right: 12px; bottom: 16px; z-index: 2;
+  position: absolute; right: 12px; bottom: 196px; z-index: 2;
+  max-width: min(300px, calc(100% - 24px));
   color: #d9d0c3; font-size: 13px; text-shadow: 0 1px 2px #000;
   text-align: right; pointer-events: none;
 }
+.chat-box { display: grid; gap: 6px; }
+.match .chat-box {
+  position: absolute; right: 12px; bottom: 16px; z-index: 4;
+  width: min(300px, calc(100% - 24px));
+}
+.chat-lines {
+  max-height: 132px; overflow: auto;
+  background: #16130fcc; border: 1px solid #3a3228; padding: 8px;
+  font-size: 13px;
+}
+.chat-lines p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.chat-lines b { font-weight: 700; }
+.chat-box input { width: 100%; padding: 8px 10px; }
 .log p { margin: 0 0 2px; }
 .nametag {
   display: block; color: #f3ecdf; font-size: 12px; line-height: 1;

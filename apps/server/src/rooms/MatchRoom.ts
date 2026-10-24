@@ -14,6 +14,7 @@ import {
 import { Client, Room } from "colyseus";
 import { randomUUID } from "node:crypto";
 import { verifyToken } from "../auth.js";
+import { RoomChat } from "../chat.js";
 import { StatsWriter } from "../stats.js";
 
 interface Seat {
@@ -34,6 +35,7 @@ export class MatchRoom extends Room {
   private users = new Map<string, string>();
   private leaveTimers = new Map<string, NodeJS.Timeout>();
   private finished = false;
+  private chat = new RoomChat();
 
   onCreate(options: {
     humans: Seat[];
@@ -102,6 +104,13 @@ export class MatchRoom extends Room {
       if (!id) return;
       surrender(this.match, id);
     });
+    this.onMessage("chat", (client, raw: unknown) => {
+      const id = this.users.get(client.sessionId);
+      const player = id ? this.match.players.find((item) => item.id === id) : undefined;
+      if (!player || player.isBot) return;
+      const line = this.chat.push(player.id, player.name, player.color, raw);
+      if (line) this.broadcast("chat", line);
+    });
   }
 
   async onAuth(_client: Client, options: JoinOptions) {
@@ -119,6 +128,7 @@ export class MatchRoom extends Room {
       this.leaveTimers.delete(auth.id);
     }
     this.users.set(client.sessionId, auth.id);
+    client.send("chat", this.chat.lines());
     client.send("snapshot", buildSnapshot(this.match, auth.id));
   }
 

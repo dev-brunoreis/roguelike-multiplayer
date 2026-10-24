@@ -1,6 +1,6 @@
 # Arquitetura
 
-Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servidor. O cliente só mostra o estado e manda intenção (mover, mirar o chão, escolher carta, comprar, apostar, desistir).
+Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servidor. O cliente só mostra o estado e manda intenção (mover, mirar o chão, escolher carta, comprar, apostar, desistir, falar no chat).
 
 ## Pacotes
 
@@ -20,6 +20,7 @@ Caos é um roguelike multiplayer autoritativo. A partida inteira vive no servido
 6. Pausa é um pedido. A simulação congela quando todo humano ainda vivo pediu (`pause`). Bots não votam. O relógio, o combate e os cooldowns ficam parados até alguém cancelar.
 7. Fechar a aba espera 8 segundos. Sem voltar, conta como desistência. Sem persistir a partida no próximo login.
 8. Eventos importantes vão para SQLite (`users`, `matches`, `match_players`, `events`), uma linha por acontecimento.
+9. O chat fica na sala (`lobby` e `match`), fora do tick. O servidor corta o texto, ignora vazio e rajada curta, e manda a linha para quem está conectado. Quem entra recebe o histórico recente. Não vai para o snapshot nem para o banco.
 
 ## Plugins
 

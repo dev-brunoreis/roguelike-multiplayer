@@ -14,8 +14,7 @@
     "color": "#e23d3d",
     "armor": 0,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.05
+    "kind": "creep"
   },
   {
     "id": "bruto",
@@ -32,8 +31,7 @@
     "color": "#a32020",
     "armor": 4,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.1
+    "kind": "creep"
   },
   {
     "id": "corredor",
@@ -50,8 +48,7 @@
     "color": "#ff6b4a",
     "armor": 0,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.06
+    "kind": "creep"
   },
   {
     "id": "atirador",
@@ -68,8 +65,7 @@
     "color": "#7aa2d4",
     "armor": 0,
     "behavior": "kite",
-    "kind": "creep",
-    "dropChance": 0.08
+    "kind": "creep"
   },
   {
     "id": "boss_golem",
@@ -86,8 +82,7 @@
     "color": "#6b3a1f",
     "armor": 10,
     "behavior": "chase",
-    "kind": "boss",
-    "dropChance": 0.4
+    "kind": "boss"
   },
   {
     "id": "boss_olho",
@@ -104,8 +99,7 @@
     "color": "#c9a227",
     "armor": 2,
     "behavior": "chase",
-    "kind": "boss",
-    "dropChance": 0.45
+    "kind": "boss"
   },
   {
     "id": "morcego",
@@ -122,8 +116,7 @@
     "color": "#6b4c8a",
     "armor": 0,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.05
+    "kind": "creep"
   },
   {
     "id": "guarda",
@@ -140,8 +133,7 @@
     "color": "#8a8f98",
     "armor": 8,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.08
+    "kind": "creep"
   },
   {
     "id": "aranha",
@@ -158,8 +150,7 @@
     "color": "#3d6b3a",
     "armor": 1,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.07
+    "kind": "creep"
   },
   {
     "id": "esqueleto",
@@ -176,8 +167,7 @@
     "color": "#d9d0c3",
     "armor": 1,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.06
+    "kind": "creep"
   },
   {
     "id": "lodo",
@@ -194,8 +184,7 @@
     "color": "#6a7a3a",
     "armor": 3,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.07
+    "kind": "creep"
   },
   {
     "id": "xama",
@@ -212,8 +201,7 @@
     "color": "#c9a6ff",
     "armor": 0,
     "behavior": "kite",
-    "kind": "creep",
-    "dropChance": 0.08
+    "kind": "creep"
   },
   {
     "id": "diabrete",
@@ -230,8 +218,7 @@
     "color": "#e23d3d",
     "armor": 1,
     "behavior": "chase",
-    "kind": "creep",
-    "dropChance": 0.08
+    "kind": "creep"
   },
   {
     "id": "boss_wogol",
@@ -248,8 +235,7 @@
     "color": "#a32068",
     "armor": 5,
     "behavior": "chase",
-    "kind": "boss",
-    "dropChance": 0.5
+    "kind": "boss"
   },
   {
     "id": "boss_matriarca",
@@ -266,7 +252,6 @@
     "color": "#2f6b45",
     "armor": 6,
     "behavior": "chase",
-    "kind": "boss",
-    "dropChance": 0.45
+    "kind": "boss"
   }
 ]

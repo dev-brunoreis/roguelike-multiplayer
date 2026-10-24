@@ -16,7 +16,9 @@ Comportamentos: `single`, `chain` (N alvos, dano cai pelo `falloff`), `aoe`, `pr
 4. A partir da rodada `duelStartRound`, o salão escolhe **um** par. Um banner no topo anuncia o par por `duelAnnounceSeconds` (10s), depois o vencedor, morte e desistência. Só os dois teleportam. O perdedor perde uma vida. Depois do duelo já vai a próxima onda.
 5. Nível durante a onda só guarda a escolha (`unspentPicks`). A carta abre no salão e a oferta usa o `weight` de cada carta. Se o tempo acaba, uma carta sai sozinha.
 
-Um herói cabe até `maxAbilities` skills (padrão 6). Skill nova vem de carta `grantAbility`. Se a barra estiver cheia, a nova troca a mais fraca. Upgrade vem de carta `upgradeAbility`. Mob pode dropar item (`dropChance`) e isso vira mais uma escolha no salão.
+Um herói cabe até `maxAbilities` skills (padrão 6). Skill nova vem de carta `grantAbility`. Se a barra estiver cheia, a nova troca a mais fraca. Upgrade vem de carta `upgradeAbility`. Matar bicho dá experiência e não abre carta extra.
+
+No lobby e na partida, Enter abre o chat. A mensagem sai com o nome da conta, para todo mundo na sala. Esc solta o campo antes de abrir o menu. Enquanto escreve, o herói fica parado.
 
 Boss entra nas rodadas múltiplas de `everyRounds` do `bosses.json`. O de intervalo maior ganha a rodada quando os dois coincidem.
 

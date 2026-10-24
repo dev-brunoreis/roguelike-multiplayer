@@ -3,6 +3,7 @@ import type { LobbyConfig, LobbyState } from "@game/shared";
 import { matchOptionsSchema } from "@game/shared";
 import { Client, matchMaker, Room } from "colyseus";
 import { verifyToken } from "../auth.js";
+import { RoomChat } from "../chat.js";
 
 const BOT_NAMES = ["Bram", "Lira", "Kas", "Nox", "Vesper", "Ivo", "Sena"];
 
@@ -20,6 +21,7 @@ export class LobbyRoom extends Room {
   private error: string | null = null;
   private heroIds: string[] = [];
   private shadowColors: string[] = [];
+  private chat = new RoomChat();
 
   constructor() {
     super();
@@ -70,6 +72,13 @@ export class LobbyRoom extends Room {
       if (!this.isHost(client)) return;
       void this.start();
     });
+
+    this.onMessage("chat", (client, raw: unknown) => {
+      const seat = this.sessions.get(client.sessionId);
+      if (!seat) return;
+      const line = this.chat.push(seat.id, seat.name, seat.shadowColor ?? "#f3ecdf", raw);
+      if (line) this.broadcast("chat", line);
+    });
   }
 
   async onAuth(_client: Client, options: { token?: string }) {
@@ -87,6 +96,7 @@ export class LobbyRoom extends Room {
     this.seats.push({ ...seat });
     this.maxClients = Math.max(this.config.slots, this.seats.length);
     this.push();
+    client.send("chat", this.chat.lines());
   }
 
   onLeave(client: Client) {

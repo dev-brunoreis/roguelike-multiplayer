@@ -1,10 +1,10 @@
 import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import type { AnnounceSnap, LobbyState, Snapshot } from "@game/shared/protocol";
+import type { AnnounceSnap, ChatLine, LobbyState, Snapshot } from "@game/shared/protocol";
 import { SkillGlyph } from "../game/icons.js";
 import { Scene } from "../game/Scene.js";
 import { loadIdle } from "../game/sprites.js";
-import { cameraMove, isTypingTarget, worldAim } from "../game/input.js";
+import { cameraMove, clearMove, isTypingTarget, worldAim } from "../game/input.js";
 import { api, ServerDown, serverReachable, wsBase } from "../net.js";
 import {
   hearWorld,
@@ -346,6 +346,7 @@ function WaitRoom({
   onPick: (color: string) => void;
 }) {
   const [state, setState] = useState<LobbyState | null>(null);
+  const [chat, setChat] = useState<ChatLine[]>([]);
   const [error, setError] = useState("");
   const roomRef = useRef<Room | null>(null);
   const shadowRef = useRef(shadowColor);
@@ -366,6 +367,7 @@ function WaitRoom({
       room = joined;
       roomRef.current = joined;
       joined.onMessage("lobby", (next: LobbyState) => setState(next));
+      joined.onMessage("chat", (incoming: ChatLine | ChatLine[]) => setChat((current) => mergeChat(current, incoming)));
       joined.onMessage("go", (message: { roomId: string }) => onStart(message.roomId));
       joined.onLeave((code) => {
         if (closed || code === CONSENTED) return;
@@ -488,6 +490,7 @@ function WaitRoom({
           {state?.error ? <p className="error">{state.error}</p> : null}
           {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}
         </section>
+        <TextChat lines={chat} youId={state?.youId ?? ""} onSend={(text) => roomRef.current?.send("chat", { text })} />
         <SoundMix />
       </section>
     </main>
@@ -576,6 +579,8 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
   const askRef = useRef<null | "leave" | "giveup">(null);
   const [menu, setMenu] = useState(false);
   const [ask, setAsk] = useState<null | "leave" | "giveup">(null);
+  const [chat, setChat] = useState<ChatLine[]>([]);
+  const chatRef = useRef<HTMLInputElement>(null);
   snapRef.current = snap;
 
   useEffect(() => {
@@ -593,6 +598,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         netRef.current.arrivals.push(performance.now());
         setSnap(next);
       });
+      joined.onMessage("chat", (incoming: ChatLine | ChatLine[]) => setChat((current) => mergeChat(current, incoming)));
       joined.onMessage("pong", (sent: number) => {
         if (typeof sent !== "number") return;
         netRef.current.ping = performance.now() - sent;
@@ -640,6 +646,12 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
     const onKey = (event: KeyboardEvent) => {
       if (event.code === "Escape" && event.type === "keydown" && !event.repeat) {
         event.preventDefault();
+        if (isTypingTarget(event.target)) {
+          if (event.target instanceof HTMLElement) event.target.blur();
+          clearMove();
+          sendMove(0, 0);
+          return;
+        }
         if (askRef.current) {
           askRef.current = null;
           setAsk(null);
@@ -660,6 +672,13 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         if (event.code === "Tab" || event.code === "Space" || event.code.startsWith("Arrow")) event.preventDefault();
         return;
       }
+      if (event.code === "Enter" && event.type === "keydown" && !event.repeat && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        clearMove();
+        sendMove(0, 0);
+        chatRef.current?.focus();
+        return;
+      }
       if (event.code === "Tab") {
         event.preventDefault();
         event.stopPropagation();
@@ -670,8 +689,8 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         setWatchId((watch) => cycleWatch(current.players, current.youId, watch));
         return;
       }
-      if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
       if (isTypingTarget(event.target)) return;
+      if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
       const snap = snapRef.current;
       const you = snap?.players.find((player) => player.id === snap.youId);
       if (event.code === "Space" && event.type === "keydown") {
@@ -690,7 +709,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("keyup", onKey, true);
     const pulse = setInterval(() => {
-      if (menuRef.current) sendMove(0, 0);
+      if (menuRef.current || isTypingTarget(document.activeElement)) sendMove(0, 0);
       else {
         const move = cameraMove();
         sendMove(move.x, move.y);
@@ -810,6 +829,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
       <div className="log">
         {snap.log.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
       </div>
+      <TextChat inputRef={chatRef} lines={chat} youId={snap.youId} onSend={(text) => send("chat", { text })} />
       {me && me.pending.length > 0 ? (
         <section className="overlay pick">
           <h2>Escolhe uma carta <small>{Math.ceil(me.cardTimer)}s</small></h2>
@@ -859,7 +879,7 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
         <p className="respawn">Renasce em <strong>{Math.ceil(me.respawnIn)}s</strong></p>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
-        <p className="hint">W sobe na tela. Esc abre o menu. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
+        <p className="hint">W sobe na tela. Enter fala. Esc abre o menu. Tab olha o próximo. 1–6 escolhe carta. Espaço segue no salão.</p>
       )}
       {snap.paused && !menu ? <p className="paused-flag">Pausado</p> : null}
       {menu ? (
@@ -909,6 +929,62 @@ const BANNER_KIND: Record<string, string> = {
   eliminate: "Fora",
   info: "Aviso",
 };
+
+function mergeChat(current: ChatLine[], incoming: ChatLine | ChatLine[]) {
+  const list = Array.isArray(incoming) ? incoming : [incoming];
+  const seen = new Set(current.map((line) => line.id));
+  const next = [...current];
+  for (const line of list) {
+    if (!line || typeof line.text !== "string" || typeof line.id !== "number" || seen.has(line.id)) continue;
+    seen.add(line.id);
+    next.push(line);
+  }
+  return next.slice(-40);
+}
+
+function TextChat({
+  lines,
+  youId,
+  onSend,
+  inputRef,
+}: {
+  lines: ChatLine[];
+  youId: string;
+  onSend: (text: string) => void;
+  inputRef?: { current: HTMLInputElement | null };
+}) {
+  const [draft, setDraft] = useState("");
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = box.current;
+    if (node) node.scrollTop = node.scrollHeight;
+  }, [lines]);
+  return (
+    <form className="chat-box" onSubmit={(event) => {
+      event.preventDefault();
+      const text = draft.trim();
+      if (!text) return;
+      onSend(text);
+      setDraft("");
+    }}>
+      <div className="chat-lines" ref={box}>
+        {lines.length === 0 ? <p className="muted">Enter para falar.</p> : lines.map((line) => (
+          <p key={line.id} className={line.playerId === youId ? "mine" : undefined}><b style={{ color: line.color }}>{line.name}</b> {line.text}</p>
+        ))}
+      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        maxLength={160}
+        placeholder="Mensagem"
+        aria-label="Chat"
+        value={draft}
+        onFocus={clearMove}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+    </form>
+  );
+}
 
 function NetStat({ netRef }: { netRef: { current: { ping: number; arrivals: number[] } } }) {
   const [text, setText] = useState("fps — · ping — · lat — · loss —");

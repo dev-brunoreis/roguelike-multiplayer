@@ -114,13 +114,6 @@ export function killEntity(match: Match, entity: Entity, killer?: PlayerState) {
   if (killer && !killer.eliminated) {
     killer.kills += 1;
     grantXp(match, killer, entity.xp);
-    const def = match.data.creeps.find((creep) => creep.id === entity.defId);
-    const chance = def?.dropChance ?? 0;
-    if (def && chance > 0 && match.rng.next() < chance) {
-      killer.unspentPicks += 1;
-      addLogSafe(match, `${killer.name} achou um item`);
-      if (match.phase === "hub") offerCards(match, killer);
-    }
   }
 }
 

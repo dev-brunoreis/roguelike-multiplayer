@@ -177,6 +177,14 @@ export interface Snapshot {
   announce: AnnounceSnap | null;
 }
 
+export interface ChatLine {
+  id: number;
+  playerId: string;
+  name: string;
+  text: string;
+  color: string;
+}
+
 export interface ClientInput {
   x: number;
   y: number;
