@@ -90,6 +90,7 @@ export interface EntitySnap {
   x: number;
   y: number;
   radius: number;
+  attackRange: number;
   hp: number;
   maxHp: number;
   color: string;

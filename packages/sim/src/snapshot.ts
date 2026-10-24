@@ -1,6 +1,6 @@
 import type { AbilityView, CardView, PlayerSnap, Snapshot } from "@game/shared";
 import { isFighter } from "./actions.js";
-import type { Match, PlayerState } from "./types.js";
+import type { Entity, Match, PlayerState } from "./types.js";
 import { abilityById, cardById, heroEntity, xpToNext } from "./world.js";
 
 function cardView(match: Match, id: string): CardView | null {
@@ -24,6 +24,20 @@ function abilitiesOf(match: Match, player: PlayerState): AbilityView[] {
       color: def.color,
     }];
   });
+}
+
+function attackReach(match: Match, entity: Entity) {
+  if (entity.kind !== "hero" || !entity.playerId) return entity.attackRange;
+  const player = match.players.find((item) => item.id === entity.playerId);
+  if (!player) return 0;
+  const area = 1 + player.stats.areaPct;
+  let best = 0;
+  for (const slot of player.abilities) {
+    const def = abilityById(match, slot.abilityId);
+    const level = def?.levels[Math.min(slot.level, def.levels.length) - 1];
+    if (level) best = Math.max(best, level.range * area);
+  }
+  return best;
 }
 
 function placementOf(match: Match, player: PlayerState) {
@@ -108,6 +122,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       x: entity.x,
       y: entity.y,
       radius: entity.radius,
+      attackRange: attackReach(match, entity),
       hp: entity.hp,
       maxHp: entity.maxHp,
       color: entity.color,

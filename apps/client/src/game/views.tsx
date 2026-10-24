@@ -2,7 +2,7 @@ import type { EntitySnap, FloatEvent, Snapshot } from "@game/shared/protocol";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ComponentType, type MutableRefObject } from "react";
-import { Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
+import { RingGeometry, Sprite, SpriteMaterial, type Group, type Mesh, type MeshBasicMaterial } from "three";
 import { motionAt } from "./motion.js";
 import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
 
@@ -52,6 +52,9 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   const group = useRef<Group>(null);
   const sprite = useRef<Sprite>(null);
   const shadow = useRef<Mesh>(null);
+  const reachFill = useRef<Mesh>(null);
+  const reachBand = useRef<Mesh>(null);
+  const reachSpan = useRef(-1);
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, ready: false });
@@ -77,10 +80,11 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
   }, [id]);
 
   useFrame((state, delta) => {
-    const entity = snapRef.current?.entities.find((item) => item.id === id);
+    const snap = snapRef.current;
+    const entity = snap?.entities.find((item) => item.id === id);
     const root = group.current;
     const sheet = actor.current;
-    if (!entity || !root || !sheet) {
+    if (!snap || !entity || !root || !sheet) {
       if (root) root.visible = false;
       return;
     }
@@ -155,6 +159,35 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
         (shadow.current.material as MeshBasicMaterial).color.set(entity.shadowColor || entity.color);
       }
     }
+    const span = entity.attackRange;
+    const mine = entity.playerId != null && entity.playerId === snap.youId;
+    const arena = snap.arenas.find((item) => item.id === entity.arenaId);
+    const fighting = arena != null && arena.kind !== "hub";
+    const mark = mine && fighting && span > 0.05;
+    const tint = entity.color;
+    if (reachFill.current) {
+      reachFill.current.visible = mark && mine;
+      if (mark && mine) {
+        reachFill.current.scale.set(span, span, 1);
+        const fill = reachFill.current.material as MeshBasicMaterial;
+        fill.color.set(tint);
+        fill.opacity = 0.06;
+      }
+    }
+    if (reachBand.current) {
+      reachBand.current.visible = mark;
+      if (mark) {
+        if (Math.abs(reachSpan.current - span) > 0.04) {
+          reachSpan.current = span;
+          const thick = 0.07;
+          reachBand.current.geometry.dispose();
+          reachBand.current.geometry = new RingGeometry(Math.max(0.04, span - thick), span, 64);
+        }
+        const band = reachBand.current.material as MeshBasicMaterial;
+        band.color.set(tint);
+        band.opacity = 0.16;
+      }
+    }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
     glow.current *= 0.78;
     if (material.current) {
@@ -168,6 +201,13 @@ export function EntityPuppet({ id, snapRef }: { id: number; snapRef: MutableRefO
       <mesh ref={shadow} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} renderOrder={1}>
         <circleGeometry args={[1, 12]} />
         <meshBasicMaterial color="#120e0c" transparent opacity={0.45} depthWrite={false} depthTest={false} />
+      </mesh>
+      <mesh ref={reachFill} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.035, 0]} renderOrder={2}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial transparent opacity={0.09} depthWrite={false} />
+      </mesh>
+      <mesh ref={reachBand} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} renderOrder={3}>
+        <meshBasicMaterial transparent opacity={0.7} depthWrite={false} />
       </mesh>
       <sprite ref={sprite} center={[0.5, 0]} visible={false}>
         <spriteMaterial ref={material} transparent alphaTest={0.4} depthWrite={false} depthTest />
