@@ -26,19 +26,19 @@ function cardRarity(match: Match, id: string) {
   return match.data.cards.find((card) => card.id === id)?.rarity ?? "";
 }
 
-function preferRange(match: Match, player: PlayerState, hpRatio: number) {
-  let range = 1.7;
+function attackPlan(match: Match, player: PlayerState) {
+  let melee = Infinity;
+  let ranged = 0;
   for (const slot of player.abilities) {
     const def = abilityById(match, slot.abilityId);
     const level = def?.levels[Math.min(slot.level, def.levels.length) - 1];
     if (!def || !level) continue;
-    if (def.behavior === "projectile" || def.behavior === "chain") range = Math.max(range, level.range * 0.7);
-    else if (def.behavior === "aoe") range = Math.max(range, (level.radius ?? level.range) * 0.55);
-    else range = Math.max(range, Math.min(level.range, 2.4));
+    if (def.behavior === "projectile" || def.behavior === "chain") ranged = Math.max(ranged, level.range);
+    else if (def.behavior === "aoe") melee = Math.min(melee, (level.radius ?? level.range) * 0.8);
+    else melee = Math.min(melee, level.range * 0.82);
   }
-  if (hpRatio < 0.42) range = Math.max(range, 4.4);
-  if (hpRatio < 0.24) range = Math.max(range, 5.8);
-  return range;
+  if (melee < Infinity) return { hold: melee, kite: false };
+  return { hold: Math.max(3.2, ranged * 0.72), kite: true };
 }
 
 function steer(match: Match, player: PlayerState) {
@@ -60,19 +60,38 @@ function steer(match: Match, player: PlayerState) {
     return;
   }
   const gap = dist(entity, target);
-  const want = preferRange(match, player, entity.hp / entity.maxHp);
+  const plan = attackPlan(match, player);
   const dx = target.x - entity.x;
   const dy = target.y - entity.y;
-  if (gap < want - 0.45) {
-    setMove(player, entity, arena, -dx, -dy);
+  const biting = enemies.some((enemy) => dist(entity, enemy) <= enemy.attackRange + entity.radius * 0.5);
+  if (!plan.kite) {
+    if (gap > plan.hold) {
+      setMove(player, entity, arena, dx, dy);
+      return;
+    }
+    player.inputX = 0;
+    player.inputY = 0;
     return;
   }
-  if (gap > want + 0.7) {
+  const hpRatio = entity.hp / entity.maxHp;
+  const hold = hpRatio < 0.4 ? plan.hold + 1.4 : plan.hold;
+  if (biting || gap < hold - 1.1) {
+    let sx = 0;
+    let sy = 0;
+    for (const enemy of enemies) {
+      if (dist(entity, enemy) > enemy.attackRange + entity.radius + 0.4 && enemy !== target) continue;
+      sx += entity.x - enemy.x;
+      sy += entity.y - enemy.y;
+    }
+    setMove(player, entity, arena, sx || -dx, sy || -dy);
+    return;
+  }
+  if (gap > hold + 0.45) {
     setMove(player, entity, arena, dx, dy);
     return;
   }
-  const side = player.id.charCodeAt(0) % 2 === 0 ? 1 : -1;
-  setMove(player, entity, arena, -dy * side, dx * side);
+  player.inputX = 0;
+  player.inputY = 0;
 }
 
 function setMove(

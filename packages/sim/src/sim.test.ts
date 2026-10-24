@@ -262,6 +262,61 @@ describe("simulação", () => {
     expect(match.banner?.title).toContain("Bia");
   });
 
+  it("bot de perto entra no golpe em vez de orbitar", () => {
+    const match = createMatch({
+      players: [{ id: "b", name: "Nox", isBot: true, heroId: "guerreiro" }],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    for (const slot of player.abilities) slot.cooldown = 0;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const creepDef = data.creeps.find((creep) => creep.id === "slime")!;
+    const spawn = (x: number, y: number) => {
+      match.entities.push({
+        id: match.nextId++,
+        kind: "creep",
+        defId: "slime",
+        arenaId: arena.id,
+        x,
+        y,
+        radius: creepDef.radius,
+        hp: 500,
+        maxHp: 500,
+        speed: creepDef.speed,
+        damage: creepDef.damage,
+        attackCooldown: creepDef.attackCooldown,
+        attackTimer: creepDef.attackCooldown,
+        attackRange: creepDef.attackRange,
+        armor: 0,
+        xp: 0,
+        gold: 0,
+        color: creepDef.color,
+        team: "enemy",
+        alive: true,
+        invuln: 0,
+        flash: 0,
+        facing: 0,
+        behavior: "chase",
+      });
+    };
+    spawn(center.x + 3.2, center.y);
+    spawn(center.x + 3.5, center.y + 0.7);
+    runTicks(match, 70);
+    const creeps = match.entities.filter((entity) => entity.defId === "slime" && entity.alive);
+    const nearest = Math.min(...creeps.map((creep) => Math.hypot(creep.x - hero.x, creep.y - hero.y)));
+    const hurt = creeps.reduce((sum, creep) => sum + (500 - creep.hp), 0);
+    expect(nearest).toBeLessThan(1.9 + creepDef.radius);
+    expect(hurt).toBeGreaterThan(20);
+  });
+
   it("bots atravessam fases sem quebrar", () => {
     const match = createMatch({
       players: [
