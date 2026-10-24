@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import type { AnnounceSnap, LobbyState, Snapshot } from "@game/shared/protocol";
 import { SkillGlyph } from "../game/icons.js";
 import { Scene } from "../game/Scene.js";
+import { loadIdle } from "../game/sprites.js";
 import { cameraMove, isTypingTarget } from "../game/input.js";
-import { api, wsBase } from "../net.js";
+import { api, ServerDown, serverReachable, wsBase } from "../net.js";
 import { blip, unlockAudio } from "../audio.js";
 
 interface User {
@@ -13,13 +14,39 @@ interface User {
 }
 
 const TOKEN = "caos.token";
+const SHADOW_KEY = "caos.shadow";
+const SERVER_DOWN = "O servidor caiu. Você foi desconectado.";
+const CONSENTED = 4000;
 
 export function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN));
   const [user, setUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [seat, setSeat] = useState<null | { roomId?: string }>(null);
+  const [notice, setNotice] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [shadowColors, setShadowColors] = useState<string[]>([]);
+  const [shadowColor, setShadowColor] = useState(() => localStorage.getItem(SHADOW_KEY) ?? "");
   const leaveMatch = useCallback(() => { setRoomId(null); setSeat(null); }, []);
+  const enterMatch = useCallback((id: string) => { setSeat(null); setRoomId(id); }, []);
+  const clearNotice = useCallback(() => setNotice(""), []);
+  const rememberPalette = useCallback((colors: string[]) => {
+    setShadowColors((current) => current.join() === colors.join() ? current : colors);
+    setShadowColor((current) => {
+      const next = colors.includes(current) ? current : colors[0] ?? current;
+      if (next) localStorage.setItem(SHADOW_KEY, next);
+      return next;
+    });
+  }, []);
+  const pickShadow = useCallback((color: string) => {
+    setShadowColor(color);
+    localStorage.setItem(SHADOW_KEY, color);
+  }, []);
+  const loseServer = useCallback(() => {
+    setRoomId(null);
+    setSeat(null);
+    setNotice(SERVER_DOWN);
+  }, []);
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
@@ -28,20 +55,38 @@ export function App() {
       return;
     }
     api<{ user: User }>("/api/me", {}, token)
-      .then((data) => setUser(data.user))
-      .catch(() => {
+      .then((data) => {
+        setUser(data.user);
+        setNotice("");
+      })
+      .catch((err: unknown) => {
+        if (err instanceof ServerDown) {
+          setNotice(SERVER_DOWN);
+          return;
+        }
         localStorage.removeItem(TOKEN);
         setToken(null);
       })
       .finally(() => setBooting(false));
-  }, [token]);
+  }, [token, retry]);
 
   if (booting) return <main className="screen"><p>Entrando...</p></main>;
+  if (token && !user) {
+    return (
+      <main className="screen">
+        <section className="panel login">
+          <h1>Caos</h1>
+          <p className="error">{notice || SERVER_DOWN}</p>
+          <button className="btn primary" onClick={() => { setNotice(""); setBooting(true); setRetry((count) => count + 1); }}>Tentar de novo</button>
+        </section>
+      </main>
+    );
+  }
   if (!token || !user) {
     return <Login onAuth={(next, account) => { localStorage.setItem(TOKEN, next); setToken(next); setUser(account); }} />;
   }
   if (roomId) {
-    return <Match token={token} roomId={roomId} onLeave={leaveMatch} />;
+    return <Match token={token} roomId={roomId} onLeave={leaveMatch} onDown={loseServer} />;
   }
   if (seat) {
     return (
@@ -49,14 +94,24 @@ export function App() {
         token={token}
         roomId={seat.roomId}
         onLeave={() => setSeat(null)}
-        onStart={(id) => { setSeat(null); setRoomId(id); }}
+        onStart={enterMatch}
+        onDown={loseServer}
+        colors={shadowColors}
+        shadowColor={shadowColor}
+        onPick={pickShadow}
       />
     );
   }
   return (
     <Home
       token={token}
-      onLogout={() => { localStorage.removeItem(TOKEN); setToken(null); setUser(null); }}
+      notice={notice}
+      colors={shadowColors}
+      shadowColor={shadowColor}
+      onPalette={rememberPalette}
+      onPick={pickShadow}
+      onClearNotice={clearNotice}
+      onLogout={() => { localStorage.removeItem(TOKEN); setToken(null); setUser(null); setNotice(""); }}
       onCreate={() => setSeat({})}
       onJoin={(id) => setSeat({ roomId: id })}
     />
@@ -110,13 +165,86 @@ interface OpenRoom {
   slots: number;
 }
 
+function HeroSprite({ view, shadow }: { view: string; shadow?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    let stop = false;
+    let timer = 0;
+    void loadIdle(view).then((sheet) => {
+      if (stop) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const scale = 3;
+      canvas.width = Math.max(1, Math.round(sheet.frameW * scale));
+      canvas.height = Math.max(1, Math.round(sheet.frameH * scale));
+      ctx.imageSmoothingEnabled = false;
+      let frame = 0;
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          sheet.image,
+          (sheet.start + frame) * sheet.frameW,
+          0,
+          sheet.frameW,
+          sheet.frameH,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        frame = (frame + 1) % Math.max(1, sheet.count);
+      };
+      draw();
+      timer = window.setInterval(draw, 180);
+    });
+    return () => {
+      stop = true;
+      window.clearInterval(timer);
+    };
+  }, [view]);
+  return (
+    <span className="hero-preview">
+      {shadow ? <i className="hero-shadow" style={{ background: shadow }} /> : null}
+      <canvas ref={ref} className="hero-sprite" />
+    </span>
+  );
+}
+
+function ShadowPick({ colors, value, onPick }: { colors: string[]; value: string; onPick: (color: string) => void }) {
+  if (colors.length === 0) return null;
+  return (
+    <div>
+      <p className="eyebrow">sombra</p>
+      <div className="swatches">
+        {colors.map((color) => (
+          <button key={color} type="button" className={color === value ? "on" : ""} style={{ background: color }} aria-label={`Sombra ${color}`} onClick={() => onPick(color)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Home({
   token,
+  notice,
+  colors,
+  shadowColor,
+  onPalette,
+  onPick,
+  onClearNotice,
   onLogout,
   onCreate,
   onJoin,
 }: {
   token: string;
+  notice: string;
+  colors: string[];
+  shadowColor: string;
+  onPalette: (colors: string[]) => void;
+  onPick: (color: string) => void;
+  onClearNotice: () => void;
   onLogout: () => void;
   onCreate: () => void;
   onJoin: (roomId: string) => void;
@@ -127,10 +255,16 @@ function Home({
   useEffect(() => {
     let stop = false;
     const load = () => {
-      api<{ rooms: OpenRoom[] }>("/api/rooms", {}, token).then((data) => {
-        if (!stop) setRooms(data.rooms);
-      }).catch(() => {
-        if (!stop) setError("Não achei as salas.");
+      api<{ rooms: OpenRoom[]; shadowColors?: string[] }>("/api/rooms", {}, token).then((data) => {
+        if (stop) return;
+        setRooms(data.rooms);
+        setError("");
+        onClearNotice();
+        onPalette((data.shadowColors ?? []).filter((color) => typeof color === "string"));
+      }).catch((err: unknown) => {
+        if (stop) return;
+        setRooms((current) => current.length === 0 ? current : []);
+        setError(err instanceof ServerDown ? SERVER_DOWN : "Não achei as salas.");
       });
     };
     load();
@@ -139,7 +273,7 @@ function Home({
       stop = true;
       window.clearInterval(timer);
     };
-  }, [token]);
+  }, [token, onClearNotice, onPalette]);
 
   return (
     <main className="screen">
@@ -152,10 +286,11 @@ function Home({
           <button className="btn ghost" onClick={onLogout}>Sair</button>
         </header>
         <p className="muted">Cria uma sala e espera o pessoal, ou entra numa que já está aberta.</p>
+        <ShadowPick colors={colors} value={shadowColor} onPick={onPick} />
         <button className="btn primary" onClick={onCreate}>Criar sala</button>
-        {error ? <p className="error">{error}</p> : null}
+        {error || notice ? <p className="error">{error || notice}</p> : null}
         <div className="rooms">
-          {rooms.length === 0 ? <p className="muted">Nenhuma sala aberta.</p> : null}
+          {rooms.length === 0 && !error && !notice ? <p className="muted">Nenhuma sala aberta.</p> : null}
           {rooms.map((room) => {
             const names = room.names;
             const slots = room.slots || room.maxClients;
@@ -181,21 +316,33 @@ function WaitRoom({
   roomId,
   onLeave,
   onStart,
+  onDown,
+  colors,
+  shadowColor,
+  onPick,
 }: {
   token: string;
   roomId?: string;
   onLeave: () => void;
   onStart: (roomId: string) => void;
+  onDown: () => void;
+  colors: string[];
+  shadowColor: string;
+  onPick: (color: string) => void;
 }) {
   const [state, setState] = useState<LobbyState | null>(null);
   const [error, setError] = useState("");
   const roomRef = useRef<Room | null>(null);
+  const shadowRef = useRef(shadowColor);
+  shadowRef.current = shadowColor;
 
   useEffect(() => {
     const client = new Client(wsBase());
     let room: Room | null = null;
     let closed = false;
-    const joining = roomId ? client.joinById(roomId, { token }) : client.create("lobby", { token });
+    const joining = roomId
+      ? client.joinById(roomId, { token, shadowColor: shadowRef.current })
+      : client.create("lobby", { token, shadowColor: shadowRef.current });
     void joining.then((joined) => {
       if (closed) {
         void joined.leave();
@@ -205,14 +352,34 @@ function WaitRoom({
       roomRef.current = joined;
       joined.onMessage("lobby", (next: LobbyState) => setState(next));
       joined.onMessage("go", (message: { roomId: string }) => onStart(message.roomId));
+      joined.onLeave((code) => {
+        if (closed || code === CONSENTED) return;
+        closed = true;
+        onDown();
+      });
     }).catch((err: unknown) => {
-      if (!closed) setError(err instanceof Error ? err.message : "Não entrei na sala.");
+      if (closed) return;
+      closed = true;
+      if (err instanceof TypeError || (err instanceof Error && /fetch|network|websocket|offline|econn/i.test(err.message))) onDown();
+      else setError(err instanceof Error ? err.message : "Não entrei na sala.");
     });
+    let misses = 0;
+    const beat = window.setInterval(() => {
+      void serverReachable(token).then((up) => {
+        if (closed) return;
+        misses = up ? 0 : misses + 1;
+        if (misses >= 2) {
+          closed = true;
+          onDown();
+        }
+      });
+    }, 2000);
     return () => {
       closed = true;
+      window.clearInterval(beat);
       void room?.leave();
     };
-  }, [token, roomId, onStart]);
+  }, [token, roomId, onStart, onDown]);
 
   const host = state?.hostId === state?.youId;
   const mine = state?.players.find((player) => player.id === state.youId);
@@ -235,20 +402,31 @@ function WaitRoom({
         <ul className="roster">
           {(state?.players ?? []).map((player) => {
             const hero = state?.heroes.find((item) => item.id === player.heroId);
+            const same = player.id !== mine?.id && player.heroId === mine?.heroId;
+            const sameShade = player.id !== mine?.id && !!player.shadowColor && player.shadowColor.toLowerCase() === (mine?.shadowColor ?? shadowColor).toLowerCase();
             return (
               <li key={player.id}>
-                <b style={{ color: hero?.color }}>{player.name}</b>
-                {player.id === state?.hostId ? " · host" : ""}
-                <small>{hero?.nome ?? "escolhendo"}</small>
+                <HeroSprite view={player.heroId} shadow={player.shadowColor} />
+                <div>
+                  <b style={{ color: player.shadowColor || "#f3ecdf" }}>{player.name}</b>
+                  {player.id === state?.hostId ? " · host" : ""}
+                  <small>{hero?.nome ?? "escolhendo"}{same ? " · igual ao seu" : ""}{sameShade ? " · sombra igual" : ""}</small>
+                </div>
               </li>
             );
           })}
           {(state?.players.length ?? 0) === 0 ? <li className="muted">Entrando na sala...</li> : null}
         </ul>
         <div>
+          <ShadowPick colors={colors} value={shadowColor} onPick={(color) => {
+            onPick(color);
+            roomRef.current?.send("shadow", { color });
+          }} />
           <p className="eyebrow">personagem</p>
           <div className="heroes">
-            {(state?.heroes ?? []).map((hero) => (
+            {(state?.heroes ?? []).map((hero) => {
+              const others = (state?.players ?? []).filter((player) => player.heroId === hero.id && player.id !== state?.youId);
+              return (
               <button
                 key={hero.id}
                 type="button"
@@ -256,11 +434,14 @@ function WaitRoom({
                 style={{ ["--hero" as string]: hero.color }}
                 onClick={() => roomRef.current?.send("hero", { heroId: hero.id })}
               >
+                <HeroSprite view={hero.id} shadow={shadowColor} />
                 <strong>{hero.nome}</strong>
                 <small>{hero.hp} de vida · velocidade {hero.speed}</small>
                 <span>{hero.descricao}</span>
+                {others.length > 0 ? <em className="taken">{others.map((player) => player.name).join(", ")}</em> : null}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
         <div className="settings">
@@ -313,7 +494,7 @@ const PHASE: Record<string, string> = {
   ended: "Fim",
 };
 
-function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLeave: () => void }) {
+function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: string; onLeave: () => void; onDown: () => void }) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [watchId, setWatchId] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -344,20 +525,38 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         if (typeof sent !== "number") return;
         netRef.current.ping = performance.now() - sent;
       });
-    }).catch((error: unknown) => {
-      console.error(error);
-      onLeave();
+      joined.onLeave((code) => {
+        if (closed || code === CONSENTED) return;
+        closed = true;
+        onDown();
+      });
+    }).catch(() => {
+      if (closed) return;
+      closed = true;
+      onDown();
     });
+    let misses = 0;
+    const beat = window.setInterval(() => {
+      void serverReachable(token).then((up) => {
+        if (closed) return;
+        misses = up ? 0 : misses + 1;
+        if (misses >= 2) {
+          closed = true;
+          onDown();
+        }
+      });
+    }, 2000);
     const beforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener("beforeunload", beforeUnload);
     return () => {
       closed = true;
+      window.clearInterval(beat);
       window.removeEventListener("beforeunload", beforeUnload);
       void room?.leave();
     };
-  }, [roomId, token, onLeave]);
+  }, [roomId, token, onDown]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -455,7 +654,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
             const followed = (watchId ?? snap.youId) === player.id;
             return (
             <button key={player.id} tabIndex={-1} className={[player.eliminated ? "out" : "", mine ? "me" : "", followed ? "on" : ""].filter(Boolean).join(" ")} onClick={() => setWatchId(player.id === snap.youId ? null : player.id)}>
-              <b style={{ color: player.color }}>{player.name}{mine ? <em className="who"> você</em> : null}</b>
+              <b style={{ color: player.color }}>{player.name}</b>
               <small>{"♥".repeat(Math.max(0, player.lives))}{player.eliminated ? " fora" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}{followed ? " · vendo" : ""}</small>
               <span className="pips">
                 {player.abilities.map((ability) => {

@@ -278,6 +278,17 @@ async function buildActor(view: string): Promise<ActorSheet> {
   return sheetFromPack(PACK[view] ?? PACK.slime!);
 }
 
+export function loadIdle(view: string) {
+  const pending = loading.get(view) ?? buildActor(view);
+  loading.set(view, pending);
+  return pending.then((master) => {
+    const image = master.texture.image as CanvasImageSource & { width: number; height: number };
+    const [start, count] = master.clips.idle;
+    const frameW = image.width / master.frames;
+    return { image, start, count, frameW, frameH: image.height };
+  });
+}
+
 export function loadActor(view: string): Promise<ActorSheet> {
   const pending = loading.get(view) ?? buildActor(view);
   loading.set(view, pending);

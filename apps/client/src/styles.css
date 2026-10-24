@@ -37,6 +37,12 @@ h1, h2 { font-weight: 650; margin: 0; letter-spacing: -0.02em; }
 }
 .room small, .roster small, .hero-card small { display: block; color: #a39886; font-size: 12px; }
 .heroes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches button {
+  width: 28px; height: 28px; padding: 0; cursor: pointer;
+  border: 2px solid #3a3228; background: #1c1914;
+}
+.swatches button.on { border-color: #f3ecdf; }
 .hero-card {
   text-align: left; background: #14120f; border: 1px solid #3a3228; padding: 10px; cursor: pointer;
   display: grid; gap: 4px;
@@ -65,7 +71,15 @@ input[type="text"], input[type="password"], input[type="number"] {
 .btn:disabled { opacity: 0.45; cursor: default; }
 .row { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .roster { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.roster li { background: #14120f; padding: 8px 10px; }
+.roster li { background: #14120f; padding: 8px 10px; display: flex; align-items: center; gap: 10px; }
+.hero-preview { position: relative; display: grid; justify-items: center; align-items: end; }
+.hero-shadow {
+  position: absolute; left: 50%; bottom: 1px; z-index: 0;
+  width: 78%; height: 8px; transform: translateX(-50%);
+  border-radius: 50%; opacity: 0.9;
+}
+.hero-sprite { position: relative; z-index: 1; display: block; image-rendering: pixelated; }
+.hero-card .taken { color: #e6c15a; font-style: normal; font-size: 12px; }
 .settings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .check { align-content: end; grid-template-columns: auto 1fr; align-items: center; }
 
@@ -95,8 +109,9 @@ input[type="text"], input[type="password"], input[type="number"] {
   display: grid; gap: 3px;
 }
 .board button.out { opacity: 0.4; }
+.board button b { font-weight: 500; opacity: 0.62; }
 .board button.me { border-color: #6f8a62; }
-.who { color: #8fdb67; font-style: normal; font-weight: 700; font-size: 12px; }
+.board button.me b { font-weight: 800; opacity: 1; }
 .board button.on {
   border-color: #e6c15a;
   background: #2c2616;
