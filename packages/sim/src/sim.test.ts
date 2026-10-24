@@ -787,7 +787,7 @@ describe("simulação", () => {
     expect(player.abilities[0]!.cooldown).toBeGreaterThan(0);
   });
 
-  it("aoe no ponto vazio gasta cooldown e só acerta o raio desse ponto", () => {
+  it("aoe só acerta o raio do ponto da mira", () => {
     const match = createMatch({
       players: [{ id: "p", name: "Ana", isBot: false, heroId: "piromante" }],
       seed: 9,
@@ -817,6 +817,31 @@ describe("simulação", () => {
     for (const id of crowd) expect(match.entities.find((entity) => entity.id === id)!.hp).toBe(1000);
     expect(player.abilities[0]!.cooldown).toBeGreaterThan(0);
     expect(match.fx.some((item) => item.kind === "ring")).toBe(true);
+  });
+
+  it("aoe no chão vazio não estoura nem gasta cooldown", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "piromante" }],
+      seed: 9,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    player.abilities[0]!.cooldown = 0;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const far = stillCreep(match, arena.id, center.x + 4, center.y);
+    player.aimX = center.x - 4;
+    player.aimY = center.y;
+    tick(match);
+    expect(match.entities.find((entity) => entity.id === far)!.hp).toBe(1000);
+    expect(player.abilities[0]!.cooldown).toBe(0);
+    expect(match.fx.some((item) => item.kind === "ring")).toBe(false);
   });
 
   it("cone olha para a mira", () => {

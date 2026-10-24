@@ -164,19 +164,17 @@ registerAbilityBehavior("aoe", (ctx) => {
   const victims = ctx.match.entities.filter(
     (entity) => entity.alive && entity.arenaId === ctx.caster.arenaId && entity.team !== ctx.caster.team && dist(center, entity) <= radius + entity.radius,
   );
-  if (!aim && victims.length === 0) return false;
-  if (victims.length > 0) {
-    const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
-    for (const target of victims) {
-      dealDamage(ctx.match, {
-        source: ctx.caster,
-        sourcePlayer: ctx.player,
-        target,
-        amount: hit.amount,
-        abilityId: ctx.ability.id,
-        crit: hit.crit,
-      });
-    }
+  if (victims.length === 0) return false;
+  const hit = rolledDamage(ctx.match, ctx.player, ctx.level.damage);
+  for (const target of victims) {
+    dealDamage(ctx.match, {
+      source: ctx.caster,
+      sourcePlayer: ctx.player,
+      target,
+      amount: hit.amount,
+      abilityId: ctx.ability.id,
+      crit: hit.crit,
+    });
   }
   markSwing(ctx.caster);
   emitFx(ctx.match, {
