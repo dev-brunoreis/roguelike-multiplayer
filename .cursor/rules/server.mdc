@@ -9,7 +9,7 @@ alwaysApply: false
 `src/index.ts` sobe Express e Colyseus na mesma porta. `LobbyRoom` cria a partida com `matchMaker.createRoom`. `MatchRoom` chama `tick` e manda `snapshot`.
 
 - Auth é JWT no body HTTP e de novo em `onAuth` da room. Não confie em nome vindo do cliente.
-- Input, pick, ready no salão e surrender passam pelas funções de `packages/sim`.
+- Input, pick, ready no salão e surrender passam pelas funções de `packages/sim`. `ping` só ecoa `pong` para o cliente medir a ida e volta.
 - `StatsWriter` grava eventos persistentes. Não grave cada número de dano solto; o resumo vai em `damage_summary`.
 - Banco em `data/game.sqlite` via Drizzle e `node:sqlite`.
 - Em produção o Express serve `apps/client/dist`.

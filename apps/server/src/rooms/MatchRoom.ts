@@ -85,6 +85,10 @@ export class MatchRoom extends Room {
       if (!id || !message?.targetId || !Number.isFinite(message.amount)) return;
       placeBet(this.match, id, message.targetId, message.amount ?? 0);
     });
+    this.onMessage("ping", (client, sent: number) => {
+      if (typeof sent !== "number" || !Number.isFinite(sent)) return;
+      client.send("pong", sent);
+    });
     this.onMessage("surrender", (client) => {
       const id = this.users.get(client.sessionId);
       if (!id) return;

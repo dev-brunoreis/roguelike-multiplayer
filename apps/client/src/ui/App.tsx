@@ -175,6 +175,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
   const hpRef = useRef<number | null>(null);
   const snapRef = useRef<Snapshot | null>(null);
   const shakeRef = useRef(0);
+  const netRef = useRef({ ping: -1, arrivals: [] as number[] });
   snapRef.current = snap;
 
   useEffect(() => {
@@ -188,7 +189,14 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
       }
       room = joined;
       roomRef.current = joined;
-      joined.onMessage("snapshot", (next: Snapshot) => setSnap(next));
+      joined.onMessage("snapshot", (next: Snapshot) => {
+        netRef.current.arrivals.push(performance.now());
+        setSnap(next);
+      });
+      joined.onMessage("pong", (sent: number) => {
+        if (typeof sent !== "number") return;
+        netRef.current.ping = performance.now() - sent;
+      });
     }).catch((error: unknown) => {
       console.error(error);
       onLeave();
@@ -225,10 +233,12 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
     const pulse = setInterval(() => roomRef.current?.send("input", cameraMove()), 50);
+    const ping = setInterval(() => roomRef.current?.send("ping", performance.now()), 1000);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKey);
       clearInterval(pulse);
+      clearInterval(ping);
     };
   }, []);
 
@@ -251,6 +261,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
   return (
     <main className="match" onPointerDown={unlockAudio}>
       <Scene snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
+      <NetStat netRef={netRef} />
       <header className="hud top">
         <div>
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
@@ -358,6 +369,40 @@ const BANNER_KIND: Record<string, string> = {
   eliminate: "Fora",
   info: "Aviso",
 };
+
+function NetStat({ netRef }: { netRef: { current: { ping: number; arrivals: number[] } } }) {
+  const [text, setText] = useState("fps — · ping — · lat — · loss —");
+  useEffect(() => {
+    let frames = 0;
+    let then = performance.now();
+    let timer = 0;
+    const loop = () => {
+      frames += 1;
+      timer = requestAnimationFrame(loop);
+    };
+    timer = requestAnimationFrame(loop);
+    const report = window.setInterval(() => {
+      const now = performance.now();
+      const fps = Math.round(frames * 1000 / Math.max(1, now - then));
+      frames = 0;
+      then = now;
+      const windowMs = 2000;
+      const arrivals = netRef.current.arrivals.filter((at) => now - at <= windowMs);
+      netRef.current.arrivals = arrivals;
+      const expected = windowMs / 100;
+      const loss = arrivals.length < 8 ? 0 : Math.max(0, Math.round((1 - arrivals.length / expected) * 100));
+      const ping = netRef.current.ping;
+      const pingText = ping < 0 ? "—" : `${Math.round(ping)}`;
+      const latText = ping < 0 ? "—" : `${Math.round(ping / 2)}`;
+      setText(`fps ${fps} · ping ${pingText} · lat ${latText} · loss ${loss}%`);
+    }, 500);
+    return () => {
+      cancelAnimationFrame(timer);
+      window.clearInterval(report);
+    };
+  }, [netRef]);
+  return <p className="netstat">{text}</p>;
+}
 
 function Banner({ announce }: { announce: AnnounceSnap }) {
   return (
