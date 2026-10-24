@@ -24,9 +24,9 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 ## Creep, onda, boss
 
-`creeps.json` define status e `behavior` (hoje `chase`). `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual. `bosses.json` soma um spawn quando a rodada divide `everyRounds`.
+`creeps.json` define status, `behavior` e `dropChance`. `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual; depois da última, ela se repete mais forte. `bosses.json` soma um spawn quando a rodada divide `everyRounds`.
 
-IA nova: `registerCreepBehavior`.
+IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira).
 
 ## Visual
 
@@ -42,4 +42,4 @@ O componente só posiciona o visual. Dano, vida e cooldown continuam na simulaç
 
 ## Bot
 
-`registerBot("agressivo", fn)` e troque o nome lido em `runBots` quando houver mais de uma estratégia. A função mexe só em input e nas ações já existentes (`pickCard`, `shopAct`, `placeBet`).
+`registerBot("agressivo", fn)` e troque o nome lido em `runBots` quando houver mais de uma estratégia. A função mexe só em input e nas ações já existentes (`pickCard`, `shopAct` ready).

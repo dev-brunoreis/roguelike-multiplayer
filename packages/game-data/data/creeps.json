@@ -13,7 +13,8 @@
     "color": "#e23d3d",
     "armor": 0,
     "behavior": "chase",
-    "kind": "creep"
+    "kind": "creep",
+    "dropChance": 0.05
   },
   {
     "id": "bruto",
@@ -29,7 +30,8 @@
     "color": "#a32020",
     "armor": 4,
     "behavior": "chase",
-    "kind": "creep"
+    "kind": "creep",
+    "dropChance": 0.1
   },
   {
     "id": "corredor",
@@ -45,7 +47,25 @@
     "color": "#ff6b4a",
     "armor": 0,
     "behavior": "chase",
-    "kind": "creep"
+    "kind": "creep",
+    "dropChance": 0.06
+  },
+  {
+    "id": "atirador",
+    "nome": "Atirador",
+    "hp": 22,
+    "speed": 2.3,
+    "damage": 9,
+    "attackCooldown": 1.25,
+    "attackRange": 6.2,
+    "radius": 0.3,
+    "xp": 6,
+    "gold": 0,
+    "color": "#7aa2d4",
+    "armor": 0,
+    "behavior": "kite",
+    "kind": "creep",
+    "dropChance": 0.08
   },
   {
     "id": "boss_golem",
@@ -61,7 +81,8 @@
     "color": "#6b3a1f",
     "armor": 10,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "dropChance": 0.4
   },
   {
     "id": "boss_olho",
@@ -77,6 +98,7 @@
     "color": "#c9a227",
     "armor": 2,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "dropChance": 0.45
   }
 ]

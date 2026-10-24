@@ -11,7 +11,7 @@ export const STATS = [
   "lifesteal",
   "areaPct",
   "xpPct",
-  "goldPct",
+  "luck",
   "cooldownPct",
 ] as const;
 
@@ -93,6 +93,7 @@ export const creepSchema = z.object({
   armor: z.number().nonnegative().default(0),
   behavior: z.string().min(1),
   kind: z.enum(["creep", "boss"]).default("creep"),
+  dropChance: z.number().min(0).max(1).default(0),
 });
 
 export const waveSchema = z.object({
@@ -125,15 +126,7 @@ export const synergySchema = z.object({
 });
 
 export const economySchema = z.object({
-  goldPerWave: z.number().nonnegative(),
-  upgradeCostBase: z.number().nonnegative(),
-  upgradeCostGrowth: z.number().positive(),
-  rerollCost: z.number().nonnegative(),
-  betMin: z.number().nonnegative(),
-  betMax: z.number().positive(),
-  duelWinGold: z.number().nonnegative(),
-  byeGold: z.number().nonnegative(),
-  prices: z.record(z.string(), z.number().nonnegative()),
+  luckBias: z.record(z.string(), z.number()),
 });
 
 export const matchConfigSchema = z.object({
@@ -142,10 +135,12 @@ export const matchConfigSchema = z.object({
   maxPlayers: z.number().int().min(1),
   lives: z.number().int().min(1),
   cardsPerLevelUp: z.number().int().min(1),
+  maxAbilities: z.number().int().min(1).max(8),
   cardPickSeconds: z.number().positive(),
   pveSeconds: z.number().positive(),
   hubSeconds: z.number().positive(),
   hubSize: z.number().positive(),
+  duelAnnounceSeconds: z.number().nonnegative(),
   duelStartRound: z.number().int().min(1),
   duelSeconds: z.number().positive(),
   bettingSeconds: z.number().nonnegative(),

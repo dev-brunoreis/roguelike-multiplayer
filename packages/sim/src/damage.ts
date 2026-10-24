@@ -1,6 +1,6 @@
 import { damagePipeline } from "./registry.js";
 import type { DamageContext, Entity, Match, PlayerState } from "./types.js";
-import { arenaById, floatText, heroEntity, playerById } from "./world.js";
+import { arenaById, dist, emitFx, floatText, heroEntity, playerById } from "./world.js";
 
 export interface HitInput {
   source?: Entity;
@@ -11,7 +11,7 @@ export interface HitInput {
   crit?: boolean;
 }
 
-export function dealDamage(match: Match, hit: HitInput): number {
+export function dealDamage(match: Match, hit: HitInput, nested = false): number {
   const target = hit.target;
   if (!target.alive || target.invuln > 0) return 0;
   if (match.phase === "hub") return 0;
@@ -59,6 +59,35 @@ export function dealDamage(match: Match, hit: HitInput): number {
 
   for (const hook of damagePipeline.afterDamage) hook(ctx);
 
+  if (!nested && ctx.sourcePlayer && ctx.source) {
+    for (const hook of ctx.sourcePlayer.hooks.onHit) {
+      if (hook.hook !== "splash" || hook.value <= 0) continue;
+      const radius = 2.1 * (1 + ctx.sourcePlayer.stats.areaPct);
+      emitFx(match, {
+        kind: "ring",
+        x: target.x,
+        y: target.y,
+        radius,
+        color: "#f4c46a",
+        arenaId: target.arenaId,
+        life: 0.28,
+      });
+      for (const other of match.entities) {
+        if (!other.alive || other.id === target.id || other.arenaId !== target.arenaId) continue;
+        if (other.team === ctx.source.team) continue;
+        if (dist(target, other) > radius + other.radius) continue;
+        dealDamage(match, {
+          source: ctx.source,
+          sourcePlayer: ctx.sourcePlayer,
+          target: other,
+          amount: final * hook.value,
+          abilityId: ctx.abilityId,
+          crit: ctx.crit,
+        }, true);
+      }
+    }
+  }
+
   if (target.hp <= 0) {
     target.hp = 0;
     ctx.killed = true;
@@ -81,12 +110,17 @@ export function killEntity(match: Match, entity: Entity, killer?: PlayerState) {
   }
   if (killer && !killer.eliminated) {
     killer.kills += 1;
-    const gold = entity.gold * (1 + killer.stats.goldPct);
-    killer.gold += gold;
     for (const hook of killer.hooks.onKill) {
-      if (hook.hook === "gold") killer.gold += hook.value;
+      if (hook.hook === "luck") killer.stats.luck += hook.value;
     }
     grantXp(match, killer, entity.xp);
+    const def = match.data.creeps.find((creep) => creep.id === entity.defId);
+    const chance = (def?.dropChance ?? 0) * (1 + killer.stats.luck);
+    if (def && chance > 0 && match.rng.next() < chance) {
+      killer.unspentPicks += 1;
+      addLogSafe(match, `${killer.name} achou um item`);
+      if (match.phase === "hub") offerCards(match, killer);
+    }
   }
 }
 
@@ -151,11 +185,11 @@ export function offerCards(match: Match, player: PlayerState) {
   const draft = [...pool];
   const count = Math.min(match.config.cardsPerLevelUp, draft.length);
   for (let i = 0; i < count; i += 1) {
-    const total = draft.reduce((sum, card) => sum + card.weight, 0);
+    const total = draft.reduce((sum, card) => sum + cardWeight(match, player, card), 0);
     let roll = match.rng.next() * total;
     let index = draft.length - 1;
     for (let n = 0; n < draft.length; n += 1) {
-      roll -= draft[n]!.weight;
+      roll -= cardWeight(match, player, draft[n]!);
       if (roll <= 0) {
         index = n;
         break;
@@ -164,10 +198,18 @@ export function offerCards(match: Match, player: PlayerState) {
     const [card] = draft.splice(index, 1);
     if (card) picked.push(card.id);
   }
-  if (picked.length === 0) return;
+  if (picked.length === 0) {
+    player.unspentPicks = Math.max(0, player.unspentPicks - 1);
+    return;
+  }
   player.pendingCards = picked;
   player.cardTimer = match.config.cardPickSeconds;
   match.events.push({ type: "card_offer", round: match.round, playerId: player.id, cards: picked });
+}
+
+export function cardWeight(match: Match, player: PlayerState, card: (typeof match.data.cards)[number]) {
+  const bias = match.data.economy.luckBias[card.rarity] ?? 0;
+  return Math.max(0.01, card.weight * (1 + player.stats.luck * bias));
 }
 
 export function eligible(match: Match, player: PlayerState, card: (typeof match.data.cards)[number]) {

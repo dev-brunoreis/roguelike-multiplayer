@@ -1,7 +1,7 @@
 import { eligible, offerCards } from "./damage.js";
 import { applyCard } from "./effects.js";
 import { flushDamage, spawnCreep } from "./spawn.js";
-import type { Match, PlayerState } from "./types.js";
+import type { DuelPair, Match, PlayerState } from "./types.js";
 import { addLog, alivePlayers, arenaById, arenaCenter, emit, heroEntity } from "./world.js";
 
 export function checkWinner(match: Match) {
@@ -79,10 +79,11 @@ export function beginPve(match: Match) {
   if (match.phase === "ended") return;
   flushDamage(match);
   match.phase = "pve";
-  match.phaseTime = match.config.pveSeconds;
+  match.phaseTime = Math.min(180, match.config.pveSeconds + Math.max(0, match.round - 1) * 4);
   match.spawns = [];
   match.duel = [];
   match.duelPending = false;
+  match.duelAnnounce = 0;
   match.projectiles = [];
   match.bossAnnounced = false;
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
@@ -102,13 +103,15 @@ export function beginPve(match: Match) {
     if (player.eliminated) continue;
     sendHome(match, player);
     revive(match, player);
+    const extra = 1 + Math.max(0, match.round - wave.round) * 0.38;
+    const haste = 1 + Math.max(0, match.round - 1) * 0.035;
     for (const group of wave.spawns) {
       match.spawns.push({
         arenaId: player.arenaId,
         creepId: group.creepId,
-        left: group.count,
-        interval: group.interval,
-        acc: group.interval,
+        left: Math.max(1, Math.round(group.count * extra)),
+        interval: group.interval / haste,
+        acc: group.interval / haste,
       });
     }
     if (boss) {
@@ -152,7 +155,7 @@ function endPve(match: Match, cleared: boolean) {
     emit(match, { type: "wave_cleared", round: match.round });
     addLog(match, `Onda ${match.round} limpa`);
     for (const player of alivePlayers(match)) {
-      player.gold += match.data.economy.goldPerWave * (1 + player.stats.goldPct);
+      player.stats.luck += 0.03;
     }
   } else {
     emit(match, { type: "wave_failed", round: match.round });
@@ -202,6 +205,7 @@ export function beginHub(match: Match) {
   match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
   match.duel = [];
   match.duelPending = false;
+  match.duelAnnounce = 0;
   const fighters = alivePlayers(match);
   if (match.waveDone && match.round >= match.config.duelStartRound && fighters.length >= 2) {
     match.duel = pairPlayers(match);
@@ -215,11 +219,10 @@ export function beginHub(match: Match) {
   }
   fighters.forEach((player, index) => {
     sendToHub(match, player, index, fighters.length);
-    if (match.waveDone) player.shopOffers = rollShop(match, player);
     if (player.unspentPicks > 0 && player.pendingCards.length === 0) offerCards(match, player);
   });
-  addLog(match, match.waveDone ? "Salão aberto: cartas, loja e um respiro" : "Salão aberto");
-  if (match.duelPending) addLog(match, "Duelo em seguida. Quem não luta pode apostar.");
+  addLog(match, match.waveDone ? "Salão aberto: escolhe carta e respira" : "Salão aberto");
+  if (match.duelPending) addLog(match, "Duelo em seguida.");
 }
 
 function forcePick(match: Match, player: PlayerState) {
@@ -248,6 +251,28 @@ function leaveHub(match: Match) {
 export function updateHub(match: Match, dt: number) {
   match.phaseTime = Math.max(0, match.phaseTime - dt);
   const waiting = alivePlayers(match).some((player) => !player.ready);
+  if (match.duelPending && match.duel.length > 0) {
+    const announceFor = match.config.duelAnnounceSeconds;
+    if (announceFor <= 0) {
+      if (!waiting || match.phaseTime <= 0) leaveHub(match);
+      return;
+    }
+    if (match.duelAnnounce <= 0 && (!waiting || match.phaseTime <= announceFor)) {
+      match.duelAnnounce = announceFor;
+      const pair = match.duel[0]!;
+      const a = match.players.find((player) => player.id === pair.a);
+      const b = match.players.find((player) => player.id === pair.b);
+      addLog(match, `Duelo: ${a?.name ?? "?"} vs ${b?.name ?? "?"}`);
+    }
+    if (match.duelAnnounce > 0) {
+      match.duelAnnounce = Math.max(0, match.duelAnnounce - dt);
+      if (match.duelAnnounce <= 0) {
+        leaveHub(match);
+      }
+      return;
+    }
+    return;
+  }
   if (!waiting || match.phaseTime <= 0) leaveHub(match);
 }
 
@@ -268,22 +293,11 @@ function pairPlayers(match: Match) {
     ids[i] = ids[j]!;
     ids[j] = swap;
   }
-  const pairs = [];
-  if (ids.length % 2 === 1) {
-    const bye = match.players.find((player) => player.id === ids.pop());
-    if (bye) {
-      bye.gold += match.data.economy.byeGold;
-      addLog(match, `${bye.name} folga e ganha ${match.data.economy.byeGold} de ouro`);
-    }
-  }
-  let n = 0;
-  for (let i = 0; i < ids.length; i += 2) {
-    const a = ids[i];
-    const b = ids[i + 1];
-    if (!a || !b) continue;
-    n += 1;
-    pairs.push({ a, b, arenaId: `duel-${match.round}-${n}`, resolved: false });
-  }
+  const pairs: DuelPair[] = [];
+  const a = ids[0];
+  const b = ids[1];
+  if (!a || !b) return pairs;
+  pairs.push({ a, b, arenaId: `duel-${match.round}-1`, resolved: false });
   return pairs;
 }
 
@@ -307,6 +321,7 @@ export function beginDuel(match: Match) {
   if (match.phase === "ended") return;
   match.phase = "duel";
   match.phaseTime = match.config.duelSeconds;
+  match.duelAnnounce = 0;
   match.projectiles = [];
   match.duel.forEach((pair, index) => {
     if (!arenaById(match, pair.arenaId)) placeDuelArena(match, pair.arenaId, index + 1);
@@ -399,7 +414,6 @@ function resolvePair(
       addLog(match, `${loser.name} foi eliminado`);
     }
   }
-  winner.gold += match.data.economy.duelWinGold;
   payBets(match, winner.id, aId, bId);
   emit(match, { type: "duel_result", round: match.round, winnerId: winner.id, loserId: loser.id, timeout });
   addLog(match, `${winner.name} venceu o duelo contra ${loser.name}`);

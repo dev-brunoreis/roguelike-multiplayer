@@ -22,7 +22,7 @@ export interface Stats {
   lifesteal: number;
   areaPct: number;
   xpPct: number;
-  goldPct: number;
+  luck: number;
   cooldownPct: number;
 }
 
@@ -62,6 +62,7 @@ export interface Entity {
   alive: boolean;
   invuln: number;
   flash: number;
+  swing?: number;
   facing: number;
   behavior: string;
 }
@@ -78,6 +79,7 @@ export interface Projectile {
   arenaId: string;
   team: string;
   ownerId: string;
+  sourceId?: number;
   abilityId: string;
   color: string;
   ttl: number;
@@ -168,10 +170,12 @@ export interface Match {
   duel: DuelPair[];
   waveDone: boolean;
   duelPending: boolean;
+  duelAnnounce: number;
   winnerId: string | null;
   log: string[];
   events: PersistEvent[];
   floats: FloatEvent[];
+  fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number }[];
   bossAnnounced: boolean;
 }
 
@@ -213,7 +217,7 @@ export function emptyStats(): Stats {
     lifesteal: 0,
     areaPct: 0,
     xpPct: 0,
-    goldPct: 0,
+    luck: 0,
     cooldownPct: 0,
   };
 }

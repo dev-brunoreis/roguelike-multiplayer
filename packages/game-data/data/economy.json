@@ -1,17 +1,9 @@
 {
-  "goldPerWave": 10,
-  "upgradeCostBase": 12,
-  "upgradeCostGrowth": 1.55,
-  "rerollCost": 8,
-  "betMin": 5,
-  "betMax": 40,
-  "duelWinGold": 15,
-  "byeGold": 6,
-  "prices": {
-    "comum": 18,
-    "incomum": 32,
-    "raro": 50,
-    "epico": 75,
-    "lendario": 110
+  "luckBias": {
+    "comum": 0,
+    "incomum": 0.4,
+    "raro": 0.85,
+    "epico": 1.35,
+    "lendario": 1.9
   }
 }

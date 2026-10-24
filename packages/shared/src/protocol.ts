@@ -59,7 +59,7 @@ export interface PlayerSnap {
   level: number;
   xp: number;
   xpNext: number;
-  gold: number;
+  luck: number;
   hp: number;
   maxHp: number;
   eliminated: boolean;
@@ -93,6 +93,7 @@ export interface EntitySnap {
   color: string;
   arenaId: string;
   flash: number;
+  swing: number;
   label?: string;
   playerId?: string;
 }
@@ -101,8 +102,23 @@ export interface ProjectileSnap {
   id: number;
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   arenaId: string;
   color: string;
+}
+
+export interface FxSnap {
+  id: number;
+  kind: "ring" | "slash" | "cone" | "flash" | "bolt";
+  x: number;
+  y: number;
+  x2?: number;
+  y2?: number;
+  radius: number;
+  color: string;
+  arenaId: string;
+  t: number;
 }
 
 export interface ArenaSnap {
@@ -135,8 +151,10 @@ export interface Snapshot {
   players: PlayerSnap[];
   entities: EntitySnap[];
   projectiles: ProjectileSnap[];
+  fx: FxSnap[];
   floats: FloatEvent[];
   duel: DuelPairSnap[];
+  duelAnnounce: number;
 }
 
 export interface ClientInput {

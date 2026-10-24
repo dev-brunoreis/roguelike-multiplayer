@@ -10,6 +10,25 @@ export function addLog(match: Match, text: string) {
   if (match.log.length > 14) match.log.shift();
 }
 
+export function emitFx(
+  match: Match,
+  fx: { kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; life?: number },
+) {
+  match.fx.push({
+    id: match.nextId++,
+    kind: fx.kind,
+    x: fx.x,
+    y: fx.y,
+    x2: fx.x2,
+    y2: fx.y2,
+    radius: fx.radius,
+    color: fx.color,
+    arenaId: fx.arenaId,
+    born: match.time,
+    life: fx.life ?? 0.38,
+  });
+}
+
 export function floatText(match: Match, entity: { x: number; y: number; arenaId: string }, text: string, crit = false) {
   match.floats.push({
     id: match.nextId++,
@@ -100,7 +119,7 @@ export function creepById(match: Match, id: string) {
 
 export function roundScale(match: Match) {
   return {
-    hp: 1 + (match.round - 1) * 0.22,
-    damage: 1 + (match.round - 1) * 0.12,
+    hp: 1 + (match.round - 1) * 0.28,
+    damage: 1 + (match.round - 1) * 0.16,
   };
 }

@@ -1,5 +1,5 @@
-import type { AbilityView, CardView, PlayerSnap, ShopView, Snapshot } from "@game/shared";
-import { cardPrice, isFighter, upgradeCost } from "./actions.js";
+import type { AbilityView, CardView, PlayerSnap, Snapshot } from "@game/shared";
+import { isFighter } from "./actions.js";
 import type { Match, PlayerState } from "./types.js";
 import { abilityById, cardById, heroEntity, xpToNext } from "./world.js";
 
@@ -24,29 +24,6 @@ function abilitiesOf(match: Match, player: PlayerState): AbilityView[] {
       color: def.color,
     }];
   });
-}
-
-function shopOf(match: Match, player: PlayerState): ShopView | null {
-  if ((match.phase !== "shop" && match.phase !== "hub") || player.eliminated) return null;
-  return {
-    offers: player.shopOffers.flatMap((id) => {
-      const card = cardView(match, id);
-      if (!card) return [];
-      return [{ ...card, price: cardPrice(match, card.rarity) }];
-    }),
-    rerollCost: match.data.economy.rerollCost,
-    upgrades: player.abilities.flatMap((slot) => {
-      const def = abilityById(match, slot.abilityId);
-      if (!def || slot.level >= def.levels.length) return [];
-      return [{
-        abilityId: slot.abilityId,
-        nome: def.nome,
-        level: slot.level,
-        max: def.levels.length,
-        cost: upgradeCost(match, slot.level),
-      }];
-    }),
-  };
 }
 
 function placementOf(match: Match, player: PlayerState) {
@@ -78,7 +55,7 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     level: player.level,
     xp: player.xp,
     xpNext: xpToNext(match, player.level),
-    gold: Math.floor(player.gold),
+    luck: player.stats.luck,
     hp: entity?.alive ? entity.hp : 0,
     maxHp: entity?.maxHp ?? 1,
     eliminated: player.eliminated,
@@ -90,12 +67,12 @@ function playerSnap(match: Match, player: PlayerState, youId: string): PlayerSna
     }) : [],
     cards,
     abilities: abilitiesOf(match, player),
-    shop: mine ? shopOf(match, player) : null,
+    shop: null,
     kills: player.kills,
     deaths: player.deaths,
     damageDealt: Math.round(player.damageDealt),
     ready: player.ready,
-    bet: player.bet,
+    bet: null,
     inDuel: isFighter(match, player.id),
     arenaId: entity?.arenaId ?? player.arenaId,
     waveClear: player.waveClear,
@@ -136,6 +113,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       color: entity.color,
       arenaId: entity.arenaId,
       flash: entity.flash,
+      swing: entity.swing ?? 0,
       label: entity.kind === "hero" ? playerByName(match, entity.playerId) : undefined,
       playerId: entity.playerId,
     })),
@@ -143,11 +121,26 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       id: shot.id,
       x: shot.x,
       y: shot.y,
+      vx: shot.vx,
+      vy: shot.vy,
       arenaId: shot.arenaId,
       color: shot.color,
     })),
+    fx: match.fx.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      x: item.x,
+      y: item.y,
+      x2: item.x2,
+      y2: item.y2,
+      radius: item.radius,
+      color: item.color,
+      arenaId: item.arenaId,
+      t: Math.min(1, (match.time - item.born) / Math.max(0.05, item.life)),
+    })),
     floats: match.floats.slice(-40),
     duel: match.duel.map((pair) => ({ ...pair })),
+    duelAnnounce: Math.max(0, match.duelAnnounce),
   };
 }
 

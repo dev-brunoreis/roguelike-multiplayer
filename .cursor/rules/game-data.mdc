@@ -11,7 +11,8 @@ alwaysApply: false
 - Habilidade nova precisa de `behavior` e `targeting` já registrados na sim.
 - Carta cita `abilityId` que exista. `requires` também.
 - Onda e boss citam `creepId` que exista.
-- `match.json` manda vidas, `cardsPerLevelUp`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`), `hubSize` e `version`.
+- `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`), `hubSize` e `version`.
+- `economy.json` é sorte (`luckBias`), não ouro.
 - Não duplique esses números no servidor ou no cliente.
 
 Exemplo de nível de raio: `targets` cresce e `falloff` tem um fator por salto, o primeiro sempre `1`.

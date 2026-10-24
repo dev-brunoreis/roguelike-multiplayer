@@ -1,6 +1,7 @@
 import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { LobbyState, Snapshot } from "@game/shared/protocol";
+import { SkillGlyph } from "../game/icons.js";
 import { Scene } from "../game/Scene.js";
 import { cameraMove, isTypingTarget } from "../game/input.js";
 import { api, wsBase } from "../net.js";
@@ -170,7 +171,6 @@ const PHASE: Record<string, string> = {
 function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLeave: () => void }) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [watchId, setWatchId] = useState<string | null>(null);
-  const [betAmount, setBetAmount] = useState(5);
   const roomRef = useRef<Room | null>(null);
   const hpRef = useRef<number | null>(null);
   const snapRef = useRef<Snapshot | null>(null);
@@ -206,8 +206,20 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.code.startsWith("Arrow")) event.preventDefault();
+      if (event.code.startsWith("Arrow") || event.code === "Space") event.preventDefault();
       if (isTypingTarget(event.target)) return;
+      const snap = snapRef.current;
+      const you = snap?.players.find((player) => player.id === snap.youId);
+      if (event.code === "Space" && event.type === "keydown") {
+        if (snap?.phase === "hub" && you && !you.eliminated && you.pending.length === 0 && !you.ready) {
+          roomRef.current?.send("shop", { kind: "ready" });
+        }
+        return;
+      }
+      const digit = event.code.startsWith("Digit") ? Number(event.code.slice(5)) : 0;
+      if (you && digit >= 1 && digit <= 6 && you.pending[digit - 1]) {
+        roomRef.current?.send("pick", { cardId: you.pending[digit - 1]!.id });
+      }
       roomRef.current?.send("input", cameraMove());
     };
     window.addEventListener("keydown", onKey);
@@ -242,36 +254,38 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
       <header className="hud top">
         <div>
           <strong>{PHASE[snap.phase] ?? snap.phase} {snap.round}</strong>
-          <span>{Math.ceil(snap.phaseTime)}s</span>
+          <span>{Math.ceil(snap.duelAnnounce > 0 ? snap.duelAnnounce : snap.phaseTime)}s</span>
+          {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
         </div>
-        {me ? (
-          <div className="you">
-            <span style={{ color: me.color }}>{me.name}</span>
-            <span>{"♥".repeat(Math.max(0, me.lives))}</span>
-            <span>nível {me.level}</span>
-            <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span>
-            <span>{me.gold} ouro</span>
-          </div>
-        ) : null}
+        <div className="board">
+          {snap.players.map((player) => (
+            <button key={player.id} className={player.eliminated ? "out" : ""} onClick={() => setWatchId(player.id)}>
+              <b style={{ color: player.color }}>{player.name}</b>
+              <small>{"♥".repeat(Math.max(0, player.lives))}{player.eliminated ? " fora" : ""}{player.waveClear && snap.phase === "pve" ? " · limpo" : ""}</small>
+              <span className="pips">
+                {player.abilities.map((ability) => {
+                  const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;
+                  return (
+                    <span key={ability.id} style={{ opacity: 0.4 + (1 - ratio) * 0.6 }}>
+                      <SkillGlyph id={ability.id} color={ability.color} title={`${ability.nome} nv ${ability.level}`} />
+                    </span>
+                  );
+                })}
+              </span>
+            </button>
+          ))}
+        </div>
         <button className="btn danger" disabled={!me || me.eliminated || snap.phase === "ended"} onClick={() => {
           if (confirm("Desistir elimina você agora.")) send("surrender");
         }}>Desistir</button>
       </header>
-      <aside className="hud roster-side">
-        {snap.players.map((player) => (
-          <button key={player.id} className={player.eliminated ? "out" : ""} onClick={() => setWatchId(player.id)}>
-            <b style={{ color: player.color }}>{player.name}</b>
-            <small>{player.eliminated ? "fora" : `${Math.ceil(player.hp)} hp · ${player.lives} vidas`}</small>
-            {player.choosing ? <small>escolhendo carta</small> : null}
-            {snap.phase === "pve" && player.waveClear && !player.eliminated ? <small>limpo</small> : null}
-          </button>
-        ))}
-      </aside>
       <footer className="hud abilities">
-        {me?.abilities.map((ability) => {
+        {me?.abilities.map((ability, index) => {
           const ratio = ability.cooldownMax > 0 ? Math.max(0, ability.cooldown) / ability.cooldownMax : 0;
           return (
             <div key={ability.id} className="ability" title={ability.descricao} style={{ ["--cd" as string]: `${ratio * 100}%`, borderColor: ability.color }}>
+              <SkillGlyph id={ability.id} color={ability.color} />
+              <em>{index + 1}</em>
               <strong>{ability.nome}</strong>
               <small>nv {ability.level}/{ability.max}</small>
             </div>
@@ -284,10 +298,11 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
       {me && me.pending.length > 0 ? (
         <section className="overlay pick">
           <h2>Escolhe uma carta <small>{Math.ceil(me.cardTimer)}s</small></h2>
+          {me.luck > 0 ? <p className="muted">Sorte {(me.luck * 100).toFixed(0)}% — cartas melhores aparecem mais.</p> : null}
           <div className="cards">
-            {me.pending.map((card) => (
+            {me.pending.map((card, index) => (
               <button key={card.id} className={`card rarity-${card.rarity}`} onClick={() => send("pick", { cardId: card.id })}>
-                <em>{card.rarity}</em>
+                <em>{index + 1} · {card.rarity}</em>
                 <strong>{card.nome}</strong>
                 <span>{card.descricao}</span>
               </button>
@@ -295,51 +310,22 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
           </div>
         </section>
       ) : null}
-      {(snap.phase === "betting" || (snap.phase === "hub" && snap.duel.length > 0)) && me && !me.inDuel && !me.eliminated ? (
-        <section className="overlay dock bet">
-          <h2>Apostar em quem</h2>
-          <input type="range" min={5} max={Math.max(5, Math.min(40, me.gold))} value={betAmount} onChange={(event) => setBetAmount(Number(event.target.value))} />
-          <p>{betAmount} de ouro</p>
-          <div className="row">
-            {snap.duel.flatMap((pair) => [pair.a, pair.b]).map((id) => {
-              const fighter = snap.players.find((player) => player.id === id);
-              if (!fighter) return null;
-              return <button key={id} className="btn" onClick={() => send("bet", { targetId: id, amount: betAmount })}>{fighter.name}</button>;
-            })}
-          </div>
-          {me.bet ? <p>Aposta em {snap.players.find((player) => player.id === me.bet?.targetId)?.name}: {me.bet.amount}</p> : null}
+      {snap.duelAnnounce > 0 && snap.duel[0] ? (
+        <section className="overlay announce">
+          <p className="eyebrow">Próximo duelo</p>
+          <h2>
+            {snap.players.find((player) => player.id === snap.duel[0]!.a)?.name ?? "?"}
+            {" vs "}
+            {snap.players.find((player) => player.id === snap.duel[0]!.b)?.name ?? "?"}
+          </h2>
+          <strong>{Math.ceil(snap.duelAnnounce)}</strong>
         </section>
       ) : null}
-      {(snap.phase === "shop" || snap.phase === "hub") && me && !me.eliminated && me.pending.length === 0 ? (
+      {snap.phase === "hub" && snap.duelAnnounce <= 0 && me && !me.eliminated && me.pending.length === 0 ? (
         <section className="overlay dock shop">
-          {me.shop ? (
-            <>
-              <h2>{snap.phase === "hub" ? "Salão" : "Loja"} <small>{Math.ceil(snap.phaseTime)}s</small></h2>
-              <div className="cards">
-                {me.shop.offers.map((card) => (
-                  <button key={card.id} className={`card rarity-${card.rarity}`} disabled={me.gold < card.price} onClick={() => send("shop", { kind: "buy", cardId: card.id })}>
-                    <em>{card.rarity} · {card.price} ouro</em>
-                    <strong>{card.nome}</strong>
-                    <span>{card.descricao}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="row">
-                {me.shop.upgrades.map((upgrade) => (
-                  <button key={upgrade.abilityId} className="btn" disabled={me.gold < upgrade.cost} onClick={() => send("shop", { kind: "upgrade", abilityId: upgrade.abilityId })}>
-                    {upgrade.nome} nv{upgrade.level} → {upgrade.level + 1} · {upgrade.cost}
-                  </button>
-                ))}
-                <button className="btn" disabled={me.gold < me.shop.rerollCost} onClick={() => send("shop", { kind: "reroll" })}>Trocar cartas · {me.shop.rerollCost}</button>
-                <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2>Salão <small>{Math.ceil(snap.phaseTime)}s</small></h2>
-              <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
-            </>
-          )}
+          <h2>Salão <small>{Math.ceil(snap.phaseTime)}s</small></h2>
+          {snap.duel.length > 0 ? <p className="muted">Um duelo vem aí. Espaço para seguir.</p> : <p className="muted">Espaço para seguir.</p>}
+          <button className="btn primary" onClick={() => send("shop", { kind: "ready" })}>{me.ready ? "Pronto" : "Seguir"}</button>
         </section>
       ) : null}
       {snap.phase === "pve" && me?.waveClear && !me.eliminated ? (
@@ -366,7 +352,7 @@ function Match({ token, roomId, onLeave }: { token: string; roomId: string; onLe
         </section>
       ) : null}
       {me?.eliminated && snap.phase !== "ended" ? <p className="spectate">Você caiu. Clica num nome pra assistir.</p> : (
-        <p className="hint">W sobe na tela. No salão ninguém se bate. A onda só acaba quando o último limpa.</p>
+        <p className="hint">W sobe na tela. 1–6 escolhe carta. Espaço segue no salão.</p>
       )}
     </main>
   );

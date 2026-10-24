@@ -1,7 +1,11 @@
 import { dealDamage } from "./damage.js";
 import { getTargeting, registerAbilityBehavior } from "./registry.js";
 import type { AbilityContext, Entity, Match, PlayerState } from "./types.js";
-import { dist } from "./world.js";
+import { dist, emitFx } from "./world.js";
+
+function markSwing(entity: Entity) {
+  entity.swing = (entity.swing ?? 0) + 1;
+}
 
 function rolledDamage(match: Match, player: PlayerState, base: number) {
   let amount = base * (1 + player.stats.damagePct);
@@ -32,6 +36,26 @@ registerAbilityBehavior("single", (ctx) => {
     abilityId: ctx.ability.id,
     crit: hit.crit,
   });
+  markSwing(ctx.caster);
+  emitFx(ctx.match, {
+    kind: "bolt",
+    x: ctx.caster.x,
+    y: ctx.caster.y,
+    x2: target.x,
+    y2: target.y,
+    radius: 0.22,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+    life: 0.22,
+  });
+  emitFx(ctx.match, {
+    kind: "slash",
+    x: target.x,
+    y: target.y,
+    radius: 1.1,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+  });
   return true;
 });
 
@@ -58,9 +82,29 @@ registerAbilityBehavior("chain", (ctx) => {
       abilityId: ctx.ability.id,
       crit: hit.crit,
     });
+    emitFx(ctx.match, {
+      kind: "bolt",
+      x: from.x,
+      y: from.y,
+      x2: target.x,
+      y2: target.y,
+      radius: 0.28,
+      color: ctx.ability.color,
+      arenaId: ctx.caster.arenaId,
+      life: 0.28,
+    });
+    emitFx(ctx.match, {
+      kind: "flash",
+      x: target.x,
+      y: target.y,
+      radius: 0.85,
+      color: ctx.ability.color,
+      arenaId: ctx.caster.arenaId,
+    });
     from = target;
     fired = true;
   }
+  if (fired) markSwing(ctx.caster);
   return fired;
 });
 
@@ -84,6 +128,16 @@ registerAbilityBehavior("aoe", (ctx) => {
       crit: hit.crit,
     });
   }
+  markSwing(ctx.caster);
+  emitFx(ctx.match, {
+    kind: "ring",
+    x: center.x,
+    y: center.y,
+    radius,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+    life: 0.45,
+  });
   return true;
 });
 
@@ -111,6 +165,16 @@ registerAbilityBehavior("projectile", (ctx) => {
     abilityId: ctx.ability.id,
     color: ctx.ability.color,
     ttl: 2.2,
+  });
+  markSwing(ctx.caster);
+  emitFx(ctx.match, {
+    kind: "flash",
+    x: ctx.caster.x,
+    y: ctx.caster.y,
+    radius: 0.4,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+    life: 0.2,
   });
   return true;
 });
@@ -140,5 +204,25 @@ registerAbilityBehavior("cone", (ctx) => {
       crit: hit.crit,
     });
   }
+  markSwing(ctx.caster);
+  emitFx(ctx.match, {
+    kind: "bolt",
+    x: ctx.caster.x,
+    y: ctx.caster.y,
+    x2: ctx.caster.x + Math.cos(facing) * range,
+    y2: ctx.caster.y + Math.sin(facing) * range,
+    radius: 0.45,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+    life: 0.28,
+  });
+  emitFx(ctx.match, {
+    kind: "cone",
+    x: ctx.caster.x,
+    y: ctx.caster.y,
+    radius: range,
+    color: ctx.ability.color,
+    arenaId: ctx.caster.arenaId,
+  });
   return true;
 });

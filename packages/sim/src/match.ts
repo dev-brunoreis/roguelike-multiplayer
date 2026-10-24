@@ -57,10 +57,12 @@ export function createMatch(options: {
     duel: [],
     waveDone: false,
     duelPending: false,
+    duelAnnounce: 0,
     winnerId: null,
     log: [],
     events: [],
     floats: [],
+    fx: [],
     bossAnnounced: false,
   };
 
@@ -159,6 +161,7 @@ export function createMatch(options: {
       alive: true,
       invuln: 0,
       flash: 0,
+      swing: 0,
       facing: 0,
       behavior: "hero",
     });
@@ -247,6 +250,7 @@ export function tick(match: Match) {
   }
   checkWinner(match);
   if (match.floats.length > 80) match.floats.splice(0, match.floats.length - 80);
+  match.fx = match.fx.filter((fx) => match.time - fx.born < fx.life);
   return match.events.slice();
 }
 
@@ -260,6 +264,7 @@ export function quietMatch(match: Match) {
   match.spawns = [];
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
   match.projectiles = [];
+  match.fx = [];
   for (const player of match.players) {
     for (const slot of player.abilities) slot.cooldown = 999;
     const entity = heroEntity(match, player);

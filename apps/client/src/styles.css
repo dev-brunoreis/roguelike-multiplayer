@@ -64,24 +64,30 @@ input[type="text"], input[type="password"], input[type="number"] {
   pointer-events: none;
 }
 .hud.top > * { pointer-events: auto; background: #1c1914cc; padding: 8px 12px; border: 1px solid #3a3228; display: flex; gap: 10px; align-items: center; }
-.you { display: flex; gap: 12px; align-items: center; }
+.board { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; flex: 1; background: transparent !important; border: 0 !important; padding: 0 !important; }
+.board button {
+  min-width: 110px; text-align: left; background: #1c1914cc; border: 1px solid #3a3228; padding: 6px 8px; cursor: pointer;
+  display: grid; gap: 3px;
+}
+.board button.out { opacity: 0.4; }
+.pips { display: flex; gap: 4px; height: 22px; align-items: center; }
+.pips .skill-glyph { width: 22px; height: 22px; display: block; border-radius: 2px; }
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
 .xp i { display: block; height: 100%; background: #e07a3d; }
-.roster-side {
-  top: 72px; right: 12px; display: grid; gap: 6px; width: 190px;
-}
-.roster-side button {
-  text-align: left; background: #1c1914cc; border: 1px solid #3a3228; padding: 8px; cursor: pointer;
-  display: grid;
-}
-.roster-side button.out { opacity: 0.45; }
 .abilities {
   left: 12px; bottom: 12px; display: flex; gap: 8px;
 }
 .ability {
-  width: 110px; min-height: 64px; padding: 8px;
+  width: 128px; min-height: 64px; padding: 8px 8px 8px 44px;
   background: conic-gradient(#000a var(--cd), #1c1914cc 0);
   border: 2px solid #d7e6ff;
+  position: relative;
+}
+.ability .skill-glyph {
+  position: absolute; left: 8px; top: 14px; width: 28px; height: 28px;
+}
+.ability em {
+  position: absolute; top: 4px; right: 6px; font-style: normal; font-size: 11px; color: #f0a202;
 }
 .ability strong, .ability small { display: block; }
 .log {
@@ -110,6 +116,15 @@ input[type="text"], input[type="password"], input[type="number"] {
 .overlay.dock button,
 .overlay.dock input { pointer-events: auto; }
 .overlay.dock.bet { bottom: 280px; width: min(420px, calc(100% - 40px)); }
+.overlay.announce {
+  width: min(520px, calc(100% - 40px));
+  text-align: center;
+  background: #16130ff0;
+  border-color: #c46a3a;
+  pointer-events: none;
+}
+.overlay.announce h2 { margin: 0; font-size: 32px; }
+.overlay.announce strong { font-size: 64px; line-height: 1; color: #f0a202; }
 .cards { display: flex; gap: 10px; flex-wrap: wrap; }
 .card {
   width: 160px; min-height: 140px; text-align: left; padding: 10px;

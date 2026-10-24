@@ -1,6 +1,6 @@
 import { CanvasTexture, ClampToEdgeWrapping, NearestFilter, RepeatWrapping, SRGBColorSpace, Texture } from "three";
 
-export const SHEET_FRAMES = 6;
+export const SHEET_FRAMES = 8;
 const SIZE = 24;
 
 type Draw = (ctx: CanvasRenderingContext2D, frame: number, pal: Palette) => void;
@@ -52,13 +52,18 @@ function px(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, 
 }
 
 function bob(frame: number) {
+  if (frame >= 6) return 0;
   if (frame < 2) return frame;
   return frame === 3 || frame === 5 ? 1 : 0;
 }
 
 function stride(frame: number) {
-  if (frame < 2) return 0;
+  if (frame >= 6 || frame < 2) return 0;
   return frame === 3 || frame === 4 ? 1 : 0;
+}
+
+function reach(frame: number) {
+  return frame >= 6 ? (frame === 7 ? 3 : 2) : 0;
 }
 
 function humanoid(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
@@ -73,13 +78,27 @@ function humanoid(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   px(ctx, 10, 7 + y, pal.ink);
   px(ctx, 13, 7 + y, pal.ink);
   px(ctx, 5, 12 + y + (frame >= 2 ? step : 0), pal.skin, 2, 4);
+  if (reach(frame)) px(ctx, 16, 11 + y, pal.skin, 3, 2);
 }
 
 function guerreiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   humanoid(ctx, frame, pal);
   const y = 3 - bob(frame);
-  px(ctx, 16, 6 + y, pal.metal, 2, 12);
-  px(ctx, 15, 5 + y, pal.light, 4, 3);
+  if (frame === 6) {
+    px(ctx, 11, 0, pal.metal, 2, 12);
+    px(ctx, 9, 0, pal.light, 6, 3);
+    px(ctx, 8, 9 + y, pal.metal, 8, 2);
+    return;
+  }
+  if (frame === 7) {
+    px(ctx, 14, 8 + y, pal.metal, 10, 2);
+    px(ctx, 22, 6 + y, pal.light, 2, 6);
+    px(ctx, 20, 7 + y, pal.white, 4, 4);
+    px(ctx, 8, 9 + y, pal.metal, 8, 2);
+    return;
+  }
+  px(ctx, 16 + reach(frame), 6 + y, pal.metal, 2, 12);
+  px(ctx, 15 + reach(frame), 5 + y, pal.light, 4, 3);
   px(ctx, 8, 9 + y, pal.metal, 8, 2);
 }
 
@@ -89,6 +108,20 @@ function mago(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   px(ctx, 7, 2 + y, pal.fill, 10, 4);
   px(ctx, 10, 0 + y, pal.fill, 4, 3);
   px(ctx, 10, 0 + y, pal.light, 4, 1);
+  if (frame === 6) {
+    px(ctx, 11, 0, pal.metal, 2, 14);
+    px(ctx, 9, 0, pal.white, 6, 3);
+    px(ctx, 10, 0, "#9ad8ff", 4, 2);
+    px(ctx, 8, 1, "#c8eeff", 8, 1);
+    return;
+  }
+  if (frame === 7) {
+    px(ctx, 16, 10 + y, pal.metal, 8, 2);
+    px(ctx, 22, 8 + y, pal.white, 3, 6);
+    px(ctx, 21, 9 + y, "#9ad8ff", 5, 3);
+    px(ctx, 23, 10 + y, "#e8f6ff", 3, 2);
+    return;
+  }
   px(ctx, 17, 8 + y, pal.metal, 2, 13);
   px(ctx, 16, 7 + y, pal.white, 4, 2);
 }
@@ -99,6 +132,16 @@ function arqueiro(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   px(ctx, 17, 8 + y, pal.ink, 1, 10);
   px(ctx, 16, 8 + y, pal.metal, 1, 2);
   px(ctx, 16, 16 + y, pal.metal, 1, 2);
+  if (frame === 6) {
+    px(ctx, 14, 11 + y, pal.metal, 8, 1);
+    px(ctx, 13, 10 + y, pal.white, 2, 3);
+    return;
+  }
+  if (frame === 7) {
+    px(ctx, 19, 11 + y, pal.metal, 5, 1);
+    px(ctx, 22, 10 + y, pal.white, 2, 3);
+    return;
+  }
   px(ctx, 18, 11 + y, pal.metal, 4, 1);
 }
 
@@ -108,6 +151,16 @@ function piromante(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   const flare = frame % 2;
   px(ctx, 8, 1 + y, "#f0a202", 8, 4);
   px(ctx, 10, 0 + y - flare, "#ffcf70", 4, 3);
+  if (frame === 6) {
+    px(ctx, 16, 4 + y, "#f0a202", 4, 5);
+    px(ctx, 17, 2 + y, "#ffcf70", 3, 3);
+    return;
+  }
+  if (frame === 7) {
+    px(ctx, 18, 10 + y, "#f0a202", 6, 4);
+    px(ctx, 21, 9 + y, "#ffcf70", 3, 3);
+    return;
+  }
   px(ctx, 16, 12 + y, "#f0a202", 3, 3 + flare);
 }
 
@@ -169,6 +222,12 @@ function olho(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
   }
 }
 
+function atirador(ctx: CanvasRenderingContext2D, frame: number, pal: Palette) {
+  arqueiro(ctx, frame, pal);
+  const y = 3 - bob(frame);
+  if (frame >= 6) px(ctx, 19, 11 + y, pal.metal, 3, 1);
+}
+
 const DRAWS: Record<string, Draw> = {
   guerreiro,
   mago,
@@ -177,6 +236,7 @@ const DRAWS: Record<string, Draw> = {
   slime,
   bruto,
   corredor,
+  atirador,
   boss_golem: golem,
   boss_olho: olho,
 };

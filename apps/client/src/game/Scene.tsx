@@ -2,9 +2,9 @@ import type { Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { EntityPuppet } from "./views.js";
+import { EntityPuppet, HpLayer } from "./views.js";
 
-const VIEW_RANGE = 48;
+const VIEW_RANGE = 92;
 
 export const Scene = memo(function Scene({
   snapRef,
@@ -18,7 +18,7 @@ export const Scene = memo(function Scene({
   return (
     <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
       <color attach="background" args={["#12100d"]} />
-      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={280} />
+      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={22} near={-120} far={420} />
       <World snapRef={snapRef} watchId={watchId} shakeRef={shakeRef} />
     </Canvas>
   );
@@ -36,6 +36,7 @@ function World({
   const camera = useThree((state) => state.camera);
   const gl = useThree((state) => state.gl);
   const follow = useRef({ x: 0, z: 0, ready: false });
+  const focusMem = useRef({ x: 0, z: 0, ready: false });
   const pan = useRef({ x: 0, z: 0 });
   const mouse = useRef({ x: 0.5, y: 0.5, drag: false, lx: 0, ly: 0 });
   const [visible, setVisible] = useState<{ arenas: string[]; entities: number[] }>({ arenas: [], entities: [] });
@@ -102,13 +103,20 @@ function World({
     }
     const lookX = focus[0] + pan.current.x;
     const lookZ = focus[1] + pan.current.z;
-    if (!follow.current.ready) {
-      follow.current = { x: lookX, z: lookZ, ready: true };
-    } else if (Math.hypot(lookX - follow.current.x, lookZ - follow.current.z) > 24) {
-      follow.current.x = lookX;
-      follow.current.z = lookZ;
+    if (!focusMem.current.ready) {
+      focusMem.current = { x: focus[0], z: focus[1], ready: true };
+    } else if (Math.hypot(focus[0] - focusMem.current.x, focus[1] - focusMem.current.z) > 18) {
       pan.current.x = 0;
       pan.current.z = 0;
+      follow.current.x = focus[0];
+      follow.current.z = focus[1];
+      focusMem.current = { x: focus[0], z: focus[1], ready: true };
+    } else {
+      focusMem.current.x = focus[0];
+      focusMem.current.z = focus[1];
+    }
+    if (!follow.current.ready) {
+      follow.current = { x: lookX, z: lookZ, ready: true };
     }
     const smear = Math.min(1, delta * 8);
     follow.current.x += (lookX - follow.current.x) * smear;
@@ -123,10 +131,9 @@ function World({
     const arenas = snap.arenas.filter((arena) => {
       const cx = arena.x + arena.size / 2;
       const cz = arena.y + arena.size / 2;
-      return Math.hypot(cx - follow.current.x, cz - follow.current.z) < VIEW_RANGE + arena.size * 0.35;
+      return Math.hypot(cx - follow.current.x, cz - follow.current.z) < VIEW_RANGE + arena.size * 0.6;
     });
-    const arenaIds = new Set(arenas.map((arena) => arena.id));
-    const entities = snap.entities.filter((entity) => arenaIds.has(entity.arenaId));
+    const entities = snap.entities.filter((entity) => Math.hypot(entity.x - follow.current.x, entity.y - follow.current.z) < VIEW_RANGE);
     const key = `${arenas.map((arena) => arena.id).join(",")}|${entities.map((entity) => entity.id).join(",")}`;
     if (key !== idsKey.current) {
       idsKey.current = key;
@@ -140,12 +147,18 @@ function World({
   const snap = snapRef.current;
   return (
     <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <planeGeometry args={[420, 420]} />
+        <meshBasicMaterial color="#0d0c0a" />
+      </mesh>
       {visible.arenas.map((id) => {
         const arena = snap?.arenas.find((item) => item.id === id);
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
       })}
       {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} />)}
+      <HpLayer ids={visible.entities} snapRef={snapRef} />
       <Shots snapRef={snapRef} follow={follow} />
+      <FxLayer snapRef={snapRef} follow={follow} />
     </>
   );
 }
@@ -154,23 +167,45 @@ function ArenaPad({ arena }: { arena: { id: string; x: number; y: number; size: 
   const cx = arena.x + arena.size / 2;
   const cz = arena.y + arena.size / 2;
   const s = arena.size / 2;
-  const points = useMemo(() => new Float32Array([
-    -s, 0.04, -s, s, 0.04, -s,
-    s, 0.04, -s, s, 0.04, s,
-    s, 0.04, s, -s, 0.04, s,
-    -s, 0.04, s, -s, 0.04, -s,
-  ]), [s]);
+  const inner = s - 0.45;
+  const fill = arena.kind === "hub" ? "#3f4d3c" : arena.kind === "duel" ? "#6e3f28" : "#4d4336";
+  const rim = arena.kind === "hub" ? "#6f8a62" : arena.kind === "duel" ? "#c46a3a" : "#8a6f4c";
+  const points = useMemo(() => {
+    const tiles: number[] = [];
+    const step = arena.size / 6;
+    for (let i = 1; i < 6; i += 1) {
+      const p = -s + i * step;
+      tiles.push(-inner, 0.05, p, inner, 0.05, p, p, 0.05, -inner, p, 0.05, inner);
+    }
+    tiles.push(
+      -s, 0.06, -s, s, 0.06, -s,
+      s, 0.06, -s, s, 0.06, s,
+      s, 0.06, s, -s, 0.06, s,
+      -s, 0.06, s, -s, 0.06, -s,
+    );
+    return new Float32Array(tiles);
+  }, [arena.size, inner, s]);
   return (
     <group position={[cx, 0, cz]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[arena.size + 1.4, arena.size + 1.4]} />
+        <meshBasicMaterial color="#1a1612" />
+      </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[arena.size, arena.size]} />
-        <meshBasicMaterial color={arena.kind === "hub" ? "#3d4a3a" : arena.kind === "duel" ? "#6a3d28" : "#4a4034"} />
+        <meshBasicMaterial color={fill} />
       </mesh>
+      {arena.kind === "hub" ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+          <circleGeometry args={[4.2, 24]} />
+          <meshBasicMaterial color="#4d5c48" />
+        </mesh>
+      ) : null}
       <lineSegments>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[points, 3]} />
         </bufferGeometry>
-        <lineBasicMaterial color="#8a6f4c" />
+        <lineBasicMaterial color={rim} transparent opacity={0.55} />
       </lineSegments>
     </group>
   );
@@ -204,21 +239,105 @@ function Shots({
 
 function Shot({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
   const mesh = useRef<import("three").Mesh>(null);
-  useFrame(() => {
+  const pos = useRef({ x: 0, z: 0, ready: false });
+  useFrame((_, delta) => {
     const shot = snapRef.current?.projectiles.find((item) => item.id === id);
     if (!mesh.current) return;
     if (!shot) {
       mesh.current.visible = false;
+      pos.current.ready = false;
       return;
     }
     mesh.current.visible = true;
-    mesh.current.position.set(shot.x, 0.35, shot.y);
+    if (!pos.current.ready) {
+      pos.current = { x: shot.x, z: shot.y, ready: true };
+    }
+    pos.current.x += shot.vx * delta;
+    pos.current.z += shot.vy * delta;
+    const smear = Math.min(1, delta * 16);
+    pos.current.x += (shot.x - pos.current.x) * smear;
+    pos.current.z += (shot.y - pos.current.z) * smear;
+    mesh.current.position.set(pos.current.x, 0.5, pos.current.z);
+    mesh.current.scale.setScalar(1.35);
+    const mat = mesh.current.material as import("three").MeshBasicMaterial;
+    if (mat.color) mat.color.set(shot.color);
   });
   return (
     <mesh ref={mesh}>
       <sphereGeometry args={[0.14, 8, 6]} />
       <meshBasicMaterial color="#f4efe4" />
     </mesh>
+  );
+}
+
+function FxLayer({
+  snapRef,
+  follow,
+}: {
+  snapRef: MutableRefObject<Snapshot | null>;
+  follow: MutableRefObject<{ x: number; z: number; ready: boolean }>;
+}) {
+  const [ids, setIds] = useState<number[]>([]);
+  const key = useRef("");
+  useFrame(() => {
+    const snap = snapRef.current;
+    if (!snap) return;
+    const near = snap.fx.filter((item) => Math.hypot(item.x - follow.current.x, item.y - follow.current.z) < VIEW_RANGE);
+    const next = near.map((item) => item.id).join(",");
+    if (next !== key.current) {
+      key.current = next;
+      setIds(near.map((item) => item.id));
+    }
+  });
+  return (
+    <>
+      {ids.map((id) => <FxBurst key={id} id={id} snapRef={snapRef} />)}
+    </>
+  );
+}
+
+function FxBurst({ id, snapRef }: { id: number; snapRef: MutableRefObject<Snapshot | null> }) {
+  const ring = useRef<import("three").Mesh>(null);
+  const bolt = useRef<import("three").Mesh>(null);
+  useFrame(() => {
+    const fx = snapRef.current?.fx.find((item) => item.id === id);
+    const fade = fx ? Math.max(0, 1 - fx.t) : 0;
+    if (ring.current) ring.current.visible = false;
+    if (bolt.current) bolt.current.visible = false;
+    if (!fx) return;
+    if (fx.kind === "bolt" && fx.x2 != null && fx.y2 != null && bolt.current) {
+      const dx = fx.x2 - fx.x;
+      const dz = fx.y2 - fx.y;
+      const len = Math.hypot(dx, dz) || 0.2;
+      bolt.current.visible = true;
+      bolt.current.position.set((fx.x + fx.x2) / 2, 0.62, (fx.y + fx.y2) / 2);
+      bolt.current.rotation.set(0, Math.atan2(dx, dz), 0);
+      bolt.current.scale.set(fx.radius * 2.2 * fade, 0.16, len);
+      const mat = bolt.current.material as import("three").MeshBasicMaterial;
+      mat.color.set(fx.color);
+      mat.opacity = 0.95 * fade;
+      return;
+    }
+    if (!ring.current) return;
+    ring.current.visible = true;
+    const grow = 0.4 + fx.t * 1.35;
+    ring.current.position.set(fx.x, 0.18, fx.y);
+    ring.current.scale.set(fx.radius * grow, fx.radius * grow, 1);
+    const mat = ring.current.material as import("three").MeshBasicMaterial;
+    mat.color.set(fx.color);
+    mat.opacity = Math.max(0, 0.72 * fade);
+  });
+  return (
+    <group>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} renderOrder={8}>
+        <ringGeometry args={[0.28, 1, 28]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+      <mesh ref={bolt} renderOrder={9}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial transparent depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
 

@@ -33,6 +33,7 @@ export function spawnCreep(match: Match, arenaId: string, creepId: string) {
     alive: true,
     invuln: 0,
     flash: 0,
+    swing: 0,
     facing: 0,
     behavior: def.behavior,
   });

@@ -19,9 +19,17 @@ registerEffect("stat", (match, player, effect) => {
   }
 });
 
-registerEffect("grantAbility", (_match, player, effect) => {
+registerEffect("grantAbility", (match, player, effect) => {
   if (!effect.abilityId) throw new Error("grantAbility precisa de abilityId.");
   if (player.abilities.some((slot) => slot.abilityId === effect.abilityId)) return;
+  if (player.abilities.length >= match.config.maxAbilities) {
+    const victim = [...player.abilities].sort((a, b) => a.level - b.level || a.abilityId.localeCompare(b.abilityId))[0];
+    if (!victim) return;
+    const old = match.data.abilities.find((ability) => ability.id === victim.abilityId);
+    const next = match.data.abilities.find((ability) => ability.id === effect.abilityId);
+    player.abilities = player.abilities.filter((slot) => slot !== victim);
+    addLog(match, `${player.name} trocou ${old?.nome ?? victim.abilityId} por ${next?.nome ?? effect.abilityId}`);
+  }
   player.abilities.push({ abilityId: effect.abilityId, level: 1, cooldown: 0.2, cooldownMax: 0.2 });
 });
 

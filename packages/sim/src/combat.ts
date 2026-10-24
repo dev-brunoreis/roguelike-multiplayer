@@ -133,7 +133,9 @@ function moveProjectiles(match: Match, dt: number) {
     shot.x += shot.vx * dt;
     shot.y += shot.vy * dt;
     const owner = playerById(match, shot.ownerId);
-    const source = owner ? heroEntity(match, owner) : undefined;
+    const source = owner
+      ? heroEntity(match, owner)
+      : match.entities.find((entity) => entity.id === shot.sourceId);
     const hit = match.entities.find(
       (entity) =>
         entity.alive &&

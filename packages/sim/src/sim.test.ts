@@ -66,6 +66,7 @@ describe("simulação", () => {
     const first = make(center.x + 1.4, center.y);
     const second = make(center.x + 1.4, center.y + 1.1);
     tick(match);
+    expect(match.fx.some((item) => item.kind === "bolt")).toBe(true);
     const a = match.entities.find((entity) => entity.id === first)!;
     const b = match.entities.find((entity) => entity.id === second)!;
     expect(a.hp).toBeCloseTo(1000 - level.damage * level.falloff![0]!, 5);
@@ -271,6 +272,7 @@ describe("simulação", () => {
       config: {
         pveSeconds: 1,
         hubSeconds: 0.25,
+        duelAnnounceSeconds: 0.05,
         bettingSeconds: 0.2,
         duelSeconds: 0.4,
         shopSeconds: 0.25,
@@ -283,5 +285,29 @@ describe("simulação", () => {
     expect(events.length + match.tick).toBeGreaterThan(0);
     expect(match.round).toBeGreaterThan(1);
     expect(["hub", "pve", "betting", "duel", "shop", "ended"]).toContain(match.phase);
+  });
+
+  it("só marca um duelo e anuncia antes de começar", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+        { id: "c", name: "Caio", isBot: false, heroId: "arqueiro" },
+        { id: "d", name: "Dora", isBot: false, heroId: "piromante" },
+      ],
+      seed: 11,
+      config: { duelStartRound: 1, duelAnnounceSeconds: 10 },
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    expect(match.phase).toBe("hub");
+    expect(match.duel).toHaveLength(1);
+    expect(match.duelPending).toBe(true);
+    expect(match.duelAnnounce).toBe(0);
+    for (const player of match.players) player.ready = true;
+    tick(match);
+    expect(match.phase).toBe("hub");
+    expect(match.duelAnnounce).toBeGreaterThan(9);
   });
 });
