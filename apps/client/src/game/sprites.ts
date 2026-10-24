@@ -40,6 +40,11 @@ function hero(prefix: string, fx: Fx): PackActor {
   };
 }
 
+function chest(prefix: string, fx: Fx): PackActor {
+  const frames = [0, 1, 2, 1].map((frame) => `${prefix}_open_anim_f${frame}`);
+  return { idle: frames, run: frames, hit: [frames[2]!], fx };
+}
+
 function creep(prefix: string, pattern: "split" | "loop", fx: Fx): PackActor {
   if (pattern === "loop") {
     const idle = loop(prefix);
@@ -64,6 +69,16 @@ const PACK: Record<string, PackActor> = {
   lodo: creep("muddy", "loop", "none"),
   xama: creep("orc_shaman", "split", "flame"),
   diabrete: creep("chort", "split", "flame"),
+  zumbi: creep("tiny_zombie", "split", "slash"),
+  gelo: creep("ice_zombie", "loop", "none"),
+  pantano: creep("swampy", "loop", "none"),
+  lesma: creep("slug", "loop", "none"),
+  mimico: chest("chest_mimic", "slash"),
+  mascara: creep("masked_orc", "split", "slash"),
+  abobora: creep("pumpkin_dude", "split", "slash"),
+  necromante: creep("necromancer", "loop", "flame"),
+  medico: creep("doc", "split", "none"),
+  anjo: creep("angel", "split", "slash"),
   boss_golem: creep("ogre", "split", "slash"),
   boss_matriarca: creep("big_demon", "split", "slash"),
   boss_wogol: creep("wogol", "split", "flame"),

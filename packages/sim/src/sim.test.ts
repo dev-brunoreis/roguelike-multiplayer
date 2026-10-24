@@ -634,4 +634,91 @@ describe("simulação", () => {
     expect(player.aimX).toBeCloseTo(x, 5);
     expect(player.aimY).toBeCloseTo(y, 5);
   });
+
+  it("bicho grande usa a skill do json", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 5,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === hero.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const before = hero.hp;
+
+    const mascara = placeCreep(match, "mascara", hero.x + 4, hero.y);
+    runTicks(match, 16);
+    expect(hero.hp).toBeLessThan(before);
+    expect(match.entities.find((entity) => entity.id === mascara)!.x).toBeLessThan(hero.x + 4);
+
+    hero.hp = hero.maxHp;
+    const burstBefore = hero.hp;
+    placeCreep(match, "abobora", hero.x + 1.2, hero.y);
+    runTicks(match, 16);
+    expect(hero.hp).toBeLessThan(burstBefore);
+
+    hero.hp = hero.maxHp;
+    const boltBefore = hero.hp;
+    placeCreep(match, "anjo", hero.x + 4, hero.y);
+    tick(match);
+    expect(hero.hp).toBeLessThan(boltBefore);
+    expect(match.fx.some((item) => item.kind === "bolt")).toBe(true);
+
+    const necromante = placeCreep(match, "necromante", hero.x - 6, hero.y);
+    tick(match);
+    const summoned = match.entities.find((entity) => entity.defId === "zumbi" && entity.summonedBy === necromante);
+    expect(summoned?.alive).toBe(true);
+
+    const ally = placeCreep(match, "zumbi", hero.x - 6, hero.y + 1.5);
+    const wounded = match.entities.find((entity) => entity.id === ally)!;
+    wounded.hp = 10;
+    placeCreep(match, "medico", hero.x - 6, hero.y + 1.2);
+    tick(match);
+    expect(wounded.hp).toBeGreaterThan(10);
+  });
 });
+
+function placeCreep(match: Match, defId: string, x: number, y: number) {
+  const def = data.creeps.find((creep) => creep.id === defId)!;
+  const hero = match.entities.find((entity) => entity.kind === "hero")!;
+  const id = match.nextId++;
+  match.entities.push({
+    id,
+    kind: "creep",
+    defId: def.id,
+    arenaId: hero.arenaId,
+    x,
+    y,
+    radius: def.radius,
+    hp: def.hp,
+    maxHp: def.hp,
+    speed: 0,
+    damage: def.damage,
+    attackCooldown: def.attackCooldown,
+    attackTimer: 99,
+    attackRange: def.attackRange,
+    attackWindup: def.attackWindup,
+    winding: 0,
+    armor: 0,
+    xp: 0,
+    gold: 0,
+    color: def.color,
+    team: "enemy",
+    alive: true,
+    invuln: 0,
+    flash: 0,
+    swing: 0,
+    facing: 0,
+    behavior: def.behavior,
+    skillTimer: 0,
+    skillLeft: 0,
+    skillStep: "",
+    chargeHit: false,
+  });
+  return id;
+}
