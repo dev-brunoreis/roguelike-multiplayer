@@ -4,15 +4,15 @@ Edite o JSON em `packages/game-data/data` e reinicie o servidor. O Zod recusa ar
 
 ## Habilidade
 
-Em `abilities.json`. `behavior` e `targeting` precisam já estar registrados.
+Em `abilities.json`. `cast` e `targeting` precisam já estar registrados.
 
-Behaviors atuais: `single`, `chain`, `aoe`, `projectile`, `cone`.
+Ações atuais: `strike`, `chain`, `burst`, `shoot`, `cone`, `pattern`, `zone`, `dash`, `summon`, `heal`, `warn`, `orbit`.
 
-Targeting atual: `nearest`, `lowestHp`, `random`, `densest`. Com mira do mouse, `single`, `projectile` e o primeiro salto do `chain` usam a linha até o ponto; `aoe` estoura no ponto só se tem inimigo no raio; vazio, não gasta cooldown. O targeting do JSON vale enquanto `aimX`/`aimY` ainda são nulos.
+Targeting atual: `nearest`, `lowestHp`, `random`, `densest`. Com mira do mouse, `strike`, `shoot` e o primeiro salto do `chain` usam a linha até o ponto; `burst` estoura no ponto só se tem inimigo no raio; vazio, não gasta cooldown. O targeting do JSON vale enquanto `aimX`/`aimY` ainda são nulos.
 
-`levels` é a progressão. Nível 1 usa o primeiro item. `chain` lê `targets` e `falloff`.
+`levels` é a progressão. Nível 1 usa o primeiro item. Cada ação lê esses números e só substitui o campo que ela mesma declara. `chain` lê `targets` e `falloff`. `vfx` escolhe a folha em `vfx.ts`.
 
-Behavior novo: arquivo em `packages/sim/src`, `registerAbilityBehavior("nome", fn)` e import em `content.ts`. A função recebe o caster e devolve `true` só se disparou (senão o cooldown não começa).
+Ação nova: arquivo em `packages/sim/src/spells`, `registerAction("nome", fn)` e import em `content.ts` (por `spells/index.ts`). A função devolve `true` só se disparou (senão o cooldown não começa).
 
 ## Carta
 
@@ -24,17 +24,17 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 ## Creep, onda, boss
 
-`creeps.json` define status e `behavior`. `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual; depois da última, ela se repete mais forte. `bosses.json` soma um spawn quando a rodada divide `everyRounds`.
+`creeps.json` define status e `behavior`. `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual; depois da última, ela se repete mais forte. `bosses.json` marca a rodada de chefe (`everyRounds`). O chefe não entra no spawn: nasce quando o quadrado daquele jogador limpa.
 
 IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira). No corpo a corpo, `attackWindup` é o tempo da bolinha: o bicho para, a bolinha cresce, e o dano sai no fim se o alvo ainda está no alcance.
 
-Skill opcional no creep, campo `skill`. O golpe normal continua. A skill gasta `cooldown` e lê o resto do objeto: `charge` (investida: `damage`, `range`, `speed`), `burst` (estouro no `radius` depois do `attackWindup`, se o herói está em `range`), `summon` (`creepId`, `count` vivos daquele conjurador), `mend` (`amount`, `range` no aliado mais ferido), `bolt` (`damage`, `range`). Dano e cura escalam com a rodada, como a vida do bicho. Skill nova: `registerCreepSkill` num arquivo importado por `content.ts`.
+Skill opcional no creep, campo `skill` ou lista `skills`, no mesmo formato `cast` da habilidade. O golpe normal continua. A skill gasta `cooldown`. `dash` anda e toma o tick. `burst` com `windup` espera o `attackWindup`. `summon`, `heal` e `strike` não travam o golpe. Dano e cura escalam com a rodada, como a vida do bicho. Chefe acrescenta `phases`: cada item tem `hpBelow`, `rotation` (ids das skills) e `speedMul` opcional. A fase mais baixa ainda acima da vida atual vale.
 
 ## Visual
 
 O snapshot manda `view` = id do herói ou do creep. O visual padrão é um sprite de pixel em `apps/client/src/game/sprites.ts`, com idle, corrida, ataque e hit. A folha CC0 fica em `apps/client/public/sprites/0x72/`.
 
-Sprite novo de um frame do pack: entrada em `PACK`. Sprite desenhado no cliente: entrada em `DRAWN`. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Tiro com forma própria entra em `shotShape` em `sprites.ts` (flecha, lança, dardo). Modelo 3D no lugar do sprite:
+Sprite novo de um frame do pack: entrada em `PACK`. Sprite desenhado no cliente: entrada em `DRAWN`. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Folha de efeito entra em `registerVfx` (`apps/client/src/game/vfx.ts`); o `vfx` do JSON escolhe o id. Flecha, lança e dardo continuam canvas. Modelo 3D no lugar do sprite:
 
 ```tsx
 registerEntityView("guerreiro", GuerreiroModel);

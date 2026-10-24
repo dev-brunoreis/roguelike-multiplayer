@@ -45,7 +45,9 @@ export function spawnCreep(
     behavior: def.behavior,
   });
   const skill = emptySkill();
-  if (def.skill) skill.timer = def.skill.cooldown * 0.45;
+  const opening = def.phases?.[0]?.rotation[0];
+  const spell = def.skills?.find((item) => item.id === opening) ?? def.skills?.[0] ?? def.skill;
+  if (spell) skill.timer = spell.cooldown * 0.45;
   if (at?.home) {
     skill.homeX = x;
     skill.homeY = y;

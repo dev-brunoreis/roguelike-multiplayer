@@ -2,7 +2,8 @@ import type { AbilityView, CardView, MatchMeta, PlayerSnap, Snapshot, WirePlayer
 import { isFighter } from "./queries.js";
 import { getMode } from "./registry.js";
 import type { Entity, Match, PlayerState } from "./types.js";
-import { abilityById, cardById, heroEntity, playerById, xpToNext } from "./world.js";
+import { statusKinds } from "./spells/status.js";
+import { abilityById, cardById, creepById, heroEntity, playerById, skillOf, xpToNext } from "./world.js";
 
 function cardView(match: Match, id: string): CardView | null {
   const card = cardById(match, id);
@@ -147,6 +148,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
         : match.data.creeps.find((creep) => creep.id === entity.defId)?.nome,
       playerId: entity.playerId,
       facing: entity.facing,
+      statuses: statusKinds(match, entity.id),
     })),
     projectiles: match.projectiles.map((shot) => ({
       id: shot.id,
@@ -157,6 +159,30 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       arenaId: shot.arenaId,
       abilityId: shot.abilityId,
       color: shot.color,
+      vfx: shot.vfx,
+    })),
+    zones: match.zones.map((zone) => ({
+      id: zone.id,
+      x: zone.x,
+      y: zone.y,
+      radius: zone.radius,
+      color: zone.color,
+      arenaId: zone.arenaId,
+      vfx: zone.vfx,
+      t: Math.min(1, (match.time - zone.born) / Math.max(0.05, zone.ttl + (match.time - zone.born))),
+    })),
+    warnings: match.warnings.map((warning) => ({
+      id: warning.id,
+      x: warning.x,
+      y: warning.y,
+      x2: warning.x2,
+      y2: warning.y2,
+      shape: warning.shape,
+      radius: warning.radius,
+      angle: warning.angle,
+      color: warning.color,
+      arenaId: warning.arenaId,
+      t: Math.min(1, (match.time - warning.born) / Math.max(0.05, warning.life)),
     })),
     fx: match.fx.map((item) => ({
       id: item.id,
@@ -182,6 +208,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       y: portal.y,
       to: portal.toArenaId,
     })),
+    boss: bossSnap(match, youId),
     dungeon: dungeonSnap(match),
   };
 }
@@ -190,6 +217,22 @@ function visibleBody(match: Match, entity: Entity) {
   if (entity.alive) return true;
   if (entity.kind !== "hero" || !entity.playerId) return false;
   return playerById(match, entity.playerId)?.downed === true;
+}
+
+function bossSnap(match: Match, watchId: string) {
+  const arenaId = playerById(match, watchId)?.arenaId;
+  if (!arenaId) return null;
+  const boss = match.entities.find((entity) => entity.alive && entity.kind === "boss" && entity.arenaId === arenaId);
+  if (!boss) return null;
+  const def = creepById(match, boss.defId);
+  const phase = skillOf(match, boss.id).phase;
+  return {
+    nome: def?.nome ?? boss.defId,
+    hp: q(boss.hp),
+    maxHp: q(boss.maxHp),
+    phase: phase + 1,
+    marks: (def?.phases ?? []).map((item) => item.hpBelow).filter((mark) => mark < 1),
+  };
 }
 
 function dungeonSnap(match: Match) {
@@ -346,6 +389,7 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
         : 0,
       playerId: entity.playerId,
       facing: q(entity.facing),
+      statuses: statusKinds(match, entity.id),
     })),
     projectiles: match.projectiles.filter((shot) => seen.has(shot.arenaId)).map((shot) => ({
       id: shot.id,
@@ -356,6 +400,30 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
       arena: arenas.get(shot.arenaId) ?? 0,
       abilityId: shot.abilityId,
       color: shot.color,
+      vfx: shot.vfx,
+    })),
+    zones: match.zones.filter((zone) => seen.has(zone.arenaId)).map((zone) => ({
+      id: zone.id,
+      x: q(zone.x),
+      y: q(zone.y),
+      radius: q(zone.radius),
+      color: zone.color,
+      arena: arenas.get(zone.arenaId) ?? 0,
+      vfx: zone.vfx,
+      t: q(Math.min(1, (match.time - zone.born) / Math.max(0.05, zone.ttl + (match.time - zone.born)))),
+    })),
+    warnings: match.warnings.filter((warning) => seen.has(warning.arenaId)).map((warning) => ({
+      id: warning.id,
+      x: q(warning.x),
+      y: q(warning.y),
+      x2: q(warning.x2),
+      y2: q(warning.y2),
+      shape: warning.shape,
+      radius: q(warning.radius),
+      angle: q(warning.angle),
+      color: warning.color,
+      arena: arenas.get(warning.arenaId) ?? 0,
+      t: q(Math.min(1, (match.time - warning.born) / Math.max(0.05, warning.life))),
     })),
     fx: match.fx.filter((item) => seen.has(item.arenaId)).map((item) => ({
       id: item.id,
@@ -387,6 +455,7 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
     })),
     duelAnnounce: q(Math.max(0, match.duelAnnounce)),
     announce: match.banner && match.banner.left > 0 ? { ...match.banner, left: q(match.banner.left) } : null,
+    boss: bossSnap(match, watchId),
     dungeon: wireDungeon(match, arenas),
   };
 }

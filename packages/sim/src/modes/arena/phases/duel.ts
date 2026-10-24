@@ -1,5 +1,5 @@
 import type { DuelPair, Match } from "../../../types.js";
-import { addLog, arenaById, emit, heroEntity, pushBanner, syncWorld } from "../../../world.js";
+import { addLog, arenaById, clearHazards, emit, heroEntity, pushBanner, syncWorld } from "../../../world.js";
 import { checkWinner } from "../victory.js";
 import { beginPve } from "./pve.js";
 
@@ -18,7 +18,7 @@ export function dropDuel(match: Match) {
   match.duel = [];
   match.duelPending = false;
   match.duelAnnounce = 0;
-  match.projectiles = [];
+  clearHazards(match);
   match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
   syncWorld(match);
 }
@@ -28,7 +28,7 @@ export function beginDuel(match: Match) {
   match.phase = "duel";
   match.phaseTime = match.config.duelSeconds;
   match.duelAnnounce = 0;
-  match.projectiles = [];
+  clearHazards(match);
   match.duel.forEach((pair, index) => {
     if (!arenaById(match, pair.arenaId)) placeDuelArena(match, pair.arenaId, index + 1);
     sendToDuel(match, pair.a, pair.arenaId, "red", 0.28);

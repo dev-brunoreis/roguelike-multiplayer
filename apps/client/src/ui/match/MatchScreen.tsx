@@ -6,6 +6,7 @@ import { cameraMove, clearMove, isTypingTarget, worldAim } from "../../game/inpu
 import { mergeChat, TextChat } from "../TextChat.js";
 import { AbilityBar } from "./AbilityBar.js";
 import { Banner } from "./Banner.js";
+import { BossBar } from "./BossBar.js";
 import { DungeonHud } from "./DungeonHud.js";
 import { Board } from "./Board.js";
 import { CardPick } from "./CardPick.js";
@@ -150,6 +151,7 @@ export function MatchScreen({ token, roomId, onLeave, onDown }: { token: string;
       <TextChat inputRef={chatRef} lines={chat} youId={matchStore.youId} onSend={(text) => send("chat", { text })} />
       <CardPick onPick={pickCard} />
       <Banner />
+      <BossBar />
       <HubDock onReady={readyUp} />
       <WaveWait />
       <EndScreen onLeave={onLeave} />

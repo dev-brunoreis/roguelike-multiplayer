@@ -1,6 +1,7 @@
 import type {
   AbilityDef,
   AbilityLevel,
+  ActionDef,
   AnnounceKind,
   EffectDef,
   FloatEvent,
@@ -10,7 +11,6 @@ import type {
 } from "@game/shared";
 import type { Rng } from "@game/shared";
 import type { GameData } from "@game/game-data";
-import type { CreepSkillDef } from "@game/shared";
 import type { SimEvent } from "./events.js";
 
 export interface Stats {
@@ -73,7 +73,7 @@ export interface Entity {
 
 export interface SkillState {
   timer: number;
-  step: "" | "charge" | "burst";
+  step: "" | "dash" | "burst";
   left: number;
   vx: number;
   vy: number;
@@ -81,6 +81,12 @@ export interface SkillState {
   homeX: number | null;
   homeY: number | null;
   returning: boolean;
+  phase: number;
+  rot: number;
+  pace: number;
+  payload: number;
+  payloadRadius: number;
+  crit: boolean;
 }
 
 export interface Projectile {
@@ -99,6 +105,144 @@ export interface Projectile {
   abilityId: string;
   color: string;
   ttl: number;
+  vfx: string;
+  pierce: number;
+  hit: number[];
+  curve: number;
+  returns: boolean;
+  returning: boolean;
+  originX: number;
+  originY: number;
+  travel: number;
+  range: number;
+  status: string;
+  statusTime: number;
+  statusValue: number;
+  orbit: boolean;
+  angle: number;
+  orbitRadius: number;
+  spin: number;
+}
+
+export interface Zone {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  arenaId: string;
+  team: string;
+  ownerId: string;
+  sourceId: number;
+  spellId: string;
+  color: string;
+  vfx: string;
+  damage: number;
+  crit: boolean;
+  every: number;
+  acc: number;
+  ttl: number;
+  born: number;
+  follow: "point" | "caster" | "trail";
+  drops: number;
+  dropRadius: number;
+  status: string;
+  statusTime: number;
+  statusValue: number;
+  childLife: number;
+}
+
+export interface Warning {
+  id: number;
+  x: number;
+  y: number;
+  x2: number;
+  y2: number;
+  shape: "circle" | "line" | "cone";
+  radius: number;
+  angle: number;
+  arenaId: string;
+  color: string;
+  team: string;
+  born: number;
+  life: number;
+}
+
+export interface StatusInst {
+  kind: string;
+  left: number;
+  value: number;
+  acc: number;
+  sourceId: number;
+  ownerId: string;
+  spellId: string;
+}
+
+export interface Volley {
+  id: number;
+  casterId: number;
+  left: number;
+  interval: number;
+  bursts: number;
+  angle: number;
+  spin: number;
+  count: number;
+  shape: string;
+  speed: number;
+  damage: number;
+  crit: boolean;
+  width: number;
+  pierce: number;
+  curve: number;
+  returns: boolean;
+  range: number;
+  status: string;
+  statusTime: number;
+  statusValue: number;
+  team: string;
+  arenaId: string;
+  ownerId: string;
+  spellId: string;
+  color: string;
+  vfx: string;
+}
+
+export interface Telegraph {
+  id: number;
+  left: number;
+  casterId: number;
+  playerId: string;
+  spellId: string;
+  color: string;
+  vfx: string;
+  targeting: string;
+  numbers: SpellNumbers;
+  aimX: number | null;
+  aimY: number | null;
+  action: ActionDef;
+}
+
+export interface SpellNumbers {
+  damage: number;
+  range: number;
+  radius: number;
+  angle: number;
+  speed: number;
+  targets: number;
+  falloff: number[];
+  duration: number;
+  every: number;
+  dropRadius: number;
+  count: number;
+  interval: number;
+  time: number;
+  bursts: number;
+  spin: number;
+  pierce: number;
+  amount: number;
+  statusTime: number;
+  statusValue: number;
+  curve: number;
+  drops: number;
 }
 
 export interface Arena {
@@ -217,6 +361,13 @@ export interface Match {
   players: PlayerState[];
   entities: Entity[];
   projectiles: Projectile[];
+  zones: Zone[];
+  warnings: Warning[];
+  volleys: Volley[];
+  telegraphs: Telegraph[];
+  statuses: Map<number, StatusInst[]>;
+  stunReady: Map<number, number>;
+  bossArenas: Set<string>;
   arenas: Arena[];
   spawns: SpawnJob[];
   duel: DuelPair[];
@@ -259,11 +410,25 @@ export interface DamageContext {
   killed: boolean;
 }
 
+export interface CastCtx {
+  match: Match;
+  caster: Entity;
+  player: PlayerState | null;
+  spellId: string;
+  color: string;
+  vfx: string;
+  targeting: string;
+  numbers: SpellNumbers;
+  aim: { x: number; y: number } | null;
+  action: ActionDef;
+}
+
+export type SpellAction = (ctx: CastCtx, force: boolean) => boolean;
+export type StatusFn = (match: Match, entity: Entity, status: StatusInst, dt: number) => void;
 export type AbilityBehavior = (ctx: AbilityContext) => boolean;
 export type TargetingFn = (match: Match, origin: Entity, range: number, ignore: Set<number>) => Entity | null;
 export type EffectHandler = (match: Match, player: PlayerState, effect: EffectDef) => void;
 export type CreepBehavior = (match: Match, creep: Entity, dt: number) => void;
-export type CreepSkill = (match: Match, creep: Entity, skill: CreepSkillDef) => boolean;
 export type DamageHook = (ctx: DamageContext) => void;
 export type HitHook = (ctx: DamageContext, value: number, info: { final: number; nested: boolean }) => void;
 export type BotFn = (match: Match, player: PlayerState) => void;

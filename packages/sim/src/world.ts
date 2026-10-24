@@ -52,7 +52,33 @@ export function floatText(
 }
 
 export function emptySkill(): SkillState {
-  return { timer: 0, step: "", left: 0, vx: 0, vy: 0, hit: false, homeX: null, homeY: null, returning: false };
+  return {
+    timer: 0,
+    step: "",
+    left: 0,
+    vx: 0,
+    vy: 0,
+    hit: false,
+    homeX: null,
+    homeY: null,
+    returning: false,
+    phase: 0,
+    rot: 0,
+    pace: 0,
+    payload: 0,
+    payloadRadius: 0,
+    crit: false,
+  };
+}
+
+export function clearHazards(match: Match) {
+  match.projectiles = [];
+  match.zones = [];
+  match.warnings = [];
+  match.volleys = [];
+  match.telegraphs = [];
+  match.statuses.clear();
+  match.stunReady.clear();
 }
 
 export function skillOf(match: Match, id: number) {
@@ -69,6 +95,9 @@ export function syncWorld(match: Match) {
   match.entitiesById = new Map(match.entities.map((entity) => [entity.id, entity]));
   for (const id of match.skillState.keys()) {
     if (!match.entitiesById.has(id)) match.skillState.delete(id);
+  }
+  for (const id of match.statuses.keys()) {
+    if (!match.entitiesById.has(id)) match.statuses.delete(id);
   }
 }
 

@@ -1,4 +1,4 @@
-import type { AnnounceSnap, PlayerSnap, Snapshot } from "@game/shared/protocol";
+import type { AnnounceSnap, BossSnap, PlayerSnap, Snapshot } from "@game/shared/protocol";
 
 const PHASE: Record<string, string> = {
   hub: "Salão",
@@ -49,6 +49,7 @@ class MatchStore {
   pending: PendingSlice = { cards: [], timer: 0, show: false };
   log: string[] = [];
   announce: AnnounceSnap | null = null;
+  boss: BossSnap | null = null;
   waveWait = false;
   ended = false;
   winnerName = "";
@@ -98,6 +99,11 @@ class MatchStore {
       && Math.ceil(this.announce.left) === Math.ceil(announce.left)
       ? this.announce
       : announce;
+    const boss = snap.boss;
+    this.boss = this.boss && boss && this.boss.nome === boss.nome && this.boss.phase === boss.phase
+      && Math.round(this.boss.hp) === Math.round(boss.hp) && this.boss.marks.join(",") === boss.marks.join(",")
+      ? this.boss
+      : boss;
     const waveWait = snap.phase === "pve" && !!me?.waveClear && !me.eliminated;
     this.waveWait = this.waveWait === waveWait ? this.waveWait : waveWait;
     this.ended = snap.phase === "ended";

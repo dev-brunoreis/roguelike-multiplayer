@@ -1,4 +1,4 @@
-export type Mood = "calm" | "wild" | "duel" | "end"
+export type Mood = "calm" | "wild" | "duel" | "boss" | "end"
 
 export interface Hit {
   step: number
@@ -37,6 +37,7 @@ const SCALE: Record<string, number[]> = {
   dorian: [0, 2, 3, 5, 7, 9, 10],
   mixolydian: [0, 2, 4, 5, 7, 9, 10],
   harmonic: [0, 2, 3, 5, 7, 8, 11],
+  phrygian: [0, 1, 3, 5, 7, 8, 10],
 }
 
 const HOOKS = [
@@ -77,6 +78,12 @@ const RHYTHM: Record<Mood, number[][]> = {
     [0, 3, 4, 6, 8, 10, 12, 14],
     [0, 2, 4, 6, 8, 11, 12, 14],
     [0, 2, 6, 8, 10, 12, 15],
+  ],
+  boss: [
+    [0, 2, 4, 6, 8, 10, 12, 14],
+    [0, 2, 3, 4, 6, 8, 10, 12, 14],
+    [0, 2, 4, 6, 8, 10, 12, 14, 15],
+    [0, 2, 4, 7, 8, 10, 12, 14, 15],
   ],
   end: [
     [0, 4, 8, 12],
@@ -142,6 +149,11 @@ const ARP_STEPS: Record<Mood, number[][]> = {
     [0, 2, 4, 6, 8, 10, 12, 14],
     [0, 2, 3, 4, 6, 8, 10, 11, 12, 14],
     [0, 2, 4, 7, 8, 10, 12, 15],
+  ],
+  boss: [
+    [0, 2, 4, 6, 8, 10, 12, 14],
+    [0, 1, 2, 4, 6, 8, 9, 10, 12, 14],
+    [0, 2, 4, 6, 8, 10, 12, 14, 15],
   ],
   end: [[]],
 }
@@ -305,6 +317,7 @@ function modePool(mood: Mood) {
   if (mood === "calm") return ["major", "major", "mixolydian", "dorian"]
   if (mood === "wild") return ["major", "dorian", "mixolydian", "minor"]
   if (mood === "duel") return ["minor", "harmonic", "dorian", "minor"]
+  if (mood === "boss") return ["phrygian", "harmonic", "minor", "phrygian"]
   return ["minor", "dorian", "harmonic"]
 }
 
@@ -313,6 +326,7 @@ function tempoOf(mood: Mood, rng: Rng) {
     calm: [96, 100, 104, 108, 112],
     wild: [126, 130, 134, 138],
     duel: [138, 142, 146, 150],
+    boss: [150, 154, 158, 160],
     end: [78, 82, 86, 90],
   }[mood]
   return rng.pick(pool)
@@ -322,6 +336,7 @@ function colorOf(mood: Mood) {
   if (mood === "end") return { bright: 1700, lead: 0.05 }
   if (mood === "calm") return { bright: 2400, lead: 0.062 }
   if (mood === "wild") return { bright: 3000, lead: 0.066 }
+  if (mood === "boss") return { bright: 3800, lead: 0.072 }
   return { bright: 3400, lead: 0.068 }
 }
 
@@ -329,14 +344,14 @@ export function compose(mood: Mood, random: () => number = Math.random): Song {
   const rng = rngOf(random)
   const mode = rng.pick(modePool(mood))
   const scale = SCALE[mode] ?? SCALE.major!
-  const minor = mode === "minor" || mode === "dorian" || mode === "harmonic"
+  const minor = mode === "minor" || mode === "dorian" || mode === "harmonic" || mode === "phrygian"
   const home = rng.pick(minor ? PROGRESS.minor! : PROGRESS.major!)
   const bridge = rng.pick(minor ? PROGRESS.bridgeMinor! : PROGRESS.bridgeMajor!)
   const attacks = rng.pick(RHYTHM[mood])
   const bridgeAttacks = rng.pick(RHYTHM[mood].filter((item) => item !== attacks).concat([attacks]))
   const hook = rng.pick(HOOKS)
   const otherHook = rng.float() < 0.55 ? rng.pick(HOOKS) : hook
-  const maxHold = mood === "end" ? 14 : mood === "calm" ? 12 : mood === "wild" ? 8 : 7
+  const maxHold = mood === "end" ? 14 : mood === "calm" ? 12 : mood === "wild" ? 8 : mood === "boss" ? 6 : 7
   const homePhrase = phrase(scale, hook, attacks, rng, maxHold, true, 0)
   const bridgePhrase = phrase(scale, otherHook, bridgeAttacks, rng, maxHold, false, rng.pick([2, 3, 4]))
   const melody = [...homePhrase, ...shift(homePhrase, 4), ...shift(bridgePhrase, 8), ...shift(homePhrase, 12)]
@@ -386,7 +401,7 @@ export function compose(mood: Mood, random: () => number = Math.random): Song {
     }
   }
   const color = colorOf(mood)
-  const wideChance = mood === "duel" ? 0.7 : mood === "wild" ? 0.35 : mood === "calm" ? 0.12 : 0
+  const wideChance = mood === "boss" ? 0.8 : mood === "duel" ? 0.7 : mood === "wild" ? 0.35 : mood === "calm" ? 0.12 : 0
   return {
     bpm: tempoOf(mood, rng),
     root: rng.pick([55, 57, 59, 60, 62, 64, 65]),
@@ -405,6 +420,12 @@ export function compose(mood: Mood, random: () => number = Math.random): Song {
 
 export function drumAt(mood: Mood, variant: number, step: number, fill: boolean): Drum {
   if (mood === "end") return { kick: step === 0, snare: false, hat: step === 8 ? "closed" : "off" }
+  if (mood === "boss") {
+    const kick = step % 4 === 0 || step === 10 || step === 14
+    const snare = step === 4 || step === 12 || step === 14 || (fill && step >= 8 && step % 2 === 0)
+    const hat: Drum["hat"] = step % 2 === 0 ? "closed" : "off"
+    return { kick, snare, hat }
+  }
   if (mood === "calm") {
     if (variant % 2 === 0) return { kick: step === 0 || step === 8, snare: false, hat: step % 4 === 2 ? "closed" : "off" }
     return { kick: step === 0, snare: step === 8, hat: step % 4 === 2 ? "closed" : "off" }

@@ -9,15 +9,15 @@ export type { CreatePlayer } from "./match.js";
 export { grantXp } from "./progression.js";
 export { eliminate } from "./elimination.js";
 export {
-  registerAbilityBehavior,
+  registerAction,
   registerBeforeDamage,
   registerBot,
   registerCreepBehavior,
-  registerCreepSkill,
   registerEffect,
   registerHitHook,
   registerOnKill,
   registerMode,
+  registerStatus,
   registerTargeting,
 } from "./registry.js";
 export { buildCommon, buildMeta, buildSnapshot, buildWire, interestArenaIds, withYou } from "./snapshot.js";

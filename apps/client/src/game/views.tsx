@@ -73,6 +73,7 @@ export function EntityPuppet({
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
   const tell = useRef<Mesh>(null);
+  const statusMark = useRef<Mesh>(null);
   const reviveRing = useRef<Mesh>(null);
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
@@ -251,9 +252,23 @@ export function EntityPuppet({
     }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
     glow.current *= 0.78;
+    const statuses = entity.statuses ?? [];
+    const slowed = statuses.includes("slow") || statuses.includes("root");
+    const stunned = statuses.includes("stun");
+    const burning = statuses.includes("burn");
     if (material.current) {
       const lit = downed ? 0.42 : 1 + glow.current * 1.8;
-      material.current.color.setRGB(lit, lit, lit);
+      material.current.color.setRGB(slowed ? lit * 0.55 : lit, slowed ? lit * 0.72 : lit, lit);
+    }
+    if (statusMark.current) {
+      statusMark.current.visible = stunned || burning;
+      if (stunned || burning) {
+        statusMark.current.position.set(0, tall + 0.28, 0);
+        statusMark.current.rotation.z += stunned ? delta * 4 : delta * 2;
+        const mark = statusMark.current.material as MeshBasicMaterial;
+        mark.color.set(stunned ? "#f4efe4" : "#ff8a3d");
+        mark.opacity = stunned ? 0.95 : 0.8;
+      }
     }
   });
 
@@ -273,6 +288,10 @@ export function EntityPuppet({
       <mesh ref={aimMark} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} renderOrder={4}>
         <ringGeometry args={[0.1, 0.22, 16]} />
         <meshBasicMaterial transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+      <mesh ref={statusMark} visible={false} position={[0, 1.1, 0]} renderOrder={14}>
+        <ringGeometry args={[0.08, 0.16, 5]} />
+        <meshBasicMaterial transparent depthWrite={false} />
       </mesh>
       <mesh ref={tell} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={2}>
         <circleGeometry args={[1, 20]} />

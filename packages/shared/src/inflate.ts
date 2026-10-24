@@ -8,7 +8,9 @@ import type {
   PlayerSnap,
   ProjectileSnap,
   Snapshot,
+  WarningSnap,
   WireSnapshot,
+  ZoneSnap,
 } from "./protocol.js";
 
 function cardView(meta: MatchMeta, id: string): CardView | null {
@@ -107,6 +109,7 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
       label: entity.kind === "hero" ? who?.name : creeps.get(entity.defId),
       playerId: entity.playerId,
       facing: entity.facing,
+      statuses: entity.statuses,
     }];
   });
   const projectiles: ProjectileSnap[] = wire.projectiles.flatMap((shot) => {
@@ -121,6 +124,38 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
       arenaId: arena.id,
       abilityId: shot.abilityId,
       color: shot.color,
+      vfx: shot.vfx,
+    }];
+  });
+  const zones: ZoneSnap[] = wire.zones.flatMap((zone) => {
+    const arena = meta.arenas[zone.arena];
+    if (!arena) return [];
+    return [{
+      id: zone.id,
+      x: zone.x,
+      y: zone.y,
+      radius: zone.radius,
+      color: zone.color,
+      arenaId: arena.id,
+      vfx: zone.vfx,
+      t: zone.t,
+    }];
+  });
+  const warnings: WarningSnap[] = wire.warnings.flatMap((warning) => {
+    const arena = meta.arenas[warning.arena];
+    if (!arena) return [];
+    return [{
+      id: warning.id,
+      x: warning.x,
+      y: warning.y,
+      x2: warning.x2,
+      y2: warning.y2,
+      shape: warning.shape,
+      radius: warning.radius,
+      angle: warning.angle,
+      color: warning.color,
+      arenaId: arena.id,
+      t: warning.t,
     }];
   });
   const fx: FxSnap[] = wire.fx.flatMap((item) => {
@@ -167,7 +202,10 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
     players,
     entities,
     projectiles,
+    zones,
+    warnings,
     fx,
+    boss: wire.boss,
     floats,
     duel: wire.duel.flatMap((pair) => {
       const arena = meta.arenas[pair.arena];

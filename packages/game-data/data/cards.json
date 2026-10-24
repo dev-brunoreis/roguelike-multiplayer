@@ -835,5 +835,252 @@
         "abilityId": "dardo"
       }
     ]
+  },
+  {
+    "id": "aprender_chuva_meteoros",
+    "nome": "Aprender Chuva de Meteoros",
+    "descricao": "Ganha Chuva de Meteoros. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "fogo",
+      "area",
+      "magia"
+    ],
+    "requires": {
+      "missingAbility": "chuva_meteoros"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "chuva_meteoros"
+      }
+    ]
+  },
+  {
+    "id": "chuva_meteoros_maior",
+    "nome": "Chuva de Meteoros Maior",
+    "descricao": "Sobe o nível de Chuva de Meteoros.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "fogo"
+    ],
+    "requires": {
+      "ability": "chuva_meteoros"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "chuva_meteoros"
+      }
+    ]
+  },
+  {
+    "id": "aprender_granizo",
+    "nome": "Aprender Granizo",
+    "descricao": "Ganha Granizo. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "gelo",
+      "area",
+      "magia"
+    ],
+    "requires": {
+      "missingAbility": "granizo"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "granizo"
+      }
+    ]
+  },
+  {
+    "id": "granizo_maior",
+    "nome": "Granizo Maior",
+    "descricao": "Sobe o nível de Granizo.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "gelo"
+    ],
+    "requires": {
+      "ability": "granizo"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "granizo"
+      }
+    ]
+  },
+  {
+    "id": "aprender_pisao",
+    "nome": "Aprender Pisão",
+    "descricao": "Ganha Pisão. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "forca",
+      "area"
+    ],
+    "requires": {
+      "missingAbility": "pisao"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "pisao"
+      }
+    ]
+  },
+  {
+    "id": "pisao_maior",
+    "nome": "Pisão Maior",
+    "descricao": "Sobe o nível de Pisão.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "forca"
+    ],
+    "requires": {
+      "ability": "pisao"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "pisao"
+      }
+    ]
+  },
+  {
+    "id": "aprender_rastro_fogo",
+    "nome": "Aprender Rastro de Fogo",
+    "descricao": "Ganha Rastro de Fogo. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "fogo"
+    ],
+    "requires": {
+      "missingAbility": "rastro_fogo"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "rastro_fogo"
+      }
+    ]
+  },
+  {
+    "id": "rastro_fogo_maior",
+    "nome": "Rastro de Fogo Maior",
+    "descricao": "Sobe o nível de Rastro de Fogo.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "fogo"
+    ],
+    "requires": {
+      "ability": "rastro_fogo"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "rastro_fogo"
+      }
+    ]
+  },
+  {
+    "id": "aprender_chao_chamas",
+    "nome": "Aprender Chão em Chamas",
+    "descricao": "Ganha Chão em Chamas. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "fogo",
+      "area"
+    ],
+    "requires": {
+      "missingAbility": "chao_chamas"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "chao_chamas"
+      }
+    ]
+  },
+  {
+    "id": "chao_chamas_maior",
+    "nome": "Chão em Chamas Maior",
+    "descricao": "Sobe o nível de Chão em Chamas.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "fogo"
+    ],
+    "requires": {
+      "ability": "chao_chamas"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "chao_chamas"
+      }
+    ]
+  },
+  {
+    "id": "aprender_lamina_bumerangue",
+    "nome": "Aprender Lâmina Bumerangue",
+    "descricao": "Ganha Lâmina Bumerangue. Se a barra estiver cheia, troca a skill mais fraca.",
+    "rarity": "raro",
+    "weight": 3,
+    "unique": true,
+    "tags": [
+      "forca",
+      "agilidade"
+    ],
+    "requires": {
+      "missingAbility": "lamina_bumerangue"
+    },
+    "effects": [
+      {
+        "type": "grantAbility",
+        "abilityId": "lamina_bumerangue"
+      }
+    ]
+  },
+  {
+    "id": "lamina_bumerangue_maior",
+    "nome": "Lâmina Bumerangue Maior",
+    "descricao": "Sobe o nível de Lâmina Bumerangue.",
+    "rarity": "incomum",
+    "weight": 6,
+    "unique": false,
+    "tags": [
+      "forca"
+    ],
+    "requires": {
+      "ability": "lamina_bumerangue"
+    },
+    "effects": [
+      {
+        "type": "upgradeAbility",
+        "abilityId": "lamina_bumerangue"
+      }
+    ]
   }
 ]

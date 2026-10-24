@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { compose, type Mood } from "./music.js"
 
-const MOODS: Mood[] = ["calm", "wild", "duel", "end"]
+const MOODS: Mood[] = ["calm", "wild", "duel", "boss", "end"]
 
 function midi(songRoot: number, semi: number) {
   return songRoot + semi

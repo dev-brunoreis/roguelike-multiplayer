@@ -10,18 +10,19 @@ alwaysApply: false
 
 Ordem: se a pausa estiver fechada (todo humano vivo pediu), o tick volta sem avançar o tempo. Senão: bots, cooldowns, respawn, escolha de carta, `mode.update`, `mode.checkEnd`. Na arena, combate se a fase for pve ou duelo, só movimento no salão (`hub`), transição de fase, vitória do último vivo. A onda só fecha quando o último vivo limpa. Carta de nível espera o salão. Na masmorra a carta abre na hora, o herói cai e um aliado levanta, e a vitória é o chefe morto.
 
-`single`, `projectile`, `chain`, `cone` e `aoe` devolvem `false` sem alvo na mira, para não gastar cooldown. `aoe` estoura no ponto da mira só se tem bicho no raio. Sem `aimX`/`aimY`, o targeting do JSON escolhe. Dano passa por `dealDamage` (armadura, crítico, onHit, lifesteal, eventos). Herói com `godmode` não perde vida. `setGodmode` vale com o jogador morto ou eliminado e o flag continua ligado. `setBotsGodmode` guarda `botsGodmode` e aplica a todo bot, morto também. `revivePlayer` de um bot liga `godmode` se essa flag está ligada. `skipDuel` cancela o par anunciado no salão ou o duelo em curso e segue para a onda, sem escolher vencedor. `setDuels(false)` impede o salão de marcar par; se já tinha um, cancela sem tirar vida. `jumpWave` troca a rodada e chama `beginPve` na hora. `revivePlayer` levanta o herói na hora: se ainda tinha vida, não gasta outra; se estava eliminado, volta com 1 vida. Com a partida já encerrada, reabre no salão.
+`strike`, `shoot`, `chain`, `cone` e `burst` devolvem `false` sem alvo na mira, para não gastar cooldown. `burst` estoura no ponto da mira só se tem bicho no raio. Sem `aimX`/`aimY`, o targeting do JSON escolhe. A magia é `castSpell`: uma lista `cast` de ações (`spells/`). Dano passa por `dealDamage` (armadura, crítico, onHit, lifesteal, eventos). Herói com `godmode` não perde vida. `setGodmode` vale com o jogador morto ou eliminado e o flag continua ligado. `setBotsGodmode` guarda `botsGodmode` e aplica a todo bot, morto também. `revivePlayer` de um bot liga `godmode` se essa flag está ligada. `skipDuel` cancela o par anunciado no salão ou o duelo em curso e segue para a onda, sem escolher vencedor. `setDuels(false)` impede o salão de marcar par; se já tinha um, cancela sem tirar vida. `jumpWave` troca a rodada e chama `beginPve` na hora. `revivePlayer` levanta o herói na hora: se ainda tinha vida, não gasta outra; se estava eliminado, volta com 1 vida. Com a partida já encerrada, reabre no salão.
 
 `setGodmode`, `setBotsGodmode`, `setDuels`, `jumpWave`, `skipDuel` e `revivePlayer` ficam em `src/debug.ts` (`@game/sim/debug`). A sala só aceita esses comandos do host, ou com `CAOS_DEV=1`.
 
-`chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. O snapshot manda `strike` de 0 a 1 nesse intervalo. Investida e estouro guardam passo, tempo e velocidade em `match.skillState`, não na entidade.
+`chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. O snapshot manda `strike` de 0 a 1 nesse intervalo. `dash` e `burst` com `windup` guardam passo, tempo e velocidade em `match.skillState`, não na entidade. Stun, slow, burn e root ficam em `match.statuses`. Stun impede andar e lançar; depois dele, `stunImmuneSeconds` segura o próximo. Zona, aviso e rajada também ficam no `Match`. Tiro respeita `maxShotsPerArena`.
 
-Creep com `skill` no JSON dispara isso antes do `behavior`, quando o `cooldown` zera. `charge` e `burst` tomam o tick (a investida anda, o estouro usa o `attackWindup` como a bolinha). `summon`, `mend` e `bolt` não travam o golpe normal. Número da skill não entra no TypeScript.
+Creep com `skill` ou `skills` dispara `castSpell` antes do `behavior`, quando o `cooldown` zera. `dash` e `burst` com `windup` tomam o tick. `summon`, `heal` e `strike` não travam o golpe normal. Chefe com `phases` troca a rotação pelo limiar de vida (`tickBossPhases`), e a velocidade viva é `pace * speedMul`. Na arena o chefe não entra no spawn da onda: o quadrado limpo chama o chefe da rodada, o banner `boss` sai uma vez e `bossSeconds` soma no relógio. `waveClear` espera esse chefe morto. Número da magia não entra no TypeScript.
 
 Registro novo:
 
 ```ts
-registerAbilityBehavior("nova", (ctx) => true);
+registerAction("nova", (ctx) => true);
+registerStatus("nova", (match, entity, status, dt) => {});
 registerHitHook("nova", "before", (ctx) => {});
 ```
 

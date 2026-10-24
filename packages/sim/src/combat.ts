@@ -1,8 +1,5 @@
-import { creepSkillBusy } from "./creepSkills.js";
-import { getBehavior, getCreepBehavior } from "./registry.js";
+import { getCreepBehavior } from "./registry.js";
 import type { Entity, Match } from "./types.js";
-import { dealDamage } from "./damage.js";
-import { playerById } from "./world.js";
 import {
   abilityById,
   alivePlayers,
@@ -11,6 +8,10 @@ import {
   dist,
   heroEntity,
 } from "./world.js";
+import { castSpell } from "./spells/cast.js";
+import { creepCastBusy, tickBossPhases, tickTelegraphs, tickVolleys, tickWarnings, tickZones } from "./spells/runtime.js";
+import { tickShots } from "./spells/shots.js";
+import { isStunned, moveScale, tickStatuses } from "./spells/status.js";
 
 function clampAll(match: Match) {
   for (const entity of match.entities) {
@@ -32,7 +33,12 @@ export function simulateCombat(match: Match, dt: number) {
   separate(match);
   clampAll(match);
   castAbilities(match);
-  moveProjectiles(match, dt);
+  tickShots(match, dt);
+  tickZones(match, dt);
+  tickVolleys(match, dt);
+  tickTelegraphs(match, dt);
+  tickWarnings(match);
+  tickStatuses(match, dt);
 }
 
 function moveHeroes(match: Match, dt: number) {
@@ -46,7 +52,7 @@ function moveHeroes(match: Match, dt: number) {
       x /= len;
       y /= len;
     }
-    const speed = entity.speed * (1 + player.stats.moveSpeedPct);
+    const speed = entity.speed * (1 + player.stats.moveSpeedPct) * moveScale(match, entity.id);
     if (len > 0.05) {
       entity.x += x * speed * dt;
       entity.y += y * speed * dt;
@@ -77,9 +83,11 @@ function nearestEnemy(match: Match, entity: Entity) {
 }
 
 function moveCreeps(match: Match, dt: number) {
+  tickBossPhases(match);
   for (const entity of match.entities) {
     if (!entity.alive || entity.kind === "hero") continue;
-    if (creepSkillBusy(match, entity, dt)) continue;
+    if (isStunned(match, entity.id)) continue;
+    if (creepCastBusy(match, entity, dt)) continue;
     const behavior = getCreepBehavior(entity.behavior);
     behavior?.(match, entity, dt);
   }
@@ -113,16 +121,21 @@ function separate(match: Match) {
 function castAbilities(match: Match) {
   for (const player of alivePlayers(match)) {
     const caster = heroEntity(match, player);
-    if (!caster?.alive) continue;
+    if (!caster?.alive || isStunned(match, caster.id)) continue;
     for (const slot of player.abilities) {
       if (slot.cooldown > 0) continue;
       const ability = abilityById(match, slot.abilityId);
       if (!ability) continue;
       const level = ability.levels[Math.min(slot.level, ability.levels.length) - 1];
       if (!level) continue;
-      const behavior = getBehavior(ability.behavior);
-      if (!behavior) continue;
-      const fired = behavior({ match, player, caster, ability, level });
+      const fired = castSpell(match, caster, ability, {
+        player,
+        level,
+        spellId: ability.id,
+        color: ability.color,
+        vfx: ability.vfx ?? "",
+        targeting: ability.targeting,
+      });
       if (!fired) continue;
       const haste = 1 + player.stats.attackSpeedPct;
       const cdr = 1 - Math.min(0.6, player.stats.cooldownPct);
@@ -133,32 +146,3 @@ function castAbilities(match: Match) {
   }
 }
 
-function moveProjectiles(match: Match, dt: number) {
-  for (const shot of match.projectiles) {
-    shot.ttl -= dt;
-    shot.x += shot.vx * dt;
-    shot.y += shot.vy * dt;
-    const owner = playerById(match, shot.ownerId);
-    const source = owner
-      ? heroEntity(match, owner)
-      : match.entities.find((entity) => entity.id === shot.sourceId);
-    const hit = match.entities.find(
-      (entity) =>
-        entity.alive &&
-        entity.arenaId === shot.arenaId &&
-        entity.team !== shot.team &&
-        dist(entity, shot) <= entity.radius + shot.radius,
-    );
-    if (!hit) continue;
-    dealDamage(match, {
-      source: source ?? undefined,
-      sourcePlayer: owner,
-      target: hit,
-      amount: shot.damage,
-      abilityId: shot.abilityId,
-      crit: shot.crit,
-    });
-    shot.ttl = 0;
-  }
-  match.projectiles = match.projectiles.filter((shot) => shot.ttl > 0);
-}

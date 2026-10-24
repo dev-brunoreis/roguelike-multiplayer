@@ -33,8 +33,9 @@ function attackPlan(match: Match, player: PlayerState) {
     const def = abilityById(match, slot.abilityId);
     const level = def?.levels[Math.min(slot.level, def.levels.length) - 1];
     if (!def || !level) continue;
-    if (def.behavior === "projectile" || def.behavior === "chain") ranged = Math.max(ranged, level.range);
-    else if (def.behavior === "aoe") melee = Math.min(melee, (level.radius ?? level.range) * 0.8);
+    const kinds = new Set(def.cast.map((action) => action.do));
+    if (kinds.has("shoot") || kinds.has("chain") || kinds.has("pattern")) ranged = Math.max(ranged, level.range);
+    else if (kinds.has("burst") || kinds.has("zone") || kinds.has("cone")) melee = Math.min(melee, (level.radius ?? level.range) * 0.8);
     else melee = Math.min(melee, level.range * 0.82);
   }
   if (melee < Infinity) return { hold: melee, kite: false };
@@ -54,7 +55,12 @@ export function steer(match: Match, player: PlayerState) {
   );
   enemies.sort((a, b) => dist(entity, a) - dist(entity, b));
   const target = enemies[0];
+  const alone = hazardVector(match, entity);
   if (!target) {
+    if (alone) {
+      setMove(player, entity, arena, alone.x, alone.y);
+      return;
+    }
     if (match.tick % 40 === 0) player.wander = match.rng.next() * Math.PI * 2;
     setMove(player, entity, arena, Math.cos(player.wander), Math.sin(player.wander));
     player.aimX = entity.x + Math.cos(player.wander) * 4;
@@ -63,6 +69,11 @@ export function steer(match: Match, player: PlayerState) {
   }
   player.aimX = target.x;
   player.aimY = target.y;
+  const flee = hazardVector(match, entity);
+  if (flee) {
+    setMove(player, entity, arena, flee.x, flee.y);
+    return;
+  }
   const gap = dist(entity, target);
   const plan = attackPlan(match, player);
   const dx = target.x - entity.x;
@@ -96,6 +107,40 @@ export function steer(match: Match, player: PlayerState) {
   }
   player.inputX = 0;
   player.inputY = 0;
+}
+
+function hazardVector(match: Match, entity: { id: number; x: number; y: number; arenaId: string; team: string; radius: number }) {
+  let sx = 0;
+  let sy = 0;
+  let found = false;
+  for (const warning of match.warnings) {
+    if (warning.arenaId !== entity.arenaId || warning.team === entity.team) continue;
+    const gap = warning.shape === "line"
+      ? segmentGap(entity.x, entity.y, warning.x, warning.y, warning.x2, warning.y2)
+      : dist(entity, warning);
+    if (gap > warning.radius + entity.radius + 0.45) continue;
+    sx += entity.x - warning.x;
+    sy += entity.y - warning.y;
+    found = true;
+  }
+  for (const zone of match.zones) {
+    if (zone.arenaId !== entity.arenaId || zone.team === entity.team || zone.follow === "trail") continue;
+    if (dist(entity, zone) > zone.radius + entity.radius + 0.2) continue;
+    sx += entity.x - zone.x;
+    sy += entity.y - zone.y;
+    found = true;
+  }
+  if (!found) return null;
+  return { x: sx, y: sy };
+}
+
+function segmentGap(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const len2 = abx * abx + aby * aby;
+  if (len2 < 0.0000001) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * abx + (py - ay) * aby) / len2));
+  return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
 }
 
 function setMove(

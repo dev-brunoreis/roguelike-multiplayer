@@ -3,12 +3,12 @@ import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { Plane, Raycaster, Vector2, Vector3 } from "three";
-import { arenaInView, inView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
+import { arenaInView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
 import { CAMERA_ZOOM } from "./glyphs.js";
 import { setWorldAim } from "./input.js";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion } from "./motion.js";
-import { shotScale, shotShape, shotTexture } from "./sprites.js";
+import { VfxField } from "./VfxField.js";
 import { DeathLayer, EntityPuppet, FloatLayer, HpLayer, resetPoses } from "./views.js";
 
 export const Scene = memo(function Scene({
@@ -161,8 +161,7 @@ function World({
       <DeathLayer snapRef={snapRef} />
       <FloatLayer snapRef={snapRef} />
       <HpLayer ids={visible.entities} indexRef={indexRef} snapRef={snapRef} />
-      <Shots snapRef={snapRef} indexRef={indexRef} />
-      <FxLayer snapRef={snapRef} indexRef={indexRef} />
+      <VfxField snapRef={snapRef} />
     </>
   );
 }
@@ -268,132 +267,6 @@ function MoteCloud({ field, color, size, opacity }: { field: MoteField; color: s
         alphaTest={0.05}
       />
     </points>
-  );
-}
-
-function Shots({
-  snapRef,
-  indexRef,
-}: {
-  snapRef: MutableRefObject<Snapshot | null>;
-  indexRef: MutableRefObject<SnapIndex>;
-}) {
-  const [ids, setIds] = useState<number[]>([]);
-  const key = useRef("");
-  useFrame(() => {
-    const snap = snapRef.current;
-    if (!snap) return;
-    const near = snap.projectiles.filter((shot) => inView(shot.x, shot.y));
-    const next = near.map((shot) => shot.id).join(",");
-    if (next !== key.current) {
-      key.current = next;
-      setIds(near.map((shot) => shot.id));
-    }
-  });
-  return (
-    <>
-      {ids.map((id) => <Shot key={id} id={id} indexRef={indexRef} />)}
-    </>
-  );
-}
-
-function Shot({ id, indexRef }: { id: number; indexRef: MutableRefObject<SnapIndex> }) {
-  const sprite = useRef<import("three").Sprite>(null);
-  useFrame(() => {
-    const shot = indexRef.current.projectiles.get(id);
-    const placed = motionAt(id, performance.now() / 1000);
-    if (!sprite.current) return;
-    if (!shot || !placed) {
-      sprite.current.visible = false;
-      return;
-    }
-    sprite.current.visible = true;
-    sprite.current.position.set(placed.x, 0.55, placed.y);
-    const shape = shotShape(shot.abilityId);
-    const [wide, tall] = shotScale(shape);
-    sprite.current.scale.set(wide, tall, 1);
-    const mat = sprite.current.material as import("three").SpriteMaterial;
-    mat.map = shotTexture(shape);
-    const screenX = shot.vx - shot.vy;
-    const screenY = -0.75 * (shot.vx + shot.vy);
-    mat.rotation = shape === "orb" ? 0 : Math.atan2(screenY, screenX);
-    mat.color.set(shot.color);
-  });
-  return (
-    <sprite ref={sprite} center={[0.5, 0.5]} renderOrder={12}>
-      <spriteMaterial map={shotTexture()} transparent alphaTest={0.4} depthWrite={false} />
-    </sprite>
-  );
-}
-
-function FxLayer({
-  snapRef,
-  indexRef,
-}: {
-  snapRef: MutableRefObject<Snapshot | null>;
-  indexRef: MutableRefObject<SnapIndex>;
-}) {
-  const [ids, setIds] = useState<number[]>([]);
-  const key = useRef("");
-  useFrame(() => {
-    const snap = snapRef.current;
-    if (!snap) return;
-    const near = snap.fx.filter((item) => inView(item.x, item.y));
-    const next = near.map((item) => item.id).join(",");
-    if (next !== key.current) {
-      key.current = next;
-      setIds(near.map((item) => item.id));
-    }
-  });
-  return (
-    <>
-      {ids.map((id) => <FxBurst key={id} id={id} indexRef={indexRef} />)}
-    </>
-  );
-}
-
-function FxBurst({ id, indexRef }: { id: number; indexRef: MutableRefObject<SnapIndex> }) {
-  const ring = useRef<import("three").Mesh>(null);
-  const bolt = useRef<import("three").Mesh>(null);
-  useFrame(() => {
-    const fx = indexRef.current.fx.get(id);
-    const fade = fx ? Math.max(0, 1 - fx.t) : 0;
-    if (ring.current) ring.current.visible = false;
-    if (bolt.current) bolt.current.visible = false;
-    if (!fx) return;
-    if (fx.kind === "bolt" && fx.x2 != null && fx.y2 != null && bolt.current) {
-      const dx = fx.x2 - fx.x;
-      const dz = fx.y2 - fx.y;
-      const len = Math.hypot(dx, dz) || 0.2;
-      bolt.current.visible = true;
-      bolt.current.position.set((fx.x + fx.x2) / 2, 0.62, (fx.y + fx.y2) / 2);
-      bolt.current.rotation.set(0, Math.atan2(dx, dz), 0);
-      bolt.current.scale.set(fx.radius * 2.2 * fade, 0.16, len);
-      const mat = bolt.current.material as import("three").MeshBasicMaterial;
-      mat.color.set(fx.color);
-      mat.opacity = 0.95 * fade;
-      return;
-    }
-    if (!ring.current) return;
-    ring.current.visible = true;
-    const grow = 0.4 + fx.t * 1.35;
-    ring.current.position.set(fx.x, 0.18, fx.y);
-    ring.current.scale.set(fx.radius * grow, fx.radius * grow, 1);
-    const mat = ring.current.material as import("three").MeshBasicMaterial;
-    mat.color.set(fx.color);
-    mat.opacity = Math.max(0, 0.72 * fade);
-  });
-  return (
-    <group>
-      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} renderOrder={8}>
-        <ringGeometry args={[0.28, 1, 28]} />
-        <meshBasicMaterial transparent depthWrite={false} />
-      </mesh>
-      <mesh ref={bolt} renderOrder={9}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial transparent depthWrite={false} />
-      </mesh>
-    </group>
   );
 }
 

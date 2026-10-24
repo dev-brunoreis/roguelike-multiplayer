@@ -5,11 +5,11 @@ import { runBots } from "./bots.js";
 import "./content.js";
 import { isPersist, type PersistEvent } from "./events.js";
 import { respawnHero } from "./modes/arena/phases/move.js";
-import { assertCreepSkills } from "./creepSkills.js";
-import { getMode, hasBehavior, hasCreepBehavior, hasEffect, hasTargeting } from "./registry.js";
+import { getMode, hasCreepBehavior, hasEffect } from "./registry.js";
+import { assertSpells } from "./spells/validate.js";
 import type { Match, PlayerState } from "./types.js";
 import { emptyStats } from "./types.js";
-import { addLog, dtOf, emit, heroEntity, syncWorld, updateBanner } from "./world.js";
+import { addLog, clearHazards, dtOf, emit, heroEntity, syncWorld, updateBanner } from "./world.js";
 
 export interface CreatePlayer {
   id: string;
@@ -55,6 +55,13 @@ export function createMatch(options: {
     players: [],
     entities: [],
     projectiles: [],
+    zones: [],
+    warnings: [],
+    volleys: [],
+    telegraphs: [],
+    statuses: new Map(),
+    stunReady: new Map(),
+    bossArenas: new Set(),
     arenas: [],
     spawns: [],
     duel: [],
@@ -179,14 +186,10 @@ export function createMatch(options: {
 }
 
 function assertContent(data: GameData) {
-  for (const ability of data.abilities) {
-    if (!hasBehavior(ability.behavior)) throw new Error(`Behavior desconhecido em ${ability.id}: ${ability.behavior}`);
-    if (!hasTargeting(ability.targeting)) throw new Error(`Targeting desconhecido em ${ability.id}: ${ability.targeting}`);
-  }
+  assertSpells(data);
   for (const creep of data.creeps) {
     if (!hasCreepBehavior(creep.behavior)) throw new Error(`IA desconhecida em ${creep.id}: ${creep.behavior}`);
   }
-  assertCreepSkills(data.creeps);
   for (const card of data.cards) {
     for (const effect of card.effects) {
       if (!hasEffect(effect.type)) throw new Error(`Efeito desconhecido na carta ${card.id}: ${effect.type}`);
@@ -251,7 +254,7 @@ function listedColor(colors: string[], raw?: string) {
 export function quietMatch(match: Match) {
   match.spawns = [];
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
-  match.projectiles = [];
+  clearHazards(match);
   match.fx = [];
   syncWorld(match);
   for (const player of match.players) {

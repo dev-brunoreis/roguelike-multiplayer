@@ -1,6 +1,8 @@
 import { dealDamage } from "./damage.js";
 import { registerCreepBehavior } from "./registry.js";
 import type { Entity, Match } from "./types.js";
+import { moveScale } from "./spells/status.js";
+import { pushShot } from "./spells/shots.js";
 import { creepById, dist, skillOf } from "./world.js";
 
 function heroesIn(match: Match, creep: Entity) {
@@ -36,7 +38,7 @@ function walkHome(match: Match, creep: Entity, dt: number, home: { x: number; y:
     creep.y = home.y;
     return;
   }
-  const step = Math.min(creep.speed * dt, gap);
+  const step = Math.min(creep.speed * dt * moveScale(match, creep.id), gap);
   creep.facing = Math.atan2(home.y - creep.y, home.x - creep.x);
   creep.x += ((home.x - creep.x) / gap) * step;
   creep.y += ((home.y - creep.y) / gap) * step;
@@ -83,7 +85,7 @@ registerCreepBehavior("chase", (match, creep, dt) => {
     return;
   }
   if (gap > reach) {
-    const step = creep.speed * dt;
+    const step = creep.speed * dt * moveScale(match, creep.id);
     creep.x += ((target.x - creep.x) / gap) * step;
     creep.y += ((target.y - creep.y) / gap) * step;
     return;
@@ -110,7 +112,7 @@ registerCreepBehavior("kite", (match, creep, dt) => {
   const far = creep.attackRange * 0.92;
   if (gap < close || gap > far) {
     const dir = gap < close ? -1 : 1;
-    const step = creep.speed * dt;
+    const step = creep.speed * dt * moveScale(match, creep.id);
     creep.x += ((target.x - creep.x) / Math.max(gap, 0.01)) * step * dir;
     creep.y += ((target.y - creep.y) / Math.max(gap, 0.01)) * step * dir;
     if (gap > far) return;
@@ -123,8 +125,7 @@ registerCreepBehavior("kite", (match, creep, dt) => {
   const aimX = target.x - creep.x;
   const aimY = target.y - creep.y;
   const len = Math.hypot(aimX, aimY) || 1;
-  match.projectiles.push({
-    id: match.nextId++,
+  pushShot(match, {
     x: creep.x,
     y: creep.y,
     vx: (aimX / len) * speed,
@@ -139,5 +140,19 @@ registerCreepBehavior("kite", (match, creep, dt) => {
     abilityId: creep.defId,
     color: creep.color,
     ttl: 1.8,
+    vfx: "orb",
+    pierce: 0,
+    curve: 0,
+    returns: false,
+    originX: creep.x,
+    originY: creep.y,
+    range: 0,
+    status: "",
+    statusTime: 0,
+    statusValue: 0,
+    orbit: false,
+    angle: 0,
+    orbitRadius: 0,
+    spin: 0,
   });
 });

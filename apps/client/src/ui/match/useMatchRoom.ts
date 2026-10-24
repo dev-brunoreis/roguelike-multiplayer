@@ -6,16 +6,17 @@ import { emptyIndex, indexSnapshot, type SnapIndex } from "../../game/frame.js";
 import { noteSnapshot, resetMotion, trackMotion } from "../../game/motion.js";
 import { resetPoses } from "../../game/views.js";
 import type { Snapshot } from "@game/shared/protocol";
-import { hearWorld, resetHear, setMood, sfxCrit, sfxHurt, sfxPick, sfxUi, type Mood } from "../../audio.js";
+import { hearWorld, resetHear, setMood, sfxCrit, sfxHurt, sfxImpact, sfxPick, sfxUi, sfxWarn, type Mood } from "../../audio.js";
 import { serverReachable, wsBase } from "../../net.js";
 import { matchStore } from "./store.js";
 
 const CONSENTED = 4000;
 
-function moodOf(phase: string, fighting: boolean): Mood {
+function moodOf(phase: string, fighting: boolean, boss: boolean): Mood {
+  if (phase === "ended") return "end";
+  if (boss) return "boss";
   if (phase === "duel" && fighting) return "duel";
   if (phase === "pve" || phase === "dungeon") return "wild";
-  if (phase === "ended") return "end";
   return "calm";
 }
 
@@ -35,6 +36,8 @@ export function useMatchRoom(token: string, roomId: string, onDown: () => void) 
   const pendingRef = useRef(0);
   const mePlace = useRef<{ x: number; y: number } | null>(null);
   const shakeRef = useRef(0);
+  const warnRef = useRef(new Set<number>());
+  const bossPhaseRef = useRef(0);
   const onChat = useRef<(incoming: ChatLine | ChatLine[]) => void>(() => {});
 
   const publish = () => {
@@ -48,9 +51,22 @@ export function useMatchRoom(token: string, roomId: string, onDown: () => void) 
     noteSnapshot(view.tick, meta.tickRate, now);
     for (const entity of view.entities) trackMotion(entity.id, entity.x, entity.y, view.tick, meta.tickRate);
     for (const shot of view.projectiles) trackMotion(shot.id, shot.x, shot.y, view.tick, meta.tickRate);
+    for (const zone of view.zones) trackMotion(zone.id, zone.x, zone.y, view.tick, meta.tickRate);
     matchStore.set(view);
     const me = view.players.find((player) => player.id === view.youId);
-    setMood(moodOf(view.phase, me?.inDuel === true));
+    setMood(moodOf(view.phase, me?.inDuel === true, view.boss != null));
+    const seen = warnRef.current;
+    const nextWarn = new Set<number>();
+    let freshWarn = false;
+    for (const warning of view.warnings) {
+      nextWarn.add(warning.id);
+      if (!seen.has(warning.id)) freshWarn = true;
+    }
+    warnRef.current = nextWarn;
+    if (freshWarn) sfxWarn();
+    const bossPhase = view.boss?.phase ?? 0;
+    if (bossPhaseRef.current && bossPhase && bossPhase !== bossPhaseRef.current) sfxImpact();
+    bossPhaseRef.current = bossPhase;
     if (me) {
       const body = view.entities.find((entity) => entity.playerId === view.youId);
       hearWorld(view.fx, view.projectiles, body ? { x: body.x, y: body.y } : null);

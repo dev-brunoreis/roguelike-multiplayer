@@ -1,6 +1,6 @@
 import { flushDamage, spawnCreep } from "../../../spawn.js";
 import type { Match } from "../../../types.js";
-import { addLog, alivePlayers, emit, syncWorld } from "../../../world.js";
+import { addLog, alivePlayers, clearHazards, emit, pushBanner, syncWorld } from "../../../world.js";
 import { arenaQuiet, revive, sendHome } from "./move.js";
 import { checkWinner } from "../victory.js";
 import { beginHub } from "./hub.js";
@@ -29,16 +29,12 @@ export function beginPve(match: Match) {
   match.duel = [];
   match.duelPending = false;
   match.duelAnnounce = 0;
-  match.projectiles = [];
+  clearHazards(match);
+  match.bossArenas.clear();
   match.bossAnnounced = false;
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
   match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
   const wave = waveFor(match);
-  const boss = bossForRound(match);
-  if (boss && !match.bossAnnounced) {
-    match.bossAnnounced = true;
-    addLog(match, `Boss: ${boss.nome}`);
-  }
   for (const player of match.players) {
     player.ready = false;
     player.botActed = false;
@@ -59,15 +55,6 @@ export function beginPve(match: Match) {
         acc: group.interval / haste,
       });
     }
-    if (boss) {
-      match.spawns.push({
-        arenaId: player.arenaId,
-        creepId: boss.creepId,
-        left: 1,
-        interval: 0.4,
-        acc: 0.4,
-      });
-    }
   }
   syncWorld(match);
   addLog(match, `Onda ${match.round}`);
@@ -85,7 +72,8 @@ function endPve(match: Match, cleared: boolean) {
   }
   match.spawns = [];
   match.entities = match.entities.filter((entity) => entity.kind === "hero");
-  match.projectiles = [];
+  clearHazards(match);
+  match.bossArenas.clear();
   syncWorld(match);
   checkWinner(match);
   if (match.phase === "ended") return;
@@ -100,7 +88,12 @@ function emitFailed(match: Match) {
   emit(match, { type: "wave_failed", round: match.round });
 }
 
+function bossAlive(match: Match, arenaId: string) {
+  return match.entities.some((entity) => entity.alive && entity.kind === "boss" && entity.arenaId === arenaId);
+}
+
 export function updatePve(match: Match, dt: number) {
+  const boss = bossForRound(match);
   for (const job of match.spawns) {
     if (job.left <= 0) continue;
     const aliveCreeps = match.entities.filter((entity) => entity.alive && entity.arenaId === job.arenaId && entity.kind !== "hero").length;
@@ -114,6 +107,20 @@ export function updatePve(match: Match, dt: number) {
   for (const player of alivePlayers(match)) {
     if (player.waveClear) continue;
     if (!arenaQuiet(match, player.arenaId)) continue;
+    if (boss && !bossAlive(match, player.arenaId)) {
+      if (!match.bossArenas.has(player.arenaId)) {
+        spawnCreep(match, player.arenaId, boss.creepId);
+        match.bossArenas.add(player.arenaId);
+        if (!match.bossAnnounced) {
+          match.bossAnnounced = true;
+          addLog(match, `Boss: ${boss.nome}`);
+          pushBanner(match, { kind: "boss", title: boss.nome, detail: "O chefe entrou na arena", life: 4.5 });
+          match.phaseTime += match.config.bossSeconds;
+        }
+        continue;
+      }
+    }
+    if (boss && bossAlive(match, player.arenaId)) continue;
     player.waveClear = true;
     addLog(match, `${player.name} limpou a arena`);
   }

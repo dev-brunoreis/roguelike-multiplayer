@@ -82,7 +82,86 @@
     "color": "#6b3a1f",
     "armor": 10,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "skills": [
+      {
+        "id": "golem_pisao",
+        "cooldown": 5.5,
+        "cast": [
+          {
+            "do": "warn",
+            "shape": "circle",
+            "time": 0.7,
+            "radius": 2.8,
+            "range": 4.2
+          },
+          {
+            "do": "burst",
+            "at": "caster",
+            "radius": 2.8,
+            "damage": 16,
+            "range": 2.8,
+            "status": "stun",
+            "statusTime": 0.8
+          }
+        ]
+      },
+      {
+        "id": "golem_pedra",
+        "cooldown": 4.5,
+        "vfx": "rock",
+        "cast": [
+          {
+            "do": "shoot",
+            "damage": 14,
+            "range": 8,
+            "speed": 7,
+            "returns": true,
+            "pierce": 4
+          }
+        ]
+      },
+      {
+        "id": "golem_anel",
+        "cooldown": 6,
+        "vfx": "rock",
+        "cast": [
+          {
+            "do": "warn",
+            "shape": "circle",
+            "time": 0.45,
+            "radius": 3.2,
+            "range": 8
+          },
+          {
+            "do": "pattern",
+            "shape": "ring",
+            "count": 12,
+            "speed": 5.5,
+            "damage": 10,
+            "bursts": 1
+          }
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "hpBelow": 1,
+        "rotation": [
+          "golem_pisao",
+          "golem_pedra"
+        ]
+      },
+      {
+        "hpBelow": 0.5,
+        "rotation": [
+          "golem_anel",
+          "golem_pisao",
+          "golem_pedra"
+        ],
+        "speedMul": 1.15
+      }
+    ]
   },
   {
     "id": "boss_olho",
@@ -99,7 +178,109 @@
     "color": "#c9a227",
     "armor": 2,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "skills": [
+      {
+        "id": "olho_espiral",
+        "cooldown": 5,
+        "vfx": "orb",
+        "cast": [
+          {
+            "do": "pattern",
+            "shape": "spiral",
+            "count": 4,
+            "spin": 140,
+            "bursts": 18,
+            "interval": 0.12,
+            "speed": 6,
+            "damage": 9
+          }
+        ]
+      },
+      {
+        "id": "olho_anel",
+        "cooldown": 4.2,
+        "vfx": "orb",
+        "cast": [
+          {
+            "do": "warn",
+            "shape": "circle",
+            "time": 0.55,
+            "radius": 2.4,
+            "range": 9
+          },
+          {
+            "do": "pattern",
+            "shape": "ring",
+            "count": 16,
+            "speed": 5,
+            "damage": 8,
+            "bursts": 1
+          }
+        ]
+      },
+      {
+        "id": "olho_estrela",
+        "cooldown": 4.5,
+        "vfx": "orb",
+        "cast": [
+          {
+            "do": "pattern",
+            "shape": "star",
+            "count": 8,
+            "speed": 7,
+            "damage": 10,
+            "bursts": 3,
+            "interval": 0.28,
+            "spin": 22
+          }
+        ]
+      },
+      {
+        "id": "olho_espiral_dupla",
+        "cooldown": 5.5,
+        "vfx": "orb",
+        "cast": [
+          {
+            "do": "pattern",
+            "shape": "spiral",
+            "count": 2,
+            "spin": 28,
+            "bursts": 24,
+            "interval": 0.08,
+            "speed": 6.5,
+            "damage": 8
+          },
+          {
+            "do": "pattern",
+            "shape": "spiral",
+            "count": 2,
+            "spin": -28,
+            "bursts": 24,
+            "interval": 0.08,
+            "speed": 6.5,
+            "damage": 8
+          }
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "hpBelow": 1,
+        "rotation": [
+          "olho_espiral",
+          "olho_anel"
+        ]
+      },
+      {
+        "hpBelow": 0.5,
+        "rotation": [
+          "olho_estrela",
+          "olho_espiral_dupla"
+        ],
+        "speedMul": 1.2
+      }
+    ]
   },
   {
     "id": "morcego",
@@ -235,7 +416,81 @@
     "color": "#a32068",
     "armor": 5,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "skills": [
+      {
+        "id": "wogol_laminas",
+        "cooldown": 7,
+        "vfx": "arrow",
+        "cast": [
+          {
+            "do": "orbit",
+            "count": 4,
+            "radius": 1.8,
+            "speed": 220,
+            "damage": 8,
+            "duration": 4
+          }
+        ]
+      },
+      {
+        "id": "wogol_investida",
+        "cooldown": 5,
+        "cast": [
+          {
+            "do": "warn",
+            "shape": "line",
+            "time": 0.45,
+            "range": 6,
+            "radius": 0.7
+          },
+          {
+            "do": "dash",
+            "damage": 18,
+            "range": 6,
+            "speed": 9
+          }
+        ]
+      },
+      {
+        "id": "wogol_rastro",
+        "cooldown": 8,
+        "vfx": "fire",
+        "cast": [
+          {
+            "do": "zone",
+            "follow": "trail",
+            "duration": 3.5,
+            "every": 0.28,
+            "radius": 0.85,
+            "damage": 7,
+            "dropRadius": 0.85,
+            "status": "burn",
+            "statusTime": 1.2,
+            "statusValue": 4,
+            "vfx": "fire"
+          }
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "hpBelow": 1,
+        "rotation": [
+          "wogol_laminas",
+          "wogol_investida"
+        ]
+      },
+      {
+        "hpBelow": 0.5,
+        "rotation": [
+          "wogol_rastro",
+          "wogol_investida",
+          "wogol_laminas"
+        ],
+        "speedMul": 1.25
+      }
+    ]
   },
   {
     "id": "boss_matriarca",
@@ -252,7 +507,79 @@
     "color": "#2f6b45",
     "armor": 6,
     "behavior": "chase",
-    "kind": "boss"
+    "kind": "boss",
+    "skills": [
+      {
+        "id": "matriarca_ninho",
+        "cooldown": 8,
+        "cast": [
+          {
+            "do": "summon",
+            "creepId": "aranha",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": "matriarca_veneno",
+        "cooldown": 6,
+        "vfx": "poison",
+        "cast": [
+          {
+            "do": "zone",
+            "follow": "point",
+            "radius": 1.6,
+            "duration": 4,
+            "every": 0.45,
+            "damage": 6,
+            "range": 7,
+            "status": "slow",
+            "statusTime": 0.6,
+            "statusValue": 0.35,
+            "vfx": "poison"
+          }
+        ]
+      },
+      {
+        "id": "matriarca_teia",
+        "cooldown": 5,
+        "vfx": "poison",
+        "cast": [
+          {
+            "do": "pattern",
+            "shape": "fan",
+            "count": 5,
+            "angle": 70,
+            "speed": 6,
+            "damage": 7,
+            "status": "slow",
+            "statusTime": 1.2,
+            "statusValue": 0.45,
+            "bursts": 1
+          }
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "hpBelow": 1,
+        "rotation": [
+          "matriarca_veneno",
+          "matriarca_teia",
+          "matriarca_ninho"
+        ]
+      },
+      {
+        "hpBelow": 0.45,
+        "rotation": [
+          "matriarca_teia",
+          "matriarca_veneno",
+          "matriarca_ninho",
+          "matriarca_teia"
+        ],
+        "speedMul": 1.1
+      }
+    ]
   },
   {
     "id": "zumbi",
@@ -356,11 +683,15 @@
     "behavior": "chase",
     "kind": "creep",
     "skill": {
-      "kind": "charge",
       "cooldown": 5,
-      "damage": 18,
-      "range": 5.2,
-      "speed": 8.5
+      "cast": [
+        {
+          "do": "dash",
+          "damage": 18,
+          "range": 5.2,
+          "speed": 8.5
+        }
+      ]
     }
   },
   {
@@ -380,11 +711,16 @@
     "behavior": "chase",
     "kind": "creep",
     "skill": {
-      "kind": "burst",
       "cooldown": 6,
-      "damage": 16,
-      "range": 3.2,
-      "radius": 2.6
+      "cast": [
+        {
+          "do": "burst",
+          "damage": 16,
+          "range": 3.2,
+          "radius": 2.6,
+          "windup": true
+        }
+      ]
     }
   },
   {
@@ -404,10 +740,14 @@
     "behavior": "kite",
     "kind": "creep",
     "skill": {
-      "kind": "summon",
       "cooldown": 8,
-      "creepId": "zumbi",
-      "count": 2
+      "cast": [
+        {
+          "do": "summon",
+          "creepId": "zumbi",
+          "count": 2
+        }
+      ]
     }
   },
   {
@@ -427,10 +767,14 @@
     "behavior": "kite",
     "kind": "creep",
     "skill": {
-      "kind": "mend",
       "cooldown": 3.5,
-      "amount": 22,
-      "range": 4.2
+      "cast": [
+        {
+          "do": "heal",
+          "range": 4.2,
+          "amount": 22
+        }
+      ]
     }
   },
   {
@@ -450,10 +794,14 @@
     "behavior": "chase",
     "kind": "creep",
     "skill": {
-      "kind": "bolt",
       "cooldown": 4,
-      "damage": 14,
-      "range": 6.8
+      "cast": [
+        {
+          "do": "strike",
+          "damage": 14,
+          "range": 6.8
+        }
+      ]
     }
   }
 ]

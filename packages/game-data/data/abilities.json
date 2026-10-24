@@ -3,7 +3,6 @@
     "id": "golpe_rapido",
     "nome": "Golpe Rápido",
     "descricao": "Bate em quem está na linha da mira.",
-    "behavior": "single",
     "targeting": "nearest",
     "tags": [
       "forca"
@@ -25,13 +24,17 @@
         "cooldown": 0.52,
         "range": 2.2
       }
+    ],
+    "cast": [
+      {
+        "do": "strike"
+      }
     ]
   },
   {
     "id": "raio_encadeado",
     "nome": "Raio Encadeado",
     "descricao": "Atinge quem está na mira e salta, perdendo dano a cada salto.",
-    "behavior": "chain",
     "targeting": "nearest",
     "tags": [
       "raio",
@@ -69,13 +72,17 @@
           0.45
         ]
       }
+    ],
+    "cast": [
+      {
+        "do": "chain"
+      }
     ]
   },
   {
     "id": "explosao",
     "nome": "Explosão",
     "descricao": "Estoura no ponto da mira.",
-    "behavior": "aoe",
     "targeting": "densest",
     "tags": [
       "fogo",
@@ -101,13 +108,17 @@
         "range": 6,
         "radius": 3.3
       }
+    ],
+    "cast": [
+      {
+        "do": "burst"
+      }
     ]
   },
   {
     "id": "flecha",
     "nome": "Flecha",
     "descricao": "Dispara um projétil na linha da mira.",
-    "behavior": "projectile",
     "targeting": "nearest",
     "tags": [
       "agilidade"
@@ -132,13 +143,17 @@
         "range": 10,
         "projectileSpeed": 13
       }
+    ],
+    "cast": [
+      {
+        "do": "shoot"
+      }
     ]
   },
   {
     "id": "sopro",
     "nome": "Sopro",
     "descricao": "Queima todo mundo num cone à frente.",
-    "behavior": "cone",
     "targeting": "nearest",
     "tags": [
       "fogo"
@@ -163,13 +178,17 @@
         "range": 4.1,
         "angle": 86
       }
+    ],
+    "cast": [
+      {
+        "do": "cone"
+      }
     ]
   },
   {
     "id": "lamina",
     "nome": "Lâmina Giratória",
     "descricao": "Corta em volta do ponto mirado.",
-    "behavior": "aoe",
     "targeting": "nearest",
     "tags": [
       "area",
@@ -195,13 +214,17 @@
         "range": 3.1,
         "radius": 3.1
       }
+    ],
+    "cast": [
+      {
+        "do": "burst"
+      }
     ]
   },
   {
     "id": "martelo",
     "nome": "Martelo",
     "descricao": "Esmaga quem está na linha da mira, de perto.",
-    "behavior": "single",
     "targeting": "lowestHp",
     "tags": [
       "forca"
@@ -223,13 +246,17 @@
         "cooldown": 1.05,
         "range": 2.1
       }
+    ],
+    "cast": [
+      {
+        "do": "strike"
+      }
     ]
   },
   {
     "id": "lanca",
     "nome": "Lança",
     "descricao": "Arremessa uma lança pesada e lenta na linha da mira.",
-    "behavior": "projectile",
     "targeting": "nearest",
     "tags": [
       "forca"
@@ -254,13 +281,17 @@
         "range": 11,
         "projectileSpeed": 10
       }
+    ],
+    "cast": [
+      {
+        "do": "shoot"
+      }
     ]
   },
   {
     "id": "gelo",
     "nome": "Estilhaço de Gelo",
     "descricao": "Um estilhaço sai na mira e salta entre os inimigos.",
-    "behavior": "chain",
     "targeting": "nearest",
     "tags": [
       "gelo",
@@ -298,13 +329,17 @@
           0.4
         ]
       }
+    ],
+    "cast": [
+      {
+        "do": "chain"
+      }
     ]
   },
   {
     "id": "dardo",
     "nome": "Dardo",
     "descricao": "Dispara agulhas rápidas e fracas na linha da mira.",
-    "behavior": "projectile",
     "targeting": "nearest",
     "tags": [
       "veneno",
@@ -329,6 +364,307 @@
         "cooldown": 0.4,
         "range": 8,
         "projectileSpeed": 16
+      }
+    ],
+    "cast": [
+      {
+        "do": "shoot"
+      }
+    ]
+  },
+  {
+    "id": "chuva_meteoros",
+    "nome": "Chuva de Meteoros",
+    "descricao": "Meteoros caem em volta, de novo e de novo.",
+    "targeting": "nearest",
+    "tags": [
+      "fogo",
+      "area",
+      "magia"
+    ],
+    "color": "#ff8a3d",
+    "vfx": "fireball",
+    "cast": [
+      {
+        "do": "zone",
+        "follow": "caster",
+        "drops": 1,
+        "vfx": "explosion"
+      }
+    ],
+    "levels": [
+      {
+        "damage": 8,
+        "cooldown": 6,
+        "range": 3.5,
+        "radius": 3.5,
+        "duration": 4,
+        "every": 0.25,
+        "dropRadius": 0.9
+      },
+      {
+        "damage": 11,
+        "cooldown": 5.4,
+        "range": 3.8,
+        "radius": 3.8,
+        "duration": 4.4,
+        "every": 0.22,
+        "dropRadius": 1
+      },
+      {
+        "damage": 15,
+        "cooldown": 4.8,
+        "range": 4.2,
+        "radius": 4.2,
+        "duration": 5,
+        "every": 0.2,
+        "dropRadius": 1.1
+      }
+    ]
+  },
+  {
+    "id": "granizo",
+    "nome": "Granizo",
+    "descricao": "Pedras de gelo caem em volta e deixam lento.",
+    "targeting": "nearest",
+    "tags": [
+      "gelo",
+      "area",
+      "magia"
+    ],
+    "color": "#9ad8ff",
+    "vfx": "ice",
+    "cast": [
+      {
+        "do": "zone",
+        "follow": "caster",
+        "drops": 1,
+        "status": "slow",
+        "vfx": "ice"
+      }
+    ],
+    "levels": [
+      {
+        "damage": 5,
+        "cooldown": 6.2,
+        "range": 3.4,
+        "radius": 3.4,
+        "duration": 3.6,
+        "every": 0.28,
+        "dropRadius": 0.85,
+        "statusTime": 0.8,
+        "statusValue": 0.4
+      },
+      {
+        "damage": 7,
+        "cooldown": 5.6,
+        "range": 3.7,
+        "radius": 3.7,
+        "duration": 4,
+        "every": 0.24,
+        "dropRadius": 0.95,
+        "statusTime": 0.9,
+        "statusValue": 0.45
+      },
+      {
+        "damage": 10,
+        "cooldown": 5,
+        "range": 4,
+        "radius": 4,
+        "duration": 4.4,
+        "every": 0.22,
+        "dropRadius": 1,
+        "statusTime": 1,
+        "statusValue": 0.5
+      }
+    ]
+  },
+  {
+    "id": "pisao",
+    "nome": "Pisão",
+    "descricao": "Onda no chão em volta que atordoa.",
+    "targeting": "nearest",
+    "tags": [
+      "forca",
+      "area"
+    ],
+    "color": "#f0d090",
+    "vfx": "explosion",
+    "cast": [
+      {
+        "do": "burst",
+        "at": "caster",
+        "status": "stun"
+      }
+    ],
+    "levels": [
+      {
+        "damage": 12,
+        "cooldown": 7,
+        "range": 2.4,
+        "radius": 2.4,
+        "statusTime": 0.6
+      },
+      {
+        "damage": 16,
+        "cooldown": 6.4,
+        "range": 2.8,
+        "radius": 2.8,
+        "statusTime": 0.7
+      },
+      {
+        "damage": 22,
+        "cooldown": 5.8,
+        "range": 3.2,
+        "radius": 3.2,
+        "statusTime": 0.8
+      }
+    ]
+  },
+  {
+    "id": "rastro_fogo",
+    "nome": "Rastro de Fogo",
+    "descricao": "O chão queima por onde você passa.",
+    "targeting": "nearest",
+    "tags": [
+      "fogo"
+    ],
+    "color": "#ff6b4a",
+    "vfx": "fire",
+    "cast": [
+      {
+        "do": "zone",
+        "follow": "trail",
+        "status": "burn",
+        "vfx": "fire"
+      }
+    ],
+    "levels": [
+      {
+        "damage": 6,
+        "cooldown": 8,
+        "range": 1,
+        "radius": 0.85,
+        "duration": 3,
+        "every": 0.3,
+        "dropRadius": 0.85,
+        "statusTime": 1,
+        "statusValue": 5
+      },
+      {
+        "damage": 8,
+        "cooldown": 7.2,
+        "range": 1,
+        "radius": 0.95,
+        "duration": 3.5,
+        "every": 0.28,
+        "dropRadius": 0.95,
+        "statusTime": 1.1,
+        "statusValue": 6
+      },
+      {
+        "damage": 11,
+        "cooldown": 6.4,
+        "range": 1,
+        "radius": 1.05,
+        "duration": 4,
+        "every": 0.25,
+        "dropRadius": 1.05,
+        "statusTime": 1.2,
+        "statusValue": 7
+      }
+    ]
+  },
+  {
+    "id": "chao_chamas",
+    "nome": "Chão em Chamas",
+    "descricao": "Abre uma fogueira na mira. Quem pisa queima.",
+    "targeting": "densest",
+    "tags": [
+      "fogo",
+      "area"
+    ],
+    "color": "#e07a3d",
+    "vfx": "fire",
+    "cast": [
+      {
+        "do": "zone",
+        "follow": "point",
+        "status": "burn",
+        "vfx": "fire"
+      }
+    ],
+    "levels": [
+      {
+        "damage": 7,
+        "cooldown": 7,
+        "range": 6,
+        "radius": 1.8,
+        "duration": 3.5,
+        "every": 0.4,
+        "statusTime": 1,
+        "statusValue": 4
+      },
+      {
+        "damage": 10,
+        "cooldown": 6.4,
+        "range": 6.5,
+        "radius": 2.2,
+        "duration": 4,
+        "every": 0.38,
+        "statusTime": 1.1,
+        "statusValue": 5
+      },
+      {
+        "damage": 14,
+        "cooldown": 5.6,
+        "range": 7,
+        "radius": 2.6,
+        "duration": 4.5,
+        "every": 0.35,
+        "statusTime": 1.2,
+        "statusValue": 6
+      }
+    ]
+  },
+  {
+    "id": "lamina_bumerangue",
+    "nome": "Lâmina Bumerangue",
+    "descricao": "Uma lâmina atravessa, vai e volta.",
+    "targeting": "nearest",
+    "tags": [
+      "forca",
+      "agilidade"
+    ],
+    "color": "#f0f0f0",
+    "vfx": "arrow",
+    "cast": [
+      {
+        "do": "shoot",
+        "returns": true
+      }
+    ],
+    "levels": [
+      {
+        "damage": 11,
+        "cooldown": 2.4,
+        "range": 8,
+        "speed": 9,
+        "pierce": 8
+      },
+      {
+        "damage": 15,
+        "cooldown": 2.1,
+        "range": 9,
+        "speed": 10,
+        "pierce": 8
+      },
+      {
+        "damage": 20,
+        "cooldown": 1.8,
+        "range": 10,
+        "speed": 11,
+        "pierce": 8
       }
     ]
   }

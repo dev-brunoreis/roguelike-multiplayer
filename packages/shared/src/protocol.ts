@@ -91,6 +91,7 @@ export interface EntitySnap {
   label?: string;
   playerId?: string;
   facing: number;
+  statuses: string[];
 }
 
 export interface ProjectileSnap {
@@ -102,6 +103,7 @@ export interface ProjectileSnap {
   arenaId: string;
   abilityId: string;
   color: string;
+  vfx: string;
 }
 
 export interface FxSnap {
@@ -150,7 +152,40 @@ export interface DuelPairSnap {
   resolved: boolean;
 }
 
-export type AnnounceKind = "duel" | "duel_result" | "death" | "surrender" | "eliminate" | "info";
+export interface ZoneSnap {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  arenaId: string;
+  vfx: string;
+  t: number;
+}
+
+export interface WarningSnap {
+  id: number;
+  x: number;
+  y: number;
+  x2: number;
+  y2: number;
+  shape: "circle" | "line" | "cone";
+  radius: number;
+  angle: number;
+  color: string;
+  arenaId: string;
+  t: number;
+}
+
+export interface BossSnap {
+  nome: string;
+  hp: number;
+  maxHp: number;
+  phase: number;
+  marks: number[];
+}
+
+export type AnnounceKind = "duel" | "duel_result" | "death" | "surrender" | "eliminate" | "info" | "boss";
 
 export interface AnnounceSnap {
   id: number;
@@ -174,7 +209,10 @@ export interface Snapshot {
   players: PlayerSnap[];
   entities: EntitySnap[];
   projectiles: ProjectileSnap[];
+  zones: ZoneSnap[];
+  warnings: WarningSnap[];
   fx: FxSnap[];
+  boss: BossSnap | null;
   floats: FloatEvent[];
   duel: DuelPairSnap[];
   duelAnnounce: number;
@@ -334,6 +372,7 @@ export interface WireEntity {
   strike: number;
   playerId?: string;
   facing: number;
+  statuses: string[];
 }
 
 export interface WireProjectile {
@@ -345,6 +384,40 @@ export interface WireProjectile {
   arena: number;
   abilityId: string;
   color: string;
+  vfx: string;
+}
+
+export interface WireZone {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  arena: number;
+  vfx: string;
+  t: number;
+}
+
+export interface WireWarning {
+  id: number;
+  x: number;
+  y: number;
+  x2: number;
+  y2: number;
+  shape: "circle" | "line" | "cone";
+  radius: number;
+  angle: number;
+  color: string;
+  arena: number;
+  t: number;
+}
+
+export interface WireBoss {
+  nome: string;
+  hp: number;
+  maxHp: number;
+  phase: number;
+  marks: number[];
 }
 
 export interface WireFx {
@@ -397,7 +470,10 @@ export interface WireSnapshot {
   players: WirePlayer[];
   entities: WireEntity[];
   projectiles: WireProjectile[];
+  zones: WireZone[];
+  warnings: WireWarning[];
   fx: WireFx[];
+  boss: WireBoss | null;
   floats: WireFloat[];
   duel: WireDuel[];
   duelAnnounce: number;

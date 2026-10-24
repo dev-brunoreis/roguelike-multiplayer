@@ -945,6 +945,113 @@ describe("simulação", () => {
   });
 });
 
+describe("magias e chefes", () => {
+  it("pisão atordoa e a imunidade segura o segundo stun", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 3,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    player.abilities = [{ abilityId: "pisao", level: 1, cooldown: 0, cooldownMax: 1 }];
+    const creep = stillCreep(match, arena.id, center.x + 1, center.y, 500);
+    tick(match);
+    expect(match.statuses.get(creep)?.some((status) => status.kind === "stun")).toBe(true);
+    player.abilities[0]!.cooldown = 99;
+    const active = match.statuses.get(creep)![0]!;
+    active.left = 0.01;
+    tick(match);
+    expect(match.statuses.get(creep)?.some((status) => status.kind === "stun")).toBeFalsy();
+    expect(match.stunReady.get(creep) ?? 0).toBeGreaterThan(match.time);
+    player.abilities[0]!.cooldown = 0;
+    tick(match);
+    expect(match.statuses.get(creep)?.some((status) => status.kind === "stun")).toBeFalsy();
+  });
+
+  it("chão em chamas fere de novo em outro tick", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 4,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const player = match.players[0]!;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    player.aimX = center.x + 2;
+    player.aimY = center.y;
+    player.abilities = [{ abilityId: "chao_chamas", level: 1, cooldown: 0, cooldownMax: 1 }];
+    const id = stillCreep(match, arena.id, center.x + 2, center.y, 500);
+    tick(match);
+    const creep = match.entities.find((entity) => entity.id === id)!;
+    const once = creep.hp;
+    expect(once).toBeLessThan(500);
+    expect(match.zones.length).toBeGreaterThan(0);
+    runTicks(match, 20);
+    expect(creep.hp).toBeLessThan(once);
+  });
+
+  it("espiral do olho solta um anel de tiros e troca de fase", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 6,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === hero.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const id = placeCreep(match, "boss_olho", center.x + 5, center.y);
+    const boss = match.entities.find((entity) => entity.id === id)!;
+    boss.kind = "boss";
+    boss.speed = 2;
+    tick(match);
+    const shots = match.projectiles.filter((shot) => shot.abilityId === "olho_espiral");
+    expect(shots.length).toBe(4);
+    boss.hp = boss.maxHp * 0.4;
+    const pace = boss.speed;
+    tick(match);
+    expect(match.skillState.get(id)?.phase).toBe(1);
+    expect(boss.speed).toBeCloseTo(pace * 1.2, 5);
+  });
+
+  it("chefe da arena nasce só depois da onda limpa", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 8,
+      data,
+    });
+    quietMatch(match);
+    jumpWave(match, 3);
+    expect(match.entities.some((entity) => entity.kind === "boss")).toBe(false);
+    match.spawns = [];
+    match.entities = match.entities.filter((entity) => entity.kind === "hero");
+    tick(match);
+    const boss = match.entities.find((entity) => entity.kind === "boss");
+    expect(boss?.alive).toBe(true);
+    expect(match.players[0]?.waveClear).toBe(false);
+    expect(match.banner?.kind).toBe("boss");
+    boss!.alive = false;
+    boss!.hp = 0;
+    tick(match);
+    expect(match.phase).toBe("hub");
+  });
+});
+
 function placeCreep(match: Match, defId: string, x: number, y: number) {
   const def = data.creeps.find((creep) => creep.id === defId)!;
   const hero = match.entities.find((entity) => entity.kind === "hero")!;

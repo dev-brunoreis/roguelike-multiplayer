@@ -9,6 +9,7 @@ const BANNER_KIND: Record<string, string> = {
   surrender: "Desistência",
   eliminate: "Fora",
   info: "Aviso",
+  boss: "Chefe",
 };
 
 export const Banner = memo(function Banner() {

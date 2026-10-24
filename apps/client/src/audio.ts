@@ -184,7 +184,7 @@ function playStep(current: Song, index: number, pass: number, when: number, sixt
   }
   const stepInBar = index % 16;
   const bar = Math.floor(index / 16);
-  const fill = (current.mood === "wild" || current.mood === "duel") && bar === 11 && stepInBar >= 8;
+  const fill = (current.mood === "wild" || current.mood === "duel" || current.mood === "boss") && bar === 11 && stepInBar >= 8;
   const drum = drumAt(current.mood, current.drum, stepInBar, fill);
   if (drum.kick) kick(when, current.mood === "end" ? 0.05 : 0.08);
   if (drum.snare) snare(when, current.mood === "calm" ? 0.03 : 0.042);
@@ -371,6 +371,16 @@ export function sfxPick() {
 
 export function sfxUi() {
   tone(640, 0.035, "sine", 0.025);
+}
+
+export function sfxWarn() {
+  tone(196, 0.16, "sawtooth", 0.03, 90);
+  noise(0.08, 0.025, 240);
+}
+
+export function sfxImpact() {
+  tone(72, 0.22, "sine", 0.08, 36);
+  noise(0.12, 0.05, 180);
 }
 
 interface HeardFx {

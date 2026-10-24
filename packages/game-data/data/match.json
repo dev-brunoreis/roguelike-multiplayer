@@ -30,6 +30,9 @@
   "splashRadius": 2.1,
   "startCooldown": 0.35,
   "grantCooldown": 0.2,
+  "stunImmuneSeconds": 2.5,
+  "bossSeconds": 45,
+  "maxShotsPerArena": 96,
   "shadowColors": [
     "#1c1914",
     "#4ea1ff",

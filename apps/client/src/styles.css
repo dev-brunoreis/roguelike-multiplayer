@@ -233,7 +233,7 @@ input[type="text"], input[type="password"], input[type="number"] {
 .overlay.dock input { pointer-events: auto; }
 .overlay.dock.bet { bottom: 280px; width: min(420px, calc(100% - 40px)); }
 .banner {
-  position: absolute; z-index: 3; top: 74px; left: 50%; transform: translateX(-50%);
+  position: absolute; z-index: 3; top: 124px; left: 50%; transform: translateX(-50%);
   width: min(360px, calc(100% - 48px));
   background: #16130fee; border: 1px solid #6a573f; padding: 8px 14px 10px;
   text-align: center; pointer-events: none;
@@ -247,6 +247,23 @@ input[type="text"], input[type="password"], input[type="number"] {
 .banner.kind-duel_result { border-color: #f0a202; }
 .banner.kind-death, .banner.kind-eliminate { border-color: #c44a3a; }
 .banner.kind-surrender { border-color: #8a7a68; }
+.banner.kind-boss { border-color: #c44a3a; }
+.boss-bar {
+  position: absolute; z-index: 4; top: 48px; left: calc(50% + 70px); transform: translateX(-50%);
+  width: min(520px, calc(100% - 280px));
+  background: #16130fee; border: 1px solid #c44a3a; padding: 8px 12px 10px;
+  display: grid; gap: 6px; pointer-events: none;
+}
+.boss-bar strong { font-size: 16px; letter-spacing: 0.04em; text-align: center; }
+.boss-track { position: relative; height: 16px; background: #2a221c; }
+.boss-track i { display: block; height: 100%; background: #c44a3a; }
+.boss-track em { position: absolute; top: -3px; width: 2px; height: 22px; background: #f4efe4; }
+.boss-bar.shake { animation: boss-shake 0.35s linear; }
+@keyframes boss-shake {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 5px)); }
+  75% { transform: translateX(calc(-50% + 5px)); }
+}
 .cards { display: flex; gap: 10px; flex-wrap: wrap; }
 .card {
   width: 160px; min-height: 140px; text-align: left; padding: 10px;

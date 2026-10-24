@@ -26,16 +26,64 @@ export const abilityLevelSchema = z.object({
   radius: z.number().positive().optional(),
   angle: z.number().positive().optional(),
   projectileSpeed: z.number().positive().optional(),
+  duration: z.number().positive().optional(),
+  every: z.number().positive().optional(),
+  dropRadius: z.number().positive().optional(),
+  count: z.number().int().positive().optional(),
+  interval: z.number().nonnegative().optional(),
+  time: z.number().nonnegative().optional(),
+  bursts: z.number().int().positive().optional(),
+  spin: z.number().optional(),
+  speed: z.number().positive().optional(),
+  pierce: z.number().int().nonnegative().optional(),
+  amount: z.number().positive().optional(),
+  statusTime: z.number().positive().optional(),
+  statusValue: z.number().nonnegative().optional(),
+  curve: z.number().optional(),
+});
+
+export const actionSchema = z.object({
+  do: z.string().min(1),
+  damage: z.number().nonnegative().optional(),
+  range: z.number().positive().optional(),
+  radius: z.number().positive().optional(),
+  angle: z.number().positive().optional(),
+  speed: z.number().positive().optional(),
+  targets: z.number().int().positive().optional(),
+  falloff: z.array(z.number().nonnegative()).optional(),
+  duration: z.number().positive().optional(),
+  every: z.number().positive().optional(),
+  dropRadius: z.number().positive().optional(),
+  count: z.number().int().positive().optional(),
+  interval: z.number().nonnegative().optional(),
+  time: z.number().nonnegative().optional(),
+  bursts: z.number().int().positive().optional(),
+  spin: z.number().optional(),
+  pierce: z.number().int().nonnegative().optional(),
+  amount: z.number().positive().optional(),
+  statusTime: z.number().positive().optional(),
+  statusValue: z.number().nonnegative().optional(),
+  curve: z.number().optional(),
+  drops: z.number().nonnegative().optional(),
+  shape: z.string().optional(),
+  follow: z.enum(["point", "caster", "trail"]).optional(),
+  at: z.enum(["caster", "aim"]).optional(),
+  status: z.string().optional(),
+  vfx: z.string().optional(),
+  creepId: z.string().optional(),
+  windup: z.boolean().optional(),
+  returns: z.boolean().optional(),
 });
 
 export const abilitySchema = z.object({
   id: z.string().min(1),
   nome: z.string().min(1),
   descricao: z.string(),
-  behavior: z.string().min(1),
   targeting: z.string().min(1),
   tags: z.array(z.string()),
   color: z.string(),
+  vfx: z.string().optional(),
+  cast: z.array(actionSchema).min(1),
   levels: z.array(abilityLevelSchema).min(1),
 });
 
@@ -77,17 +125,20 @@ export const heroSchema = z.object({
   startingAbility: z.string().min(1),
 });
 
-export const creepSkillSchema = z.object({
-  kind: z.string().min(1),
+export const spellSchema = z.object({
+  id: z.string().min(1).optional(),
   cooldown: z.number().positive(),
-  damage: z.number().nonnegative().optional(),
-  range: z.number().positive().optional(),
-  radius: z.number().positive().optional(),
-  speed: z.number().positive().optional(),
-  amount: z.number().positive().optional(),
-  creepId: z.string().min(1).optional(),
-  count: z.number().int().positive().optional(),
+  vfx: z.string().optional(),
+  cast: z.array(actionSchema).min(1),
 });
+
+export const bossPhaseSchema = z.object({
+  hpBelow: z.number().positive().max(1),
+  rotation: z.array(z.string().min(1)).min(1),
+  speedMul: z.number().positive().optional(),
+});
+
+export const creepSkillSchema = spellSchema;
 
 export const creepSchema = z.object({
   id: z.string().min(1),
@@ -105,7 +156,9 @@ export const creepSchema = z.object({
   armor: z.number().nonnegative().default(0),
   behavior: z.string().min(1),
   kind: z.enum(["creep", "boss"]).default("creep"),
-  skill: creepSkillSchema.optional(),
+  skill: spellSchema.optional(),
+  skills: z.array(spellSchema).optional(),
+  phases: z.array(bossPhaseSchema).optional(),
   aggro: z.object({
     radius: z.number().positive(),
     leash: z.number().positive(),
@@ -203,6 +256,9 @@ export const matchConfigSchema = z.object({
   splashRadius: z.number().positive().default(2.1),
   startCooldown: z.number().nonnegative().default(0.35),
   grantCooldown: z.number().nonnegative().default(0.2),
+  stunImmuneSeconds: z.number().nonnegative().default(2.5),
+  bossSeconds: z.number().positive().default(45),
+  maxShotsPerArena: z.number().int().positive().default(96),
   shadowColors: z.array(z.string()).min(1),
 });
 
@@ -245,6 +301,9 @@ export const matchOptionsSchema = z.object({
 });
 
 export type AbilityLevel = z.infer<typeof abilityLevelSchema>;
+export type ActionDef = z.infer<typeof actionSchema>;
+export type SpellDef = z.infer<typeof spellSchema>;
+export type BossPhaseDef = z.infer<typeof bossPhaseSchema>;
 export type AbilityDef = z.infer<typeof abilitySchema>;
 export type EffectDef = z.infer<typeof effectSchema>;
 export type CardDef = z.infer<typeof cardSchema>;
