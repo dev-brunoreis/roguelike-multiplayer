@@ -186,6 +186,20 @@ let step = 0;
 let nextAt = 0;
 let switchSoon = false;
 let voices = 0;
+let rate = 1;
+
+function targetRate() {
+  if (mood === "wild") return 1.32;
+  if (mood === "duel") return 1.62;
+  if (mood === "end") return 0.9;
+  return 1;
+}
+
+function nudgeRate() {
+  const target = targetRate();
+  rate += (target - rate) * 0.28;
+  if (Math.abs(target - rate) < 0.012) rate = target;
+}
 
 function loadLevel(key: string, fallback: number) {
   try {
@@ -221,8 +235,9 @@ export function setSfxVolume(value: number) {
 
 export function setMood(next: Mood) {
   if (next === mood) return;
+  const previous = mood;
   mood = next;
-  switchSoon = true;
+  if (next === "end" || previous === "end") switchSoon = true;
 }
 
 export function unlockAudio() {
@@ -266,7 +281,8 @@ function boot() {
 }
 
 function pickSong() {
-  const pool = SONGS.filter((item) => item.moods.includes(mood));
+  const want = mood === "end" ? "end" : "calm";
+  const pool = SONGS.filter((item) => item.moods.includes(want));
   const fresh = pool.filter((item) => item.id !== songId);
   const choices = fresh.length > 0 ? fresh : pool;
   return choices[Math.floor(Math.random() * choices.length)] ?? SONGS[0]!;
@@ -293,35 +309,71 @@ function impulse(audio: AudioContext, seconds: number, decay: number) {
 
 function schedule() {
   if (!ctx || !musicGain || !song) return;
-  const horizon = ctx.currentTime + 1.3;
+  const horizon = ctx.currentTime + 0.7;
   while (nextAt < horizon) {
     const current = song;
-    const eighth = 60 / current.bpm / 2;
-    const loops = 2;
-    if ((switchSoon && step > 0 && step % 8 === 0) || step >= current.melody.length * loops) {
+    nudgeRate();
+    const eighth = 60 / current.bpm / 2 / rate;
+    const heated = mood === "wild" || mood === "duel";
+    const atBar = step > 0 && step % 8 === 0;
+    const atPhrase = step > 0 && step % current.melody.length === 0;
+    const finished = atPhrase && step / current.melody.length >= 2;
+    if ((switchSoon && atBar) || (!heated && finished)) {
       beginSong(pickSong());
       nextAt += 0.45;
       continue;
     }
-    playStep(current, step % current.melody.length, nextAt);
+    playStep(current, step % current.melody.length, nextAt, eighth);
     step += 1;
     nextAt += eighth;
   }
 }
 
-function playStep(current: Song, index: number, when: number) {
+function playStep(current: Song, index: number, when: number, eighth: number) {
+  const heat = mood === "duel" ? 2 : mood === "wild" ? 1 : 0;
+  const bright = heat === 2 ? 2500 : heat === 1 ? 1850 : 1400;
+  const sung = Math.min(0.22, Math.max(0.07, eighth * (heat === 2 ? 0.72 : heat === 1 ? 0.9 : 1)));
   const degree = current.melody[index];
-  if (degree != null) note(degreeHz(current, degree), when, 0.2, 0.05);
+  if (degree != null) note(degreeHz(current, degree), when, sung, heat === 2 ? 0.046 : 0.05, bright);
+  if (heat === 2 && degree != null && index % 2 === 0) {
+    note(degreeHz(current, degree) * 2, when, sung * 0.42, 0.011, bright);
+  }
+  if (heat > 0 && degree == null && index % 2 === 1) {
+    note(chordHz(current, index, index % 4 === 1 ? 0 : 2), when, sung * 0.55, heat === 2 ? 0.018 : 0.011, bright);
+  }
   const bar = current.bars[Math.floor(index / 8)] ?? 0;
   const root = hz(current.root + bar);
-  if (index % 8 === 0) {
-    bass(root / 2, when, 0.075);
-    note(root, when, 1.15, 0.016);
-    note(hz(current.root + bar + 7), when, 1.15, 0.012);
-  } else if (index % 8 === 4) {
-    bass(root / 2, when, 0.05);
+  const beat = index % 8;
+  if (beat === 0) {
+    bass(root / 2, when, heat === 2 ? 0.086 : 0.075, eighth);
+    note(root, when, heat === 0 ? 1.15 : 0.5, heat === 2 ? 0.013 : 0.016, bright);
+    note(hz(current.root + bar + 7), when, heat === 0 ? 1.15 : 0.36, 0.012, bright);
+  } else if (beat === 4) {
+    bass(root / 2, when, heat === 2 ? 0.064 : 0.05, eighth);
+    if (heat > 0) note(hz(current.root + bar + 7), when, 0.16, 0.01, bright);
+  } else if (heat === 2 && (beat === 2 || beat === 6)) {
+    bass(root / 2, when, 0.042, eighth);
+  } else if (heat === 1 && (beat === 2 || beat === 6)) {
+    bass(root / 2, when, 0.026, eighth);
   }
-  if (index % 4 === 2) hat(when);
+  if (heat === 2 && beat % 2 === 0) note(chordHz(current, index, 1), when, 0.07, 0.009, bright);
+  if (heat === 0) {
+    if (beat === 2 || beat === 6) hat(when, 0.018, 0.04);
+  } else if (heat === 1) {
+    const accent = beat % 2 === 0;
+    hat(when, accent ? 0.02 : 0.008, accent ? 0.034 : 0.022);
+    if (!accent) shaker(when, 0.011);
+  } else {
+    hat(when, beat % 2 === 0 ? 0.022 : 0.012, 0.024);
+    if (beat === 2 || beat === 6) clap(when);
+  }
+}
+
+function chordHz(current: Song, index: number, tone: 0 | 1 | 2) {
+  const bar = current.bars[Math.floor(index / 8)] ?? 0;
+  const third = current.scale.includes(3) && !current.scale.includes(4) ? 3 : 4;
+  const semi = [0, third, 7][tone];
+  return hz(current.root + bar + semi + 12);
 }
 
 function degreeHz(current: Song, degree: number) {
@@ -335,15 +387,17 @@ function hz(midi: number) {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
-function note(freq: number, when: number, duration: number, amount: number) {
+function note(freq: number, when: number, duration: number, amount: number, bright = 1400) {
   if (!ctx || !musicGain) return;
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
-  filter.frequency.value = 1400;
+  filter.frequency.value = bright;
+  const attack = Math.min(0.02, duration * 0.28);
+  const releaseAt = Math.max(duration, attack + 0.03);
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0.0001, when);
-  gain.gain.exponentialRampToValueAtTime(amount, when + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+  gain.gain.exponentialRampToValueAtTime(amount, when + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + releaseAt);
   const osc = ctx.createOscillator();
   osc.type = "triangle";
   osc.frequency.value = freq;
@@ -356,27 +410,28 @@ function note(freq: number, when: number, duration: number, amount: number) {
   filter.connect(gain).connect(musicGain);
   osc.start(when);
   warm.start(when);
-  osc.stop(when + duration + 0.02);
-  warm.stop(when + duration + 0.02);
+  osc.stop(when + releaseAt + 0.02);
+  warm.stop(when + releaseAt + 0.02);
 }
 
-function bass(freq: number, when: number, amount: number) {
+function bass(freq: number, when: number, amount: number, eighth: number) {
   if (!ctx || !musicGain) return;
+  const release = Math.min(0.22, Math.max(0.08, eighth * 0.95));
   const osc = ctx.createOscillator();
   osc.type = "sine";
   osc.frequency.setValueAtTime(freq * 1.4, when);
-  osc.frequency.exponentialRampToValueAtTime(freq, when + 0.08);
+  osc.frequency.exponentialRampToValueAtTime(freq, when + Math.min(0.08, release * 0.45));
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(amount, when);
-  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.22);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + release);
   osc.connect(gain).connect(musicGain);
   osc.start(when);
-  osc.stop(when + 0.24);
+  osc.stop(when + release + 0.02);
 }
 
 let hatBuffer: AudioBuffer | null = null;
 
-function hat(when: number) {
+function hat(when: number, amount: number, decay: number) {
   if (!ctx || !musicGain) return;
   if (!hatBuffer) {
     const length = Math.floor(ctx.sampleRate * 0.04);
@@ -390,8 +445,43 @@ function hat(when: number) {
   filter.type = "highpass";
   filter.frequency.value = 3200;
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.018, when);
-  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
+  gain.gain.setValueAtTime(amount, when);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + decay);
+  source.connect(filter).connect(gain).connect(musicGain);
+  source.start(when);
+}
+
+function shaker(when: number, amount: number) {
+  if (!ctx || !musicGain) return;
+  burst(when, amount, 0.05, "highpass", 5000);
+}
+
+function clap(when: number) {
+  if (!ctx || !musicGain) return;
+  burst(when, 0.03, 0.07, "bandpass", 1400);
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(196, when);
+  osc.frequency.exponentialRampToValueAtTime(90, when + 0.06);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.02, when);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.08);
+  osc.connect(gain).connect(musicGain);
+  osc.start(when);
+  osc.stop(when + 0.1);
+}
+
+function burst(when: number, amount: number, decay: number, type: BiquadFilterType, freq: number) {
+  if (!ctx || !musicGain || !hatBuffer) return;
+  const source = ctx.createBufferSource();
+  source.buffer = hatBuffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = type;
+  filter.frequency.value = freq;
+  filter.Q.value = 0.7;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(amount, when);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + decay);
   source.connect(filter).connect(gain).connect(musicGain);
   source.start(when);
 }

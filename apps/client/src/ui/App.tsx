@@ -520,8 +520,8 @@ function SoundMix() {
   );
 }
 
-function moodOf(phase: string): Mood {
-  if (phase === "duel") return "duel";
+function moodOf(phase: string, fighting: boolean): Mood {
+  if (phase === "duel" && fighting) return "duel";
   if (phase === "pve") return "wild";
   if (phase === "ended") return "end";
   return "calm";
@@ -699,8 +699,8 @@ function Match({ token, roomId, onLeave, onDown }: { token: string; roomId: stri
 
   useEffect(() => {
     if (!snap) return;
-    setMood(moodOf(snap.phase));
     const me = snap.players.find((player) => player.id === snap.youId);
+    setMood(moodOf(snap.phase, me?.inDuel === true));
     if (!me) return;
     const body = snap.entities.find((entity) => entity.playerId === snap.youId);
     hearWorld(snap.fx, snap.projectiles, body ? { x: body.x, y: body.y } : null);
