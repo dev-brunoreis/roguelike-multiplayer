@@ -143,15 +143,17 @@ export function MatchScreen({ token, roomId, onLeave, onDown }: { token: string;
     <main className="match" onPointerDown={unlockAudio}>
       <Scene snapRef={snapRef} indexRef={indexRef} watchId={watchId} shakeRef={shakeRef} />
       <NetStat netRef={netRef} />
-      <PhaseBar />
-      <DungeonHud />
+      <div className="top-stack">
+        <PhaseBar />
+        <DungeonHud />
+        <BossBar />
+        <Banner />
+      </div>
       <Board watchId={watchId} onWatch={setWatch} />
       <AbilityBar />
       <MatchLog />
       <TextChat inputRef={chatRef} lines={chat} youId={matchStore.youId} onSend={(text) => send("chat", { text })} />
       <CardPick onPick={pickCard} />
-      <Banner />
-      <BossBar />
       <HubDock onReady={readyUp} />
       <WaveWait />
       <EndScreen onLeave={onLeave} />
