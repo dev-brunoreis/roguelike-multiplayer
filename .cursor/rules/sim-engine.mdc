@@ -14,7 +14,7 @@ Ordem: se a pausa estiver fechada (todo humano vivo pediu), o tick volta sem ava
 
 `setGodmode`, `setBotsGodmode`, `setDuels`, `jumpWave`, `skipDuel` e `revivePlayer` ficam em `src/debug.ts` (`@game/sim/debug`). A sala só aceita esses comandos do host, ou com `CAOS_DEV=1`.
 
-`chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. O snapshot manda `strike` de 0 a 1 nesse intervalo. `dash` e `burst` com `windup` guardam passo, tempo e velocidade em `match.skillState`, não na entidade. Stun, slow, burn e root ficam em `match.statuses`. Stun impede andar e lançar; depois dele, `stunImmuneSeconds` segura o próximo. Zona, aviso e rajada também ficam no `Match`. Tiro respeita `maxShotsPerArena`.
+`chase` fica parado no fim do cooldown pelo `attackWindup` do creep. O dano sai nesse fim, e só se o alvo ainda está no alcance. `dash` e `burst` com `windup` guardam passo, tempo e velocidade em `match.skillState`, não na entidade. Stun, slow, burn e root ficam em `match.statuses`. Stun impede andar e lançar; depois dele, `stunImmuneSeconds` segura o próximo. Zona, aviso e rajada também ficam no `Match`. Tiro respeita `maxShotsPerArena`.
 
 Creep com `skill` ou `skills` dispara `castSpell` antes do `behavior`, quando o `cooldown` zera. `dash` e `burst` com `windup` tomam o tick. `summon`, `heal` e `strike` não travam o golpe normal. Chefe com `phases` troca a rotação pelo limiar de vida (`tickBossPhases`), e a velocidade viva é `pace * speedMul`. Na arena o chefe não entra no spawn da onda: o quadrado limpo chama o chefe da rodada, o banner `boss` sai uma vez e `bossSeconds` soma no relógio. `waveClear` espera esse chefe morto. Número da magia não entra no TypeScript.
 

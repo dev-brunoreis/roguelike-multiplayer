@@ -26,7 +26,7 @@ Efeito novo: `registerEffect` em `effects.ts` (ou um arquivo importado por `cont
 
 `creeps.json` define status e `behavior`. `waves.json` escolhe a onda de maior `round` que ainda é menor ou igual à rodada atual; depois da última, ela se repete mais forte. `bosses.json` marca a rodada de chefe (`everyRounds`). O chefe não entra no spawn: nasce quando o quadrado daquele jogador limpa.
 
-IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira). No corpo a corpo, `attackWindup` é o tempo da bolinha: o bicho para, a bolinha cresce, e o dano sai no fim se o alvo ainda está no alcance.
+IA nova: `registerCreepBehavior`. Hoje: `chase` (corpo a corpo) e `kite` (ranged, recua e atira). No corpo a corpo, `attackWindup` é o tempo parado antes do dano: o bicho para, e o dano sai no fim se o alvo ainda está no alcance.
 
 Skill opcional no creep, campo `skill` ou lista `skills`, no mesmo formato `cast` da habilidade. O golpe normal continua. A skill gasta `cooldown`. `dash` anda e toma o tick. `burst` com `windup` espera o `attackWindup`. `summon`, `heal` e `strike` não travam o golpe. Dano e cura escalam com a rodada, como a vida do bicho. Chefe acrescenta `phases`: cada item tem `hpBelow`, `rotation` (ids das skills) e `speedMul` opcional. A fase mais baixa ainda acima da vida atual vale.
 
@@ -34,7 +34,7 @@ Skill opcional no creep, campo `skill` ou lista `skills`, no mesmo formato `cast
 
 O snapshot manda `view` = id do herói ou do creep. O visual padrão é um sprite de pixel em `apps/client/src/game/sprites.ts`, com idle, corrida, ataque e hit. A folha CC0 fica em `apps/client/public/sprites/0x72/`.
 
-Sprite novo de um frame do pack: entrada em `PACK` e o id em `visual/actors.json` (`source: "pack"`). Sprite desenhado no cliente: entrada em `DRAWN` e `source: "drawn"`. Nesse JSON ficam o multiplicador do corpo, o fps de cada clipe, a duração do ataque e a escala da sombra. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Folha de efeito entra em `visual/vfx.json` (`frames`, `fps`, `loop`, `wide`, `tall`, `tint`, `aim`, `sheet`). O `vfx` da habilidade ou da skill escolhe o id. `byAbility` e `fxKind` cobrem o que não declara. `bolt` é a folha do raio entre dois pontos. Flecha, lança, dardo e lâmina continuam canvas quando o def tem `builtin`. Em dev, `/lab` mostra o resultado e grava o JSON. Modelo 3D no lugar do sprite:
+Sprite novo de um frame do pack: entrada em `PACK` e o id em `visual/actors.json` (`source: "pack"`). Sprite desenhado no cliente: entrada em `DRAWN` e `source: "drawn"`. Nesse JSON ficam o multiplicador do corpo, o fps de cada clipe e a duração do ataque. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Folha de efeito entra em `visual/vfx.json` (`frames`, `fps`, `loop`, `wide`, `tall`, `tint`, `aim`, `sheet`). O `vfx` da habilidade ou da skill escolhe o id. `byAbility` e `fxKind` cobrem o que não declara. `bolt` é a folha do raio entre dois pontos. Flecha, lança, dardo e lâmina continuam canvas quando o def tem `builtin`. Em dev, `/lab` mostra o resultado e grava o JSON. Modelo 3D no lugar do sprite:
 
 ```tsx
 registerEntityView("guerreiro", GuerreiroModel);

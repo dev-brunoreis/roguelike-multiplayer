@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { loadIdle } from "../game/sprites.js";
 
-export function HeroSprite({ view, shadow }: { view: string; shadow?: string }) {
+export function HeroSprite({ view }: { view: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -32,7 +32,6 @@ export function HeroSprite({ view, shadow }: { view: string; shadow?: string }) 
   }, [view]);
   return (
     <span className="hero-preview">
-      {shadow ? <i className="hero-shadow" style={{ background: shadow }} /> : null}
       <canvas ref={ref} className="hero-sprite" />
     </span>
   );

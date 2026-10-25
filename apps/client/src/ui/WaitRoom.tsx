@@ -109,7 +109,7 @@ export function WaitRoom({
                 const sameShade = player.id !== mine?.id && !!player.shadowColor && player.shadowColor.toLowerCase() === (mine?.shadowColor ?? shadowColor).toLowerCase();
                 return (
                   <li key={player.id}>
-                    <HeroSprite view={player.heroId} shadow={player.shadowColor} />
+                    <HeroSprite view={player.heroId} />
                     <div>
                       <b style={{ color: player.shadowColor || "#f3ecdf" }}>{player.name}</b>
                       {player.id === state?.hostId ? " · host" : ""}
@@ -139,7 +139,7 @@ export function WaitRoom({
                     style={{ ["--hero" as string]: hero.color }}
                     onClick={() => roomRef.current?.send("hero", { heroId: hero.id })}
                   >
-                    <HeroSprite view={hero.id} shadow={shadowColor} />
+                    <HeroSprite view={hero.id} />
                     <strong>{hero.nome}</strong>
                     <small>{hero.hp} de vida · velocidade {hero.speed}</small>
                     <span>{hero.descricao}</span>

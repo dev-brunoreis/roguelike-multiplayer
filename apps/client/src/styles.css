@@ -83,11 +83,6 @@ input[type="text"], input[type="password"], input[type="number"] {
 .roster { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .roster li { background: #0f0e0c; padding: 8px 10px; display: flex; align-items: center; gap: 10px; }
 .hero-preview { position: relative; display: grid; justify-items: center; align-items: end; }
-.hero-shadow {
-  position: absolute; left: 50%; bottom: 1px; z-index: 0;
-  width: 78%; height: 8px; transform: translateX(-50%);
-  border-radius: 50%; opacity: 0.9;
-}
 .hero-sprite { position: relative; z-index: 1; display: block; image-rendering: pixelated; }
 .hero-card .taken { color: #e6c15a; font-style: normal; font-size: 12px; }
 .settings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }

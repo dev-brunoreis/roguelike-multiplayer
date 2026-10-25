@@ -105,7 +105,6 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
       arenaId: arena.id,
       flash: entity.flash,
       swing: entity.swing,
-      strike: entity.strike,
       label: entity.kind === "hero" ? who?.name : creeps.get(entity.defId),
       playerId: entity.playerId,
       facing: entity.facing,

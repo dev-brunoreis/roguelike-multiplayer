@@ -334,8 +334,6 @@ export const actorKindSchema = z.object({
   bodyMul: z.number().positive(),
   fps: actorFpsSchema,
   attackSeconds: z.number().positive(),
-  shadowWide: z.number().positive(),
-  shadowTall: z.number().positive(),
 });
 
 export const actorViewSchema = z.object({
@@ -343,8 +341,6 @@ export const actorViewSchema = z.object({
   bodyMul: z.number().positive().optional(),
   fps: actorFpsSchema.partial().optional(),
   attackSeconds: z.number().positive().optional(),
-  shadowWide: z.number().positive().optional(),
-  shadowTall: z.number().positive().optional(),
 });
 
 export const actorsVisualSchema = z.object({

@@ -59,8 +59,6 @@ const LIMITS: Record<string, { min: number; max: number; step: number }> = {
   wide: { min: 0.1, max: 6, step: 0.05 },
   tall: { min: 0.1, max: 6, step: 0.05 },
   bodyMul: { min: 1, max: 12, step: 0.1 },
-  shadowWide: { min: 0.05, max: 1.5, step: 0.01 },
-  shadowTall: { min: 0.05, max: 1.5, step: 0.01 },
   attackSeconds: { min: 0.05, max: 1.5, step: 0.01 },
   hpBelow: { min: 0.05, max: 1, step: 0.01 },
   speedMul: { min: 0.25, max: 2.5, step: 0.05 },

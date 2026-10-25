@@ -3,23 +3,17 @@
     "hero": {
       "bodyMul": 5.8,
       "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
-      "attackSeconds": 0.36,
-      "shadowWide": 0.42,
-      "shadowTall": 0.24
+      "attackSeconds": 0.36
     },
     "boss": {
       "bodyMul": 4.8,
       "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
-      "attackSeconds": 0.36,
-      "shadowWide": 0.42,
-      "shadowTall": 0.24
+      "attackSeconds": 0.36
     },
     "creep": {
       "bodyMul": 5.1,
       "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
-      "attackSeconds": 0.36,
-      "shadowWide": 0.42,
-      "shadowTall": 0.24
+      "attackSeconds": 0.36
     }
   },
   "views": {

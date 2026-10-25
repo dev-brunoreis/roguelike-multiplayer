@@ -87,7 +87,6 @@ export interface EntitySnap {
   arenaId: string;
   flash: number;
   swing: number;
-  strike: number;
   label?: string;
   playerId?: string;
   facing: number;
@@ -370,7 +369,6 @@ export interface WireEntity {
   arena: number;
   flash: number;
   swing: number;
-  strike: number;
   playerId?: string;
   facing: number;
   statuses: string[];

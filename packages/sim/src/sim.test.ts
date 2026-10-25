@@ -267,7 +267,7 @@ describe("simulação", () => {
     expect(tank).toBeCloseTo(open * 0.5, 5);
   });
 
-  it("corpo a corpo avisa antes do golpe e erra se o alvo sair", () => {
+  it("corpo a corpo espera o windup e erra se o alvo sair", () => {
     const match = createMatch({
       players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
       seed: 2,
@@ -312,9 +312,7 @@ describe("simulação", () => {
     expect(creep.winding).toBeCloseTo(0.2);
     tick(match);
     expect(hero.hp).toBe(before);
-    const strike = buildSnapshot(match, "p").entities.find((entity) => entity.id === creepId)?.strike ?? 0;
-    expect(strike).toBeGreaterThan(0);
-    expect(strike).toBeLessThan(1);
+    expect(creep.winding).toBeGreaterThan(0);
     runTicks(match, 5);
     expect(hero.hp).toBeLessThan(before);
 

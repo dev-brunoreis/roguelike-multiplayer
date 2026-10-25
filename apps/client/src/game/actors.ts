@@ -27,8 +27,6 @@ export function actorLook(view: string, kind: string): ActorLook {
   return {
     bodyMul: over.bodyMul ?? base.bodyMul,
     attackSeconds: over.attackSeconds ?? base.attackSeconds,
-    shadowWide: over.shadowWide ?? base.shadowWide,
-    shadowTall: over.shadowTall ?? base.shadowTall,
     fps: {
       idle: over.fps?.idle ?? base.fps.idle,
       run: over.fps?.run ?? base.fps.run,

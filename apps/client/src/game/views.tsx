@@ -68,17 +68,15 @@ export function EntityPuppet({
 }) {
   const group = useRef<Group>(null);
   const sprite = useRef<Sprite>(null);
-  const shadow = useRef<Mesh>(null);
   const reachFill = useRef<Mesh>(null);
   const reachBand = useRef<Mesh>(null);
   const aimMark = useRef<Mesh>(null);
   const reachSpan = useRef(-1);
   const material = useRef<SpriteMaterial>(null);
   const actor = useRef<ActorSheet | null>(null);
-  const tell = useRef<Mesh>(null);
   const statusMark = useRef<Mesh>(null);
   const reviveRing = useRef<Mesh>(null);
-  const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
+  const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
   const [view, setView] = useState(() => indexRef.current.entities.get(id)?.view ?? "slime");
@@ -198,14 +196,6 @@ export function EntityPuppet({
         reviveRing.current.scale.set(fill, fill, 1);
       }
     }
-    if (shadow.current) {
-      const show = entity.kind === "hero";
-      shadow.current.visible = show;
-      if (show) {
-        shadow.current.scale.set(wide * look.shadowWide, wide * look.shadowTall, 1);
-        (shadow.current.material as MeshBasicMaterial).color.set(entity.shadowColor || entity.color);
-      }
-    }
     const span = entity.attackRange;
     const arena = indexRef.current.arenas.get(entity.arenaId);
     const fighting = arena != null && arena.kind !== "hub";
@@ -251,20 +241,6 @@ export function EntityPuppet({
         dot.opacity = 0.9;
       }
     }
-    const goal = entity.kind === "hero" ? 0 : entity.strike;
-    if (goal <= 0) anim.current.tell = 0;
-    else anim.current.tell += (goal - anim.current.tell) * Math.min(1, delta * 12);
-    if (tell.current) {
-      const shown = anim.current.tell;
-      tell.current.visible = shown > 0.02;
-      if (shown > 0.02) {
-        const span = wide * (0.32 + shown * 0.3);
-        tell.current.scale.set(span, span * 0.5, 1);
-        const mat = tell.current.material as MeshBasicMaterial;
-        mat.color.set("#ffc4bc");
-        mat.opacity = 0.38 + shown * 0.42;
-      }
-    }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
     noteDrawn(state.gl.info.render.frame, { kind: "entity", id, x: placed.x, y: placed.y, wide, tall });
     if (material.current) material.current.opacity = locked && lock.clip === "death" ? 0.4 : 1;
@@ -291,10 +267,6 @@ export function EntityPuppet({
 
   return (
     <group ref={group} visible={false}>
-      <mesh ref={shadow} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} renderOrder={1}>
-        <circleGeometry args={[1, 12]} />
-        <meshBasicMaterial color="#120e0c" transparent opacity={0.45} depthWrite={false} depthTest={false} />
-      </mesh>
       <mesh ref={reachFill} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.035, 0]} renderOrder={2}>
         <circleGeometry args={[1, 48]} />
         <meshBasicMaterial transparent opacity={0.09} depthWrite={false} />
@@ -309,10 +281,6 @@ export function EntityPuppet({
       <mesh ref={statusMark} visible={false} position={[0, 1.1, 0]} renderOrder={14}>
         <ringGeometry args={[0.08, 0.16, 5]} />
         <meshBasicMaterial transparent depthWrite={false} />
-      </mesh>
-      <mesh ref={tell} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} renderOrder={2}>
-        <circleGeometry args={[1, 20]} />
-        <meshBasicMaterial color="#ffc4bc" transparent opacity={0.55} depthWrite={false} depthTest={false} />
       </mesh>
       <mesh ref={reviveRing} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]} renderOrder={4}>
         <ringGeometry args={[0.72, 0.92, 24]} />
