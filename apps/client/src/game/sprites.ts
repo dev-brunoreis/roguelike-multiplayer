@@ -342,12 +342,13 @@ export function setSpriteFrame(texture: Texture, frame: number, frames: number, 
   texture.offset.x = index * span;
 }
 
-export type ShotShape = "orb" | "arrow" | "spear" | "dart";
+export type ShotShape = "orb" | "arrow" | "spear" | "dart" | "blade";
 
 const SHOT_BY_ABILITY: Record<string, ShotShape> = {
   flecha: "arrow",
   lanca: "spear",
   dardo: "dart",
+  lamina_bumerangue: "blade",
 };
 
 export function shotShape(abilityId: string): ShotShape {
@@ -355,13 +356,75 @@ export function shotShape(abilityId: string): ShotShape {
 }
 
 export function shotScale(shape: ShotShape): [number, number] {
-  if (shape === "arrow") return [0.78, 0.34];
-  if (shape === "spear") return [1.05, 0.26];
-  if (shape === "dart") return [0.58, 0.2];
+  if (shape === "arrow") return [0.92, 0.5];
+  if (shape === "spear") return [1.15, 0.42];
+  if (shape === "dart") return [0.92, 0.46];
+  if (shape === "blade") return [0.72, 0.72];
   return [0.42, 0.42];
 }
 
 const shotTextures = new Map<ShotShape, Texture>();
+
+const SHOT_ROWS: Record<ShotShape, string[]> = {
+  arrow: [
+    "......oooooo....",
+    "....oowwwwwwoo..",
+    "...owwwwwwwwhho.",
+    ".oswwwwwwwwwhhho",
+    "osswwwwwwwwwhhho",
+    ".oswwwwwwwwwhhho",
+    "...owwwwwwwwhho.",
+    "....oowwwwwwoo..",
+    "......oooooo....",
+  ],
+  spear: [
+    "..............o.",
+    "......owwwwwwho.",
+    "...owwwwwwwwwwho",
+    "oswwwwwwwwwwwhho",
+    "...owwwwwwwwwwho",
+    "......owwwwwwho.",
+    "..............o.",
+  ],
+  dart: [
+    "..............o.",
+    "..........owwwho",
+    ".......owwwwwwho",
+    "....owwwwwwwwwho",
+    ".oswwwwwwwwwwhho",
+    "osswwwwwwwwwwhho",
+    ".oswwwwwwwwwwhho",
+    "....owwwwwwwwwho",
+    ".......owwwwwwho",
+    "..........owwwho",
+    "..............o.",
+  ],
+  blade: [
+    ".............oo.",
+    "...........ooww.",
+    ".........oowwh..",
+    ".......oowwh....",
+    ".....oowwhh.....",
+    "..ooowwhhh......",
+    ".....oowwhh.....",
+    ".......oowwh....",
+    ".........oowwh..",
+    "...........ooww.",
+    ".............oo.",
+  ],
+  orb: [
+    "......oooo......",
+    "....oyyyyyyo....",
+    "...oyyyyyyyyo...",
+    "..oyyyyyyyyyyo..",
+    "..oyyyyyyyyyyo..",
+    "..oyyyyyyyyyyo..",
+    "..oyyyyyyyyyyo..",
+    "...oyyyyyyyyo...",
+    "....oyyyyyyo....",
+    "......oooo......",
+  ],
+};
 
 function shotCanvas(shape: ShotShape) {
   const canvas = document.createElement("canvas");
@@ -370,13 +433,7 @@ function shotCanvas(shape: ShotShape) {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas");
   ctx.imageSmoothingEnabled = false;
-  const rows = shape === "arrow"
-    ? [".......www......", ".....wwwwwww....", "wwwwwwwwwwwwwwwh", ".....wwwwwww....", ".......www......"]
-    : shape === "spear"
-      ? ["...............h", "wwwwwwwwwwwwwwwh", "wwwwwwwwwwwwwwss", "...............h"]
-        : shape === "dart"
-        ? ["...............h", "wwwwwwwwwwwwwwwh", "...............s"]
-        : ["......oooo......", "....oyyyyyyo....", "...oyyyyyyyyo...", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "..oyyyyyyyyyyo..", "...oyyyyyyyyo...", "....oyyyyyyo....", "......oooo......"];
+  const rows = SHOT_ROWS[shape];
   const color: Record<string, string> = { o: "#2a241c", y: "#fff6d8", w: "#ffffff", h: "#fff6d8", s: "#c8c0b4" };
   const top = Math.floor((16 - rows.length) / 2);
   rows.forEach((row, y) => {

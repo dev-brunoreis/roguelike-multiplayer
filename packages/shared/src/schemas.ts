@@ -310,7 +310,7 @@ export const vfxDefSchema = z.object({
   tint: z.boolean(),
   aim: z.boolean(),
   sheet: z.string(),
-  builtin: z.enum(["orb", "arrow", "spear", "dart"]).optional(),
+  builtin: z.enum(["orb", "arrow", "spear", "dart", "blade"]).optional(),
 });
 
 export const vfxVisualSchema = z.object({

@@ -402,7 +402,7 @@
         "do": "zone",
         "follow": "caster",
         "drops": 1,
-        "vfx": "fire"
+        "vfx": "fireball"
       }
     ],
     "levels": [
@@ -650,7 +650,7 @@
       "agilidade"
     ],
     "color": "#f0f0f0",
-    "vfx": "arrow",
+    "vfx": "blade",
     "cast": [
       {
         "do": "shoot",

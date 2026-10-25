@@ -13,7 +13,7 @@ const CHOICES: Record<string, string[]> = {
   at: ["caster", "aim"],
   shape: ["circle", "line", "ring", "cone"],
   source: ["pack", "drawn"],
-  builtin: ["orb", "arrow", "spear", "dart"],
+  builtin: ["orb", "arrow", "spear", "dart", "blade"],
   type: ["stat", "grantAbility", "upgradeAbility", "onHit", "onKill"],
   stat: ["damagePct", "attackSpeedPct", "moveSpeedPct", "maxHpFlat", "armor", "critChance", "critMultiplier", "lifesteal", "areaPct", "xpPct", "cooldownPct"],
   status: ["stun", "slow", "root", "burn"],

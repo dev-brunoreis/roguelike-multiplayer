@@ -33,7 +33,6 @@ function stripMaterial(map: Texture, frames: number) {
     transparent: true,
     depthWrite: false,
     toneMapped: false,
-    vertexColors: true,
   });
   material.customProgramCacheKey = () => `strip-v2-${frames}`;
   material.onBeforeCompile = (shader) => {
@@ -121,26 +120,37 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
       const placed = motionAt(zone.id, now);
       const named = zone.vfx && vfxDef(zone.vfx).id === zone.vfx ? zone.vfx : "fire";
       const def = vfxDef(named);
-      const size = Math.max(def.wide, zone.radius * 1.3);
-      put(def.id, placed?.x ?? zone.x, placed?.y ?? zone.y, 0.4, size, size, frameOf(def, zone.t), def.tint ? zone.color : "#ffffff", 0);
+      const x = placed?.x ?? zone.x;
+      const z = placed?.y ?? zone.y;
+      const frame = frameOf(def, zone.t);
+      const color = def.tint ? zone.color : "#ffffff";
+      if (def.aim) {
+        put(def.id, x, z, 0.55, def.wide, def.tall, frame, color, 0);
+      } else {
+        const span = Math.min(def.wide * 1.8, Math.max(def.wide, Math.min(zone.radius, def.wide * 1.6)));
+        put(def.id, x, z, 0.45, span, span, frame, color, 0);
+      }
     }
     for (const fx of snap.fx) {
       if (!inView(fx.x, fx.y)) continue;
       if (fx.kind === "bolt" && fx.x2 != null && fx.y2 != null) {
         const look = boltLook();
-        const def = vfxDef(look.vfx);
+        const aimed = fx.vfx && vfxDef(fx.vfx).aim && vfxDef(fx.vfx).id === fx.vfx ? fx.vfx : look.vfx;
+        const def = vfxDef(aimed);
         const dx = fx.x2 - fx.x;
         const dz = fx.y2 - fx.y;
         const len = Math.hypot(dx, dz) || 0.2;
         const screenX = dx - dz;
         const screenY = -0.75 * (dx + dz);
-        put(def.id, (fx.x + fx.x2) / 2, (fx.y + fx.y2) / 2, 0.55, len, look.tall, frameOf(def, fx.t), def.tint ? fx.color : "#ffffff", Math.atan2(screenY, screenX));
+        const tall = def.aim ? def.tall : look.tall;
+        put(def.id, (fx.x + fx.x2) / 2, (fx.y + fx.y2) / 2, 0.55, len, tall, frameOf(def, fx.t), def.tint ? fx.color : "#ffffff", Math.atan2(screenY, screenX));
         continue;
       }
-      const id = vfxForFx(fx.kind);
-      const def = vfxDef(id);
-      const size = Math.max(0.4, fx.radius) * (0.7 + fx.t);
-      put(id, fx.x, fx.y, fx.kind === "ring" || fx.kind === "cone" ? 0.25 : 0.6, size, size, frameOf(def, fx.t), "#ffffff", 0);
+      const named = fx.vfx && vfxDef(fx.vfx).id === fx.vfx ? fx.vfx : vfxForFx(fx.kind);
+      const def = vfxDef(named);
+      const size = Math.max(def.wide, fx.radius) * (0.7 + fx.t);
+      const tall = def.aim ? def.tall * (size / def.wide) : size;
+      put(def.id, fx.x, fx.y, fx.kind === "ring" || fx.kind === "cone" ? 0.25 : 0.6, size, tall, frameOf(def, fx.t), def.tint ? fx.color : "#ffffff", 0);
     }
     let ringsN = 0;
     const ring = rings.current;
@@ -181,7 +191,7 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
   return (
     <group ref={root}>
       <instancedMesh ref={rings} args={[ringGeo, undefined, MAX]} frustumCulled={false} renderOrder={7}>
-        <meshBasicMaterial transparent depthWrite={false} opacity={0.55} toneMapped={false} vertexColors />
+        <meshBasicMaterial transparent depthWrite={false} opacity={0.55} toneMapped={false} />
       </instancedMesh>
     </group>
   );

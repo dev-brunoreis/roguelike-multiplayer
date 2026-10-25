@@ -147,13 +147,14 @@ function dropZone(match: Match, zone: Zone) {
   const y = zone.y + Math.sin(angle) * distanced;
   hurtZone(match, zone, x, y, zone.dropRadius);
   emitFx(match, {
-    kind: "ring",
+    kind: "flash",
     x,
     y,
     radius: zone.dropRadius,
     color: zone.color,
     arenaId: zone.arenaId,
     life: 0.28,
+    vfx: zone.vfx,
   });
 }
 

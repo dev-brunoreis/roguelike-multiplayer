@@ -195,6 +195,7 @@ registerAction("chain", (ctx) => {
       color: ctx.color,
       arenaId: ctx.caster.arenaId,
       life: 0.28,
+      vfx: ctx.vfx,
     });
     emitFx(ctx.match, {
       kind: "flash",
@@ -281,6 +282,7 @@ registerAction("burst", (ctx, force) => {
     color: ctx.color,
     arenaId: ctx.caster.arenaId,
     life: 0.45,
+    vfx: ctx.vfx,
   });
   return true;
 });

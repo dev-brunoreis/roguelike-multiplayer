@@ -1,29 +1,285 @@
 {
   "defs": [
-    { "id": "orb", "frames": 1, "fps": 1, "loop": true, "wide": 0.42, "tall": 0.42, "tint": true, "aim": false, "sheet": "", "builtin": "orb" },
-    { "id": "arrow", "frames": 1, "fps": 1, "loop": true, "wide": 0.78, "tall": 0.34, "tint": true, "aim": true, "sheet": "", "builtin": "arrow" },
-    { "id": "spear", "frames": 1, "fps": 1, "loop": true, "wide": 1.05, "tall": 0.26, "tint": true, "aim": true, "sheet": "", "builtin": "spear" },
-    { "id": "dart", "frames": 1, "fps": 1, "loop": true, "wide": 0.58, "tall": 0.2, "tint": true, "aim": true, "sheet": "", "builtin": "dart" },
-    { "id": "explosion", "frames": 10, "fps": 14, "loop": false, "wide": 2.4, "tall": 2.4, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/explosion-32px_strip10.png" },
-    { "id": "hit", "frames": 6, "fps": 15, "loop": false, "wide": 0.9, "tall": 0.9, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/hit-spark-32px_strip6.png" },
-    { "id": "fire", "frames": 8, "fps": 10, "loop": true, "wide": 0.85, "tall": 0.85, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/fire-32px_strip8.png" },
-    { "id": "sparkle", "frames": 8, "fps": 10, "loop": true, "wide": 0.7, "tall": 0.7, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/magic-sparkle-32px_strip8.png" },
-    { "id": "fireball", "frames": 8, "fps": 12, "loop": true, "wide": 1.25, "tall": 1.25, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/fireball-32px_strip8.png" },
-    { "id": "ice", "frames": 8, "fps": 12, "loop": true, "wide": 0.95, "tall": 0.42, "tint": false, "aim": true, "sheet": "/sprites/vfx/spritepilot/ice-shard-32px_strip8.png" },
-    { "id": "orb-magic", "frames": 8, "fps": 12, "loop": true, "wide": 0.62, "tall": 0.62, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/energy-orb-32px_strip8.png" },
-    { "id": "lightning", "frames": 8, "fps": 15, "loop": false, "wide": 2.2, "tall": 2.2, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/lightning-strike-32px_strip8.png" },
-    { "id": "poison", "frames": 8, "fps": 8, "loop": true, "wide": 1.2, "tall": 1.2, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/poison-cloud-32px_strip8.png" },
-    { "id": "heal", "frames": 8, "fps": 10, "loop": true, "wide": 1.1, "tall": 1.1, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/healing-aura-32px_strip8.png" },
-    { "id": "smoke", "frames": 8, "fps": 10, "loop": false, "wide": 1.1, "tall": 1.1, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/smoke-puff-32px_strip8.png" },
-    { "id": "portal", "frames": 8, "fps": 10, "loop": true, "wide": 1.4, "tall": 1.4, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/portal-32px_strip8.png" },
-    { "id": "teleport", "frames": 12, "fps": 14, "loop": false, "wide": 1.2, "tall": 1.2, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/teleport-32px_strip12.png" },
-    { "id": "shield", "frames": 12, "fps": 10, "loop": true, "wide": 1.3, "tall": 1.3, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/shield-bubble-32px_strip12.png" },
-    { "id": "water", "frames": 9, "fps": 12, "loop": false, "wide": 1.1, "tall": 1.1, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/water-splash-32px_strip9.png" },
-    { "id": "dust", "frames": 7, "fps": 12, "loop": false, "wide": 1, "tall": 1, "tint": false, "aim": false, "sheet": "/sprites/vfx/spritepilot/landing-dust-32px_strip7.png" },
-    { "id": "rock", "frames": 1, "fps": 1, "loop": true, "wide": 0.46, "tall": 0.46, "tint": true, "aim": false, "sheet": "/sprites/vfx/devwizard/Rock Sling.png" },
-    { "id": "ray", "frames": 8, "fps": 12, "loop": true, "wide": 1.4, "tall": 0.36, "tint": true, "aim": true, "sheet": "/sprites/vfx/devwizard/Black And White Ray.png" },
-    { "id": "sparks", "frames": 6, "fps": 14, "loop": true, "wide": 0.8, "tall": 0.28, "tint": true, "aim": false, "sheet": "/sprites/vfx/devwizard/Black And White Sparks.png" },
-    { "id": "dev-fireball", "frames": 6, "fps": 12, "loop": true, "wide": 0.9, "tall": 0.28, "tint": true, "aim": true, "sheet": "/sprites/vfx/devwizard/Fireball.png" }
+    {
+      "id": "orb",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 0.42,
+      "tall": 0.42,
+      "tint": true,
+      "aim": false,
+      "sheet": "",
+      "builtin": "orb"
+    },
+    {
+      "id": "arrow",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 0.92,
+      "tall": 0.5,
+      "tint": true,
+      "aim": true,
+      "sheet": "",
+      "builtin": "arrow"
+    },
+    {
+      "id": "spear",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 1.15,
+      "tall": 0.42,
+      "tint": true,
+      "aim": true,
+      "sheet": "",
+      "builtin": "spear"
+    },
+    {
+      "id": "dart",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 0.92,
+      "tall": 0.46,
+      "tint": true,
+      "aim": true,
+      "sheet": "",
+      "builtin": "dart"
+    },
+    {
+      "id": "blade",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 0.72,
+      "tall": 0.72,
+      "tint": true,
+      "aim": true,
+      "sheet": "",
+      "builtin": "blade"
+    },
+    {
+      "id": "explosion",
+      "frames": 10,
+      "fps": 14,
+      "loop": false,
+      "wide": 2.4,
+      "tall": 2.4,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/explosion-32px_strip10.png"
+    },
+    {
+      "id": "hit",
+      "frames": 6,
+      "fps": 15,
+      "loop": false,
+      "wide": 0.9,
+      "tall": 0.9,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/hit-spark-32px_strip6.png"
+    },
+    {
+      "id": "fire",
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "wide": 0.85,
+      "tall": 0.85,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/fire-32px_strip8.png"
+    },
+    {
+      "id": "sparkle",
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "wide": 0.7,
+      "tall": 0.7,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/magic-sparkle-32px_strip8.png"
+    },
+    {
+      "id": "fireball",
+      "frames": 8,
+      "fps": 12,
+      "loop": true,
+      "wide": 1.25,
+      "tall": 1.25,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/fireball-32px_strip8.png"
+    },
+    {
+      "id": "ice",
+      "frames": 8,
+      "fps": 12,
+      "loop": true,
+      "wide": 0.95,
+      "tall": 0.42,
+      "tint": false,
+      "aim": true,
+      "sheet": "/sprites/vfx/spritepilot/ice-shard-32px_strip8.png"
+    },
+    {
+      "id": "orb-magic",
+      "frames": 8,
+      "fps": 12,
+      "loop": true,
+      "wide": 0.62,
+      "tall": 0.62,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/energy-orb-32px_strip8.png"
+    },
+    {
+      "id": "lightning",
+      "frames": 8,
+      "fps": 15,
+      "loop": false,
+      "wide": 2.2,
+      "tall": 2.2,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/lightning-strike-32px_strip8.png"
+    },
+    {
+      "id": "poison",
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "wide": 1.2,
+      "tall": 1.2,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/poison-cloud-32px_strip8.png"
+    },
+    {
+      "id": "heal",
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "wide": 1.1,
+      "tall": 1.1,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/healing-aura-32px_strip8.png"
+    },
+    {
+      "id": "smoke",
+      "frames": 8,
+      "fps": 10,
+      "loop": false,
+      "wide": 1.1,
+      "tall": 1.1,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/smoke-puff-32px_strip8.png"
+    },
+    {
+      "id": "portal",
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "wide": 1.4,
+      "tall": 1.4,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/portal-32px_strip8.png"
+    },
+    {
+      "id": "teleport",
+      "frames": 12,
+      "fps": 14,
+      "loop": false,
+      "wide": 1.2,
+      "tall": 1.2,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/teleport-32px_strip12.png"
+    },
+    {
+      "id": "shield",
+      "frames": 12,
+      "fps": 10,
+      "loop": true,
+      "wide": 1.3,
+      "tall": 1.3,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/shield-bubble-32px_strip12.png"
+    },
+    {
+      "id": "water",
+      "frames": 9,
+      "fps": 12,
+      "loop": false,
+      "wide": 1.1,
+      "tall": 1.1,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/water-splash-32px_strip9.png"
+    },
+    {
+      "id": "dust",
+      "frames": 7,
+      "fps": 12,
+      "loop": false,
+      "wide": 1,
+      "tall": 1,
+      "tint": false,
+      "aim": false,
+      "sheet": "/sprites/vfx/spritepilot/landing-dust-32px_strip7.png"
+    },
+    {
+      "id": "rock",
+      "frames": 1,
+      "fps": 1,
+      "loop": true,
+      "wide": 0.46,
+      "tall": 0.46,
+      "tint": true,
+      "aim": false,
+      "sheet": "/sprites/vfx/devwizard/Rock Sling.png"
+    },
+    {
+      "id": "ray",
+      "frames": 8,
+      "fps": 12,
+      "loop": true,
+      "wide": 1.4,
+      "tall": 0.36,
+      "tint": true,
+      "aim": true,
+      "sheet": "/sprites/vfx/devwizard/Black And White Ray.png"
+    },
+    {
+      "id": "sparks",
+      "frames": 6,
+      "fps": 14,
+      "loop": true,
+      "wide": 0.8,
+      "tall": 0.28,
+      "tint": true,
+      "aim": false,
+      "sheet": "/sprites/vfx/devwizard/Black And White Sparks.png"
+    },
+    {
+      "id": "dev-fireball",
+      "frames": 6,
+      "fps": 12,
+      "loop": true,
+      "wide": 0.9,
+      "tall": 0.28,
+      "tint": true,
+      "aim": true,
+      "sheet": "/sprites/vfx/devwizard/Fireball.png"
+    }
   ],
   "byAbility": {
     "flecha": "arrow",
@@ -34,7 +290,7 @@
     "pisao": "explosion",
     "rastro_fogo": "fire",
     "chao_chamas": "fire",
-    "lamina_bumerangue": "arrow"
+    "lamina_bumerangue": "blade"
   },
   "fxKind": {
     "flash": "sparkle",
@@ -43,5 +299,8 @@
     "ring": "explosion",
     "default": "explosion"
   },
-  "bolt": { "vfx": "ray", "tall": 0.85 }
+  "bolt": {
+    "vfx": "ray",
+    "tall": 0.85
+  }
 }
