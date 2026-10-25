@@ -8,6 +8,7 @@
       "forca"
     ],
     "color": "#d7e6ff",
+    "vfx": "hit",
     "levels": [
       {
         "damage": 16,
@@ -41,6 +42,7 @@
       "magia"
     ],
     "color": "#c9a6ff",
+    "vfx": "lightning",
     "levels": [
       {
         "damage": 18,
@@ -89,6 +91,7 @@
       "area"
     ],
     "color": "#ff8a3d",
+    "vfx": "explosion",
     "levels": [
       {
         "damage": 14,
@@ -124,6 +127,7 @@
       "agilidade"
     ],
     "color": "#d6f5a3",
+    "vfx": "arrow",
     "levels": [
       {
         "damage": 15,
@@ -159,6 +163,7 @@
       "fogo"
     ],
     "color": "#ffb15a",
+    "vfx": "fire",
     "levels": [
       {
         "damage": 12,
@@ -195,6 +200,7 @@
       "forca"
     ],
     "color": "#f0f0f0",
+    "vfx": "hit",
     "levels": [
       {
         "damage": 9,
@@ -230,6 +236,7 @@
       "forca"
     ],
     "color": "#f0d090",
+    "vfx": "hit",
     "levels": [
       {
         "damage": 28,
@@ -262,6 +269,7 @@
       "forca"
     ],
     "color": "#e6c15a",
+    "vfx": "spear",
     "levels": [
       {
         "damage": 22,
@@ -298,6 +306,7 @@
       "magia"
     ],
     "color": "#9ad8ff",
+    "vfx": "ice",
     "levels": [
       {
         "damage": 14,
@@ -346,6 +355,7 @@
       "agilidade"
     ],
     "color": "#7dce6a",
+    "vfx": "dart",
     "levels": [
       {
         "damage": 8,
@@ -389,7 +399,7 @@
         "do": "zone",
         "follow": "caster",
         "drops": 1,
-        "vfx": "explosion"
+        "vfx": "fire"
       }
     ],
     "levels": [

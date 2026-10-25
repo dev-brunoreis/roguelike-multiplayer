@@ -183,7 +183,7 @@
       {
         "id": "olho_espiral",
         "cooldown": 5,
-        "vfx": "orb",
+        "vfx": "sparkle",
         "cast": [
           {
             "do": "pattern",
@@ -200,7 +200,7 @@
       {
         "id": "olho_anel",
         "cooldown": 4.2,
-        "vfx": "orb",
+        "vfx": "sparkle",
         "cast": [
           {
             "do": "warn",
@@ -222,7 +222,7 @@
       {
         "id": "olho_estrela",
         "cooldown": 4.5,
-        "vfx": "orb",
+        "vfx": "sparkle",
         "cast": [
           {
             "do": "pattern",
@@ -239,7 +239,7 @@
       {
         "id": "olho_espiral_dupla",
         "cooldown": 5.5,
-        "vfx": "orb",
+        "vfx": "sparkle",
         "cast": [
           {
             "do": "pattern",

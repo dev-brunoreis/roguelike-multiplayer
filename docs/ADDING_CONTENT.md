@@ -34,7 +34,7 @@ Skill opcional no creep, campo `skill` ou lista `skills`, no mesmo formato `cast
 
 O snapshot manda `view` = id do herói ou do creep. O visual padrão é um sprite de pixel em `apps/client/src/game/sprites.ts`, com idle, corrida, ataque e hit. A folha CC0 fica em `apps/client/public/sprites/0x72/`.
 
-Sprite novo de um frame do pack: entrada em `PACK`. Sprite desenhado no cliente: entrada em `DRAWN`. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Folha de efeito entra em `registerVfx` (`apps/client/src/game/vfx.ts`); o `vfx` do JSON escolhe o id. Flecha, lança e dardo continuam canvas. Modelo 3D no lugar do sprite:
+Sprite novo de um frame do pack: entrada em `PACK` e o id em `visual/actors.json` (`source: "pack"`). Sprite desenhado no cliente: entrada em `DRAWN` e `source: "drawn"`. Nesse JSON ficam o multiplicador do corpo, o fps de cada clipe, a duração do ataque e a escala da sombra. Ícone da habilidade fica em `apps/client/src/game/icons.tsx`, um desenho por id. Folha de efeito entra em `visual/vfx.json` (`frames`, `fps`, `loop`, `wide`, `tall`, `tint`, `aim`, `sheet`). O `vfx` da habilidade ou da skill escolhe o id. `byAbility` e `fxKind` cobrem o que não declara. `bolt` é a folha do raio entre dois pontos. Flecha, lança e dardo continuam canvas quando o def tem `builtin`. Modelo 3D no lugar do sprite:
 
 ```tsx
 registerEntityView("guerreiro", GuerreiroModel);

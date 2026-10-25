@@ -9,13 +9,13 @@ import {
   Object3D,
   PlaneGeometry,
   RingGeometry,
-  BoxGeometry,
   type Texture,
 } from "three";
 import type { Snapshot } from "@game/shared/protocol";
 import { inView } from "./frame.js";
 import { motionAt } from "./motion.js";
-import { vfxDef, vfxForFx, vfxForShot, vfxTexture, type VfxDef } from "./vfx.js";
+import { noteDrawn } from "./drawn.js";
+import { boltLook, vfxDef, vfxForFx, vfxForShot, vfxPreview, vfxTexture, type VfxDef } from "./vfx.js";
 
 const MAX = 256;
 const dummy = new Object3D();
@@ -35,7 +35,7 @@ function stripMaterial(map: Texture, frames: number) {
     toneMapped: false,
     vertexColors: true,
   });
-  material.customProgramCacheKey = () => `strip-${frames}`;
+  material.customProgramCacheKey = () => `strip-v2-${frames}`;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.frameCount = { value: frames };
     shader.vertexShader = shader.vertexShader
@@ -44,8 +44,8 @@ function stripMaterial(map: Texture, frames: number) {
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <uv_pars_fragment>", "#include <uv_pars_fragment>\nvarying float vFrame;\nuniform float frameCount;")
       .replace(
-        "vec4 sampledDiffuseColor = texture2D( map, vMapUv );",
-        "vec2 stripUv = vMapUv;\nstripUv.x = (vMapUv.x + vFrame) / frameCount;\nvec4 sampledDiffuseColor = texture2D( map, stripUv );",
+        "#include <map_fragment>",
+        "vec2 stripUv = vMapUv;\nstripUv.x = (vMapUv.x + vFrame) / frameCount;\nvec4 sampledDiffuseColor = texture2D( map, stripUv );\ndiffuseColor *= sampledDiffuseColor;",
       );
   };
   return material;
@@ -66,11 +66,9 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
   const root = useRef<Group>(null);
   const strips = useRef(new Map<string, Strip>());
   const rings = useRef<InstancedMesh>(null);
-  const bolts = useRef<InstancedMesh>(null);
   const ringGeo = useMemo(() => new RingGeometry(0.72, 1, 28), []);
-  const boxGeo = useMemo(() => new BoxGeometry(1, 1, 1), []);
 
-  useFrame(({ camera, clock }) => {
+  useFrame(({ camera, clock, gl }) => {
     const snap = snapRef.current;
     const group = root.current;
     if (!snap || !group) return;
@@ -92,6 +90,7 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
       if (spin) dummy.rotateZ(spin);
       dummy.scale.set(wide, tall, 1);
       dummy.updateMatrix();
+      noteDrawn(gl.info.render.frame, { kind: "vfx", id: index, x, y: z, wide, tall, vfx: id });
       strip.mesh.setMatrixAt(index, dummy.matrix);
       strip.mesh.setColorAt(index, tint.set(color));
       strip.frames.setX(index, frame);
@@ -102,6 +101,10 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
       const index = Math.floor(raw);
       return def.loop ? ((index % def.frames) + def.frames) % def.frames : Math.min(def.frames - 1, Math.max(0, index));
     };
+    for (const extra of vfxPreview()) {
+      const def = vfxDef(extra.id);
+      put(def.id, extra.x, extra.y, 0.7, def.wide * extra.scale, def.tall * extra.scale, frameOf(def, 0), "#ffffff", 0);
+    }
     for (const shot of snap.projectiles) {
       if (!inView(shot.x, shot.y)) continue;
       const placed = motionAt(shot.id, now);
@@ -121,20 +124,17 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
       const size = Math.max(def.wide, zone.radius * 1.3);
       put(def.id, placed?.x ?? zone.x, placed?.y ?? zone.y, 0.4, size, size, frameOf(def, zone.t), def.tint ? zone.color : "#ffffff", 0);
     }
-    let boltsN = 0;
     for (const fx of snap.fx) {
       if (!inView(fx.x, fx.y)) continue;
-      if (fx.kind === "bolt" && fx.x2 != null && fx.y2 != null && bolts.current && boltsN < MAX) {
+      if (fx.kind === "bolt" && fx.x2 != null && fx.y2 != null) {
+        const look = boltLook();
+        const def = vfxDef(look.vfx);
         const dx = fx.x2 - fx.x;
         const dz = fx.y2 - fx.y;
         const len = Math.hypot(dx, dz) || 0.2;
-        dummy.position.set((fx.x + fx.x2) / 2, 0.62, (fx.y + fx.y2) / 2);
-        dummy.rotation.set(0, Math.atan2(dx, dz), 0);
-        dummy.scale.set(0.16, 0.16, len);
-        dummy.updateMatrix();
-        bolts.current.setMatrixAt(boltsN, dummy.matrix);
-        bolts.current.setColorAt(boltsN, tint.set(fx.color));
-        boltsN += 1;
+        const screenX = dx - dz;
+        const screenY = -0.75 * (dx + dz);
+        put(def.id, (fx.x + fx.x2) / 2, (fx.y + fx.y2) / 2, 0.55, len, look.tall, frameOf(def, fx.t), def.tint ? fx.color : "#ffffff", Math.atan2(screenY, screenX));
         continue;
       }
       const id = vfxForFx(fx.kind);
@@ -169,11 +169,6 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
       ring.instanceMatrix.needsUpdate = true;
       if (ring.instanceColor) ring.instanceColor.needsUpdate = true;
     }
-    if (bolts.current) {
-      bolts.current.count = boltsN;
-      bolts.current.instanceMatrix.needsUpdate = true;
-      if (bolts.current.instanceColor) bolts.current.instanceColor.needsUpdate = true;
-    }
     for (const [id, strip] of strips.current) {
       const count = used.get(id) ?? 0;
       strip.mesh.count = count;
@@ -187,9 +182,6 @@ export function VfxField({ snapRef }: { snapRef: MutableRefObject<Snapshot | nul
     <group ref={root}>
       <instancedMesh ref={rings} args={[ringGeo, undefined, MAX]} frustumCulled={false} renderOrder={7}>
         <meshBasicMaterial transparent depthWrite={false} opacity={0.55} toneMapped={false} vertexColors />
-      </instancedMesh>
-      <instancedMesh ref={bolts} args={[boxGeo, undefined, MAX]} frustumCulled={false} renderOrder={9}>
-        <meshBasicMaterial transparent depthWrite={false} opacity={0.9} toneMapped={false} vertexColors />
       </instancedMesh>
     </group>
   );

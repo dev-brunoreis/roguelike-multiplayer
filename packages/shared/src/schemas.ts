@@ -300,6 +300,62 @@ export const matchOptionsSchema = z.object({
   mode: z.enum(["arena", "masmorra"]).optional(),
 });
 
+export const vfxDefSchema = z.object({
+  id: z.string().min(1),
+  frames: z.number().int().positive(),
+  fps: z.number().positive(),
+  loop: z.boolean(),
+  wide: z.number().positive(),
+  tall: z.number().positive(),
+  tint: z.boolean(),
+  aim: z.boolean(),
+  sheet: z.string(),
+  builtin: z.enum(["orb", "arrow", "spear", "dart"]).optional(),
+});
+
+export const vfxVisualSchema = z.object({
+  defs: z.array(vfxDefSchema).min(1),
+  byAbility: z.record(z.string(), z.string()),
+  fxKind: z.record(z.string(), z.string()),
+  bolt: z.object({
+    vfx: z.string().min(1),
+    tall: z.number().positive(),
+  }),
+});
+
+export const actorFpsSchema = z.object({
+  idle: z.number().positive(),
+  run: z.number().positive(),
+  attack: z.number().positive(),
+  hit: z.number().positive(),
+});
+
+export const actorKindSchema = z.object({
+  bodyMul: z.number().positive(),
+  fps: actorFpsSchema,
+  attackSeconds: z.number().positive(),
+  shadowWide: z.number().positive(),
+  shadowTall: z.number().positive(),
+});
+
+export const actorViewSchema = z.object({
+  source: z.enum(["pack", "drawn"]).optional(),
+  bodyMul: z.number().positive().optional(),
+  fps: actorFpsSchema.partial().optional(),
+  attackSeconds: z.number().positive().optional(),
+  shadowWide: z.number().positive().optional(),
+  shadowTall: z.number().positive().optional(),
+});
+
+export const actorsVisualSchema = z.object({
+  byKind: z.object({
+    hero: actorKindSchema,
+    boss: actorKindSchema,
+    creep: actorKindSchema,
+  }),
+  views: z.record(z.string(), actorViewSchema),
+});
+
 export type AbilityLevel = z.infer<typeof abilityLevelSchema>;
 export type ActionDef = z.infer<typeof actionSchema>;
 export type SpellDef = z.infer<typeof spellSchema>;
@@ -316,6 +372,11 @@ export type DungeonDef = z.infer<typeof dungeonSchema>;
 export type SynergyDef = z.infer<typeof synergySchema>;
 export type MatchConfig = z.infer<typeof matchConfigSchema>;
 export type MatchOptions = z.infer<typeof matchOptionsSchema>;
+export type VfxDefData = z.infer<typeof vfxDefSchema>;
+export type VfxVisual = z.infer<typeof vfxVisualSchema>;
+export type ActorKindVisual = z.infer<typeof actorKindSchema>;
+export type ActorViewVisual = z.infer<typeof actorViewSchema>;
+export type ActorsVisual = z.infer<typeof actorsVisualSchema>;
 export type ClientInputMessage = z.infer<typeof clientInputSchema>;
 export type PickMessage = z.infer<typeof pickSchema>;
 export type PauseMessage = z.infer<typeof pauseSchema>;

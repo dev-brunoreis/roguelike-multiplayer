@@ -6,6 +6,9 @@ import { inView, type SnapIndex } from "./frame.js";
 import { FLOAT_SCALE, LABEL_SCALE, floatTexture, labelTexture } from "./glyphs.js";
 import { worldAim } from "./input.js";
 import { motionAt } from "./motion.js";
+import { actorLook } from "./actors.js";
+import { noteDrawn } from "./drawn.js";
+import { poseLock } from "./pose.js";
 import { loadActor, setSpriteFrame, type ActorSheet, type ClipName } from "./sprites.js";
 
 export type ViewProps = { entity: EntitySnap };
@@ -20,8 +23,8 @@ export function resolveView(entity: EntitySnap) {
   return views.get(entity.view) ?? views.get(entity.kind) ?? views.get("default")!;
 }
 
-export function bodyHeight(entity: { radius: number; kind: string }) {
-  return entity.radius * (entity.kind === "hero" ? 5.8 : entity.kind === "boss" ? 4.8 : 5.1);
+export function bodyHeight(entity: { radius: number; kind: string; view?: string }) {
+  return entity.radius * actorLook(entity.view ?? "", entity.kind).bodyMul;
 }
 
 interface Pose {
@@ -78,11 +81,12 @@ export function EntityPuppet({
   const anim = useRef({ clip: "idle" as ClipName, frame: 0, acc: 0, flip: 1, swing: -1, attack: 0, hit: 0, tell: 0, ready: false });
   const flash = useRef(0);
   const glow = useRef(0);
-  const view = useRef(indexRef.current.entities.get(id)?.view ?? "slime");
+  const [view, setView] = useState(() => indexRef.current.entities.get(id)?.view ?? "slime");
+  const viewRef = useRef(view);
 
   useEffect(() => {
     let live = true;
-    void loadActor(view.current).then((sheet) => {
+    void loadActor(view).then((sheet) => {
       if (!live) {
         sheet.texture.dispose();
         return;
@@ -95,11 +99,15 @@ export function EntityPuppet({
       actor.current?.texture.dispose();
       actor.current = null;
     };
-  }, [id]);
+  }, [id, view]);
 
   useFrame((state, delta) => {
     const snap = snapRef.current;
     const entity = indexRef.current.entities.get(id);
+    if (entity?.view && entity.view !== viewRef.current) {
+      viewRef.current = entity.view;
+      setView(entity.view);
+    }
     const root = group.current;
     const sheet = actor.current;
     if (!snap || !entity || !root || !sheet) {
@@ -125,12 +133,13 @@ export function EntityPuppet({
       : Math.cos(entity.facing) - Math.sin(entity.facing);
     if (Math.abs(right) > 0.0008) anim.current.flip = right > 0 ? 1 : -1;
 
+    const look = actorLook(entity.view, entity.kind);
     if (!anim.current.ready) {
       anim.current.swing = entity.swing;
       anim.current.ready = true;
     } else if (anim.current.swing !== entity.swing) {
       anim.current.swing = entity.swing;
-      anim.current.attack = 0.36;
+      anim.current.attack = look.attackSeconds;
       anim.current.acc = 0;
       anim.current.frame = 0;
       anim.current.clip = "attack";
@@ -150,20 +159,26 @@ export function EntityPuppet({
 
     const owner = entity.playerId ? snap.players.find((player) => player.id === entity.playerId) : undefined;
     const downed = owner?.downed === true;
+    const lock = poseLock();
+    const locked = lock != null && (lock.entityId == null || lock.entityId === id);
     let clip: ClipName = "idle";
-    if (!downed && anim.current.attack > 0) clip = "attack";
+    if (locked && lock.clip !== "death") clip = lock.clip;
+    else if (!downed && anim.current.attack > 0) clip = "attack";
     else if (!downed && anim.current.hit > 0) clip = "hit";
     else if (!downed && moving) clip = "run";
+    if (locked && lock.clip === "death") clip = "hit";
     if (clip !== anim.current.clip) {
       anim.current.clip = clip;
       anim.current.frame = 0;
       anim.current.acc = 0;
     }
     const [start, count] = sheet.clips[clip];
-    const fps = clip === "attack" ? 14 : clip === "run" ? 10 : clip === "hit" ? 12 : 6;
-    const once = clip === "attack" || clip === "hit";
-    anim.current.acc += delta * fps;
-    anim.current.frame = once ? Math.min(count - 1, Math.floor(anim.current.acc)) : Math.floor(anim.current.acc) % count;
+    const fps = locked && lock.fps != null ? lock.fps : look.fps[clip];
+    const once = !locked && (clip === "attack" || clip === "hit");
+    if (!(locked && lock.frame != null)) anim.current.acc += delta * fps;
+    anim.current.frame = locked && lock.frame != null
+      ? Math.min(count - 1, Math.max(0, lock.frame))
+      : once ? Math.min(count - 1, Math.floor(anim.current.acc)) : Math.floor(anim.current.acc) % Math.max(1, count);
     setSpriteFrame(sheet.texture, start + anim.current.frame, sheet.frames, anim.current.flip);
 
     const tall = bodyHeight(entity);
@@ -187,7 +202,7 @@ export function EntityPuppet({
       const show = entity.kind === "hero";
       shadow.current.visible = show;
       if (show) {
-        shadow.current.scale.set(wide * 0.42, wide * 0.24, 1);
+        shadow.current.scale.set(wide * look.shadowWide, wide * look.shadowTall, 1);
         (shadow.current.material as MeshBasicMaterial).color.set(entity.shadowColor || entity.color);
       }
     }
@@ -251,6 +266,8 @@ export function EntityPuppet({
       }
     }
     poses.set(id, { view: entity.view, x: placed.x, y: placed.y, flip: anim.current.flip, tall });
+    noteDrawn(state.gl.info.render.frame, { kind: "entity", id, x: placed.x, y: placed.y, wide, tall });
+    if (material.current) material.current.opacity = locked && lock.clip === "death" ? 0.4 : 1;
     glow.current *= 0.78;
     const statuses = entity.statuses ?? [];
     const slowed = statuses.includes("slow") || statuses.includes("root");

@@ -17,5 +17,6 @@ alwaysApply: false
 - `dungeon.json` manda salas, portais, coleira, reviver, escala por profundidade e os encontros da masmorra. `aggro` no creep é opcional.
 - A oferta de carta usa o `weight` do JSON. Não existe stat de sorte.
 - Não duplique esses números no servidor ou no cliente.
+- `visual/vfx.json` e `visual/actors.json` são do cliente. O servidor não carrega essa pasta. Folha, fps e tamanho ficam aí, com schema em `schemas.ts`.
 
 Exemplo de nível de raio: `targets` cresce e `falloff` tem um fator por salto, o primeiro sempre `1`.

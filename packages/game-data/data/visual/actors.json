@@ -1,0 +1,57 @@
+{
+  "byKind": {
+    "hero": {
+      "bodyMul": 5.8,
+      "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
+      "attackSeconds": 0.36,
+      "shadowWide": 0.42,
+      "shadowTall": 0.24
+    },
+    "boss": {
+      "bodyMul": 4.8,
+      "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
+      "attackSeconds": 0.36,
+      "shadowWide": 0.42,
+      "shadowTall": 0.24
+    },
+    "creep": {
+      "bodyMul": 5.1,
+      "fps": { "idle": 6, "run": 10, "attack": 14, "hit": 12 },
+      "attackSeconds": 0.36,
+      "shadowWide": 0.42,
+      "shadowTall": 0.24
+    }
+  },
+  "views": {
+    "guerreiro": { "source": "pack" },
+    "mago": { "source": "pack" },
+    "arqueiro": { "source": "pack" },
+    "piromante": { "source": "pack" },
+    "lanceiro": { "source": "pack" },
+    "slime": { "source": "pack" },
+    "bruto": { "source": "pack" },
+    "corredor": { "source": "pack" },
+    "atirador": { "source": "pack" },
+    "guarda": { "source": "pack" },
+    "esqueleto": { "source": "pack" },
+    "lodo": { "source": "pack" },
+    "xama": { "source": "pack" },
+    "diabrete": { "source": "pack" },
+    "zumbi": { "source": "pack" },
+    "gelo": { "source": "pack" },
+    "pantano": { "source": "pack" },
+    "lesma": { "source": "pack" },
+    "mimico": { "source": "pack" },
+    "mascara": { "source": "pack" },
+    "abobora": { "source": "pack" },
+    "necromante": { "source": "pack" },
+    "medico": { "source": "pack" },
+    "anjo": { "source": "pack" },
+    "boss_golem": { "source": "pack" },
+    "boss_matriarca": { "source": "pack" },
+    "boss_wogol": { "source": "pack" },
+    "morcego": { "source": "drawn" },
+    "aranha": { "source": "drawn" },
+    "boss_olho": { "source": "drawn" }
+  }
+}
