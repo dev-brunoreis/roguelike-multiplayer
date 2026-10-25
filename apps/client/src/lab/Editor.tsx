@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { entryPath, getIn, setIn } from "./files.js";
+import { entryPath, getIn, setIn, type FieldChange, type SaveRecord } from "./files.js";
 import type { FieldIssue } from "./useLabData.js";
 import type { LabSel } from "./select.js";
 import { selectionFile } from "./select.js";
@@ -206,22 +206,57 @@ function toColor(value: string) {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#ffffff";
 }
 
+function showValue(value: unknown) {
+  if (typeof value === "string") return value.length > 36 ? `${value.slice(0, 33)}…` : value;
+  if (typeof value === "number" || typeof value === "boolean" || value == null) return String(value);
+  const text = JSON.stringify(value);
+  return text.length > 36 ? `${text.slice(0, 33)}…` : text;
+}
+
+function Delta({ change }: { change: FieldChange }) {
+  if (change.kind === "add") return <span className="to">novo {showValue(change.after)}</span>;
+  if (change.kind === "remove") return <span className="from">removido {showValue(change.before)}</span>;
+  return (
+    <>
+      <span className="from">{showValue(change.before)}</span>
+      <span>→</span>
+      <span className="to">{showValue(change.after)}</span>
+    </>
+  );
+}
+
+function clock(at: number) {
+  return new Date(at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function Editor({
   sel,
   files,
   issues,
   lists,
   dirty,
+  dirtyCount,
+  saving,
+  pending,
+  history,
   onChange,
   onRevert,
+  onRevertChange,
+  onSave,
 }: {
   sel: LabSel;
   files: Record<string, unknown>;
   issues: FieldIssue[];
   lists: Record<string, string[]>;
   dirty: boolean;
+  dirtyCount: number;
+  saving: boolean;
+  pending: { file: string; change: FieldChange }[];
+  history: SaveRecord[];
   onChange: (file: string, content: unknown) => void;
   onRevert: (file: string) => void;
+  onRevertChange: (file: string, change: FieldChange) => void;
+  onSave: () => void;
 }) {
   const [raw, setRaw] = useState(false);
   const [rawText, setRawText] = useState("");
@@ -244,10 +279,45 @@ export function Editor({
     <aside className="lab-editor">
       <header className="row">
         <strong>{dirty ? "• " : ""}{sel.kind === "file" ? sel.file : `${file}`}</strong>
+        <button className="btn primary" disabled={dirtyCount === 0 || saving} onClick={onSave} title="Grava os JSON no disco (Ctrl+S)">
+          {saving ? "Salvando" : dirtyCount > 0 ? `Salvar (${dirtyCount})` : "Salvar"}
+        </button>
         <button className="btn ghost" onClick={() => { setRaw((value) => !value); setRawText(JSON.stringify(entry, null, 2)); setRawError(""); }}>
           {raw ? "Campos" : "JSON"}
         </button>
       </header>
+      <section className="lab-history">
+        <h2>Mudanças</h2>
+        {pending.length === 0 ? <p className="muted">Nada para gravar.</p> : (
+          <ul>
+            {pending.slice(0, 12).map((item) => (
+              <li key={`${item.file}:${item.change.path.join(".")}:${item.change.kind}`}>
+                <code>{item.file} · {item.change.label}</code>
+                <span className="lab-delta"><Delta change={item.change} /></span>
+                <button className="btn ghost" onClick={() => onRevertChange(item.file, item.change)}>voltar</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {pending.length > 12 ? <p className="muted">e mais {pending.length - 12}</p> : null}
+        <details>
+          <summary>Histórico ({history.length})</summary>
+          {history.length === 0 ? <p className="muted">Nada gravado nesta sessão.</p> : history.map((record, index) => (
+            <article key={`${record.at}-${record.file}-${index}`}>
+              <strong>{clock(record.at)} · {record.file}</strong>
+              <ul>
+                {record.changes.slice(0, 8).map((change) => (
+                  <li key={`${change.path.join(".")}:${change.kind}`}>
+                    <code>{change.label}</code>
+                    <span className="lab-delta"><Delta change={change} /></span>
+                  </li>
+                ))}
+              </ul>
+              {record.total > 8 ? <p className="muted">e mais {record.total - 8}</p> : null}
+            </article>
+          ))}
+        </details>
+      </section>
       {dirty ? <button className="btn ghost" onClick={() => onRevert(file)}>Desfazer arquivo</button> : null}
       {raw ? (
         <label>

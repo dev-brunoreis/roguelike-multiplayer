@@ -73,6 +73,7 @@ export function LabScreen() {
   const [scrub, setScrub] = useState(start.current.t != null);
   const [time, setTime] = useState(Number(start.current.t ?? 0) || 0);
   const [notice, setNotice] = useState("");
+  const [saving, setSaving] = useState(false);
   const [stripUrl, setStripUrl] = useState("");
   const seed = 1;
   const layout = data.visual.lab;
@@ -272,13 +273,39 @@ export function LabScreen() {
     };
   }, []);
 
+  const savingRef = useRef(false);
+  const saveRef = useRef<() => void>(() => {});
+  const runSave = async () => {
+    if (savingRef.current) return;
+    if (data.dirty.length === 0) {
+      setNotice("Nada para salvar");
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const errors = await data.save();
+      if (errors.length) {
+        setNotice(errors.join(" "));
+        return;
+      }
+      setNotice("Salvo");
+      window.setTimeout(() => setNotice((current) => current === "Salvo" ? "" : current), 2000);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+  saveRef.current = () => { void runSave(); };
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        void data.save().then((errors) => setNotice(errors.length ? errors.join(" ") : "Salvo"));
+        saveRef.current();
+        return;
       }
+      if (isTypingTarget(event.target)) return;
       if (event.code === "Space") {
         event.preventDefault();
         castRef.current();
@@ -286,7 +313,7 @@ export function LabScreen() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [data]);
+  }, []);
 
   useEffect(() => {
     const count = start.current.strip;
@@ -333,6 +360,9 @@ export function LabScreen() {
           <LabOverlay snapRef={sim.snapRef} size={fallbackLayout.arenaSize} show={overlay} marks={marks} />
         </Scene>
         <div className="lab-bar">
+          <button className="btn primary" disabled={data.dirty.length === 0 || saving} onClick={() => saveRef.current()} title="Grava os JSON no disco (Ctrl+S)">
+            {saving ? "Salvando" : data.dirty.length > 0 ? `Salvar (${data.dirty.length})` : "Salvar"}
+          </button>
           <button className="btn" onClick={() => setPaused((value) => !value)}>{paused ? "Seguir" : "Pausar"}</button>
           <button className="btn" onClick={() => { setPaused(true); sim.step(); }}>Passo</button>
           <button className="btn" onClick={() => { setScrub(false); setPaused(false); sim.restart(); }}>Reiniciar</button>
@@ -395,7 +425,7 @@ export function LabScreen() {
           ))}
         </div>
         {notice || data.error || data.visual.vfxError || data.visual.labError ? (
-          <p className="lab-toast">{notice || data.error || data.visual.vfxError || data.visual.labError}</p>
+          <p className={notice === "Salvo" ? "lab-toast ok" : "lab-toast"}>{notice || data.error || data.visual.vfxError || data.visual.labError}</p>
         ) : null}
         {data.conflicts.length > 0 ? (
           <p className="lab-toast">
@@ -411,8 +441,14 @@ export function LabScreen() {
         issues={issues}
         lists={lists}
         dirty={data.dirty.includes(file)}
+        dirtyCount={data.dirty.length}
+        saving={saving}
+        pending={data.pending}
+        history={data.history}
         onChange={data.update}
         onRevert={data.revert}
+        onRevertChange={data.revertChange}
+        onSave={() => saveRef.current()}
       />
     </main>
   );

@@ -18,7 +18,7 @@ import {
   type VfxVisual,
 } from "@game/shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { memory, readDisk, syncDisk } from "./files.js";
+import { diffJson, memory, readDisk, rememberSave, restoreChange, syncDisk, type FieldChange, type SaveRecord } from "./files.js";
 
 const FILE_SCHEMA = {
   "heroes.json": heroSchema.array(),
@@ -104,7 +104,9 @@ export function useLabData() {
 
   const update = useCallback((file: string, content: unknown) => {
     memory.drafts[file] = content;
-    if (!memory.dirty.includes(file)) memory.dirty.push(file);
+    const clean = JSON.stringify(memory.disk[file]) === JSON.stringify(content);
+    memory.dirty = memory.dirty.filter((item) => item !== file);
+    if (!clean) memory.dirty.push(file);
     bump();
   }, [bump]);
 
@@ -122,10 +124,15 @@ export function useLabData() {
     bump();
   }, [bump]);
 
+  const revertChange = useCallback((file: string, change: FieldChange) => {
+    update(file, restoreChange(memory.drafts[file], change));
+  }, [update]);
+
   const save = useCallback(async (files?: string[]) => {
     const list = files ?? [...memory.dirty];
     const errors: string[] = [];
     for (const file of list) {
+      const changes = diffJson(memory.disk[file], memory.drafts[file]);
       const res = await fetch("/__lab/save", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -135,10 +142,15 @@ export function useLabData() {
         errors.push(`${file}: ${await res.text()}`);
         continue;
       }
+      rememberSave(file, changes);
       markClean(file);
     }
     return errors;
   }, [markClean]);
+
+  const pending = useMemo(() => {
+    return memory.dirty.flatMap((file) => diffJson(memory.disk[file], memory.drafts[file]).map((change) => ({ file, change })));
+  }, [rev]);
 
   const fileIssues = useCallback((file: string) => issuesOf(file, memory.drafts[file]), [rev]);
 
@@ -152,11 +164,14 @@ export function useLabData() {
     disk,
     update,
     revert,
+    revertChange,
     save,
+    pending,
+    history: memory.history,
     fileIssues,
     entrySchema: FILE_SCHEMA,
     vfxEntry: vfxDefSchema,
   };
 }
 
-export type { ActorsVisual, LabVisual, VfxVisual };
+export type { ActorsVisual, FieldChange, LabVisual, SaveRecord, VfxVisual };

@@ -105,7 +105,7 @@ input[type="text"], input[type="password"], input[type="number"] {
 }
 .lab-group button.on { border-color: #e07a3d; color: #f3ecdf; }
 .lab-stage { position: relative; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto auto; }
-.lab-stage .scene { width: 100%; height: 100%; }
+.lab-stage .scene { position: relative !important; inset: auto; width: 100%; height: 100%; min-height: 0; }
 .lab-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: #1c1914; border-top: 1px solid #3a3228; }
 .lab-bar label, .lab-check { display: flex; gap: 6px; align-items: center; color: #d9d0c3; font-size: 13px; }
 .lab-num { display: flex; gap: 6px; align-items: center; }
@@ -116,6 +116,17 @@ input[type="text"], input[type="password"], input[type="number"] {
 .lab-editor small { color: #ff8d7a; }
 .lab-raw { min-height: 240px; width: 100%; font-family: ui-monospace, monospace; font-size: 12px; }
 .lab-toast { position: absolute; left: 12px; top: 12px; margin: 0; background: #1c1914; border: 1px solid #6e2420; padding: 8px 10px; max-width: 420px; }
+.lab-toast.ok { border-color: #6a573f; }
+.lab-history { display: grid; gap: 6px; }
+.lab-history h2 { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a39886; margin: 0; }
+.lab-history ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.lab-history li { display: grid; gap: 2px; background: #14120f; border: 1px solid #3a3228; padding: 6px 8px; }
+.lab-history code { color: #e6c15a; font-size: 12px; }
+.lab-history article { display: grid; gap: 4px; }
+.lab-history summary { cursor: pointer; color: #d9d0c3; }
+.lab-delta { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 12px; }
+.lab-delta .from { color: #a39886; text-decoration: line-through; }
+.lab-delta .to { color: #f3ecdf; }
 .lab-strip { position: absolute; right: 12px; bottom: 108px; max-width: min(640px, 70%); border: 1px solid #3a3228; background: #0e0c0a; }
 .match { height: 100%; position: relative; overflow: hidden; }
 .match::after {

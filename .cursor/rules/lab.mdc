@@ -18,6 +18,6 @@ A URL reproduz a cena: `/lab?sel=ability:chuva_meteoros&level=3&speed=0.5&t=1.2&
 
 `measure()` devolve raio de jogo, alcance e o retângulo desenhado de cada entidade, zona e efeito.
 
-Ctrl+S grava o rascunho. O plugin (`apps/client/vite/labData.ts`, só `serve`) aceita `POST /__lab/save` para arquivos de `packages/game-data/data` e `POST /__lab/shot` para `.lab/shots/<nome>.png`. Salvar valida com Zod. Se o disco mudar com rascunho aberto, o lab avisa em vez de cobrir.
+O botão Salvar e Ctrl+S gravam o rascunho, também com um campo focado. O painel lista o que ainda difere do disco e o histórico do que esta sessão já gravou. O plugin (`apps/client/vite/labData.ts`, só `serve`) aceita `POST /__lab/save` para arquivos de `packages/game-data/data` e `POST /__lab/shot` para `.lab/shots/<nome>.png`. Salvar valida com Zod. Se o disco mudar com rascunho aberto, o lab avisa em vez de cobrir.
 
 Números de gameplay (dano, cooldown, alcance, raio de acerto) não mudam numa passada visual. Tamanho de folha, fps, cor e o id de `vfx` ficam no JSON.
