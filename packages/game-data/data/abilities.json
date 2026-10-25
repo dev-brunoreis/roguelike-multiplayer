@@ -2,7 +2,7 @@
   {
     "id": "golpe_rapido",
     "nome": "Golpe Rápido",
-    "descricao": "Bate em quem está na linha da mira.",
+    "descricao": "Corta em leque quem está na frente.",
     "targeting": "nearest",
     "tags": [
       "forca"
@@ -13,17 +13,20 @@
       {
         "damage": 16,
         "cooldown": 0.7,
-        "range": 1.9
+        "range": 1.9,
+        "angle": 110
       },
       {
         "damage": 22,
         "cooldown": 0.62,
-        "range": 2.05
+        "range": 2.05,
+        "angle": 125
       },
       {
         "damage": 30,
         "cooldown": 0.52,
-        "range": 2.2
+        "range": 2.2,
+        "angle": 140
       }
     ],
     "cast": [

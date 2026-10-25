@@ -2,7 +2,7 @@ import { dealDamage } from "../damage.js";
 import { getAction, getTargeting, registerAction } from "../registry.js";
 import { spawnCreep } from "../spawn.js";
 import type { CastCtx, Entity, Match, PlayerState, Volley } from "../types.js";
-import { creepById, dist, emitFx, floatText, roundScale, skillOf } from "../world.js";
+import { abilityById, creepById, dist, emitFx, floatText, roundScale, skillOf } from "../world.js";
 import { launchVolley, pushShot } from "./shots.js";
 import { applyStatus } from "./status.js";
 
@@ -96,15 +96,30 @@ function hurt(ctx: CastCtx, target: Entity, amount: number, crit: boolean) {
   paintStatus(ctx, target);
 }
 
-registerAction("strike", (ctx) => {
-  const reach = ctx.numbers.range * areaOf(ctx.player);
-  const target = aimedPoint(ctx.player)
-    ? enemyOnAim(ctx, ctx.caster, reach, new Set())
-    : seek(ctx, ctx.caster, reach, new Set());
-  if (!target) return false;
-  const hit = spellDamage(ctx, ctx.numbers.damage);
-  hurt(ctx, target, hit.amount, hit.crit);
-  markSwing(ctx.caster);
+function swingAngle(ctx: CastCtx) {
+  if (ctx.action.angle != null) return ctx.action.angle;
+  const ability = abilityById(ctx.match, ctx.spellId);
+  const slot = ctx.player?.abilities.find((item) => item.abilityId === ctx.spellId);
+  if (!ability || !slot) return 0;
+  const level = ability.levels[Math.min(slot.level, ability.levels.length) - 1];
+  return level?.angle ?? 0;
+}
+
+function foesInArc(ctx: CastCtx, reach: number, angleDeg: number) {
+  const angle = (angleDeg * Math.PI) / 180;
+  const facing = ctx.caster.facing;
+  return ctx.match.entities.filter((entity) => {
+    if (!entity.alive || entity.arenaId !== ctx.caster.arenaId || entity.team === ctx.caster.team) return false;
+    const gap = dist(ctx.caster, entity);
+    if (gap > reach + entity.radius) return false;
+    const aim = Math.atan2(entity.y - ctx.caster.y, entity.x - ctx.caster.x);
+    let delta = Math.abs(aim - facing);
+    if (delta > Math.PI) delta = Math.PI * 2 - delta;
+    return delta <= angle / 2;
+  });
+}
+
+function paintHit(ctx: CastCtx, target: Entity) {
   emitFx(ctx.match, {
     kind: "bolt",
     x: ctx.caster.x,
@@ -116,16 +131,39 @@ registerAction("strike", (ctx) => {
     arenaId: ctx.caster.arenaId,
     life: 0.22,
   });
-  if (ctx.player) {
-    emitFx(ctx.match, {
-      kind: "slash",
-      x: target.x,
-      y: target.y,
-      radius: 1.1,
-      color: ctx.color,
-      arenaId: ctx.caster.arenaId,
-    });
+  if (!ctx.player) return;
+  emitFx(ctx.match, {
+    kind: "slash",
+    x: target.x,
+    y: target.y,
+    radius: 1.1,
+    color: ctx.color,
+    arenaId: ctx.caster.arenaId,
+  });
+}
+
+registerAction("strike", (ctx) => {
+  const reach = ctx.numbers.range * areaOf(ctx.player);
+  const arc = swingAngle(ctx);
+  if (arc > 0) {
+    const victims = foesInArc(ctx, reach, arc);
+    if (victims.length === 0) return false;
+    const hit = spellDamage(ctx, ctx.numbers.damage);
+    for (const target of victims) {
+      hurt(ctx, target, hit.amount, hit.crit);
+      paintHit(ctx, target);
+    }
+    markSwing(ctx.caster);
+    return true;
   }
+  const target = aimedPoint(ctx.player)
+    ? enemyOnAim(ctx, ctx.caster, reach, new Set())
+    : seek(ctx, ctx.caster, reach, new Set());
+  if (!target) return false;
+  const hit = spellDamage(ctx, ctx.numbers.damage);
+  hurt(ctx, target, hit.amount, hit.crit);
+  markSwing(ctx.caster);
+  paintHit(ctx, target);
   return true;
 });
 
@@ -249,21 +287,12 @@ registerAction("burst", (ctx, force) => {
 
 registerAction("cone", (ctx) => {
   const reach = ctx.numbers.range * areaOf(ctx.player);
-  const angle = (ctx.numbers.angle * Math.PI) / 180;
-  const facing = ctx.caster.facing;
-  const victims = ctx.match.entities.filter((entity) => {
-    if (!entity.alive || entity.arenaId !== ctx.caster.arenaId || entity.team === ctx.caster.team) return false;
-    const gap = dist(ctx.caster, entity);
-    if (gap > reach + entity.radius) return false;
-    const aim = Math.atan2(entity.y - ctx.caster.y, entity.x - ctx.caster.x);
-    let delta = Math.abs(aim - facing);
-    if (delta > Math.PI) delta = Math.PI * 2 - delta;
-    return delta <= angle / 2;
-  });
+  const victims = foesInArc(ctx, reach, ctx.numbers.angle);
   if (victims.length === 0) return false;
   const hit = spellDamage(ctx, ctx.numbers.damage);
   for (const target of victims) hurt(ctx, target, hit.amount, hit.crit);
   markSwing(ctx.caster);
+  const facing = ctx.caster.facing;
   emitFx(ctx.match, {
     kind: "bolt",
     x: ctx.caster.x,

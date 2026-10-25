@@ -2,7 +2,7 @@
   {
     "id": "guerreiro",
     "nome": "Guerreiro",
-    "descricao": "Chega perto e bate sem parar.",
+    "descricao": "Chega perto e corta em leque.",
     "color": "#4ea1ff",
     "hp": 140,
     "speed": 4.4,

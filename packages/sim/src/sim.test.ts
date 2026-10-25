@@ -844,6 +844,40 @@ describe("simulação", () => {
     expect(match.fx.some((item) => item.kind === "ring")).toBe(false);
   });
 
+  it("golpe do guerreiro corta o leque e o martelo continua em um alvo", () => {
+    const match = createMatch({
+      players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
+      seed: 9,
+      data,
+    });
+    quietMatch(match);
+    match.phase = "pve";
+    match.phaseTime = 90;
+    const player = match.players[0]!;
+    player.stats.critChance = 0;
+    player.abilities[0]!.cooldown = 0;
+    const hero = match.entities.find((entity) => entity.kind === "hero")!;
+    const arena = match.arenas.find((item) => item.id === player.arenaId)!;
+    const center = arenaCenter(arena);
+    hero.x = center.x;
+    hero.y = center.y;
+    const line = stillCreep(match, arena.id, center.x + 1.2, center.y);
+    const side = stillCreep(match, arena.id, center.x + 1.2, center.y + 0.9);
+    const back = stillCreep(match, arena.id, center.x - 1.2, center.y);
+    player.aimX = center.x + 8;
+    player.aimY = center.y;
+    tick(match);
+    expect(match.entities.find((entity) => entity.id === line)!.hp).toBeLessThan(1000);
+    expect(match.entities.find((entity) => entity.id === side)!.hp).toBeLessThan(1000);
+    expect(match.entities.find((entity) => entity.id === back)!.hp).toBe(1000);
+    player.abilities = [{ abilityId: "martelo", level: 1, cooldown: 0, cooldownMax: 1 }];
+    const lineHp = match.entities.find((entity) => entity.id === line)!.hp;
+    const sideHp = match.entities.find((entity) => entity.id === side)!.hp;
+    tick(match);
+    expect(match.entities.find((entity) => entity.id === line)!.hp).toBeLessThan(lineHp);
+    expect(match.entities.find((entity) => entity.id === side)!.hp).toBe(sideHp);
+  });
+
   it("cone olha para a mira", () => {
     const match = createMatch({
       players: [{ id: "p", name: "Ana", isBot: false, heroId: "guerreiro" }],
