@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Game data
 
-`loadGameData()` em `src/load.ts` valida com Zod (`packages/shared/src/schemas.ts`) e confere ids citados.
+`buildGameData(raw)` em `src/build.ts` valida com Zod (`packages/shared/src/schemas.ts`) e confere ids citados, sem `node:fs`. `loadGameData()` em `src/load.ts` lê o disco e chama ele. No navegador o export `"."` é o stub `src/browser.ts`.
 
 - Habilidade nova precisa de `cast` (ações já registradas) e `targeting` já registrado na sim. Os números ficam em `levels`; a ação só escreve por cima o que declarar.
 - Carta cita `abilityId` que exista. `requires` também.

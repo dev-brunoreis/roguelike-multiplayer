@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "browser": "./src/browser.ts",
+      "default": "./src/index.ts"
+    },
+    "./build": "./src/build.ts",
+    "./load": "./src/load.ts"
   },
   "dependencies": {
     "@game/shared": "workspace:*"
