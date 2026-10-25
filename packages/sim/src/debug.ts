@@ -2,7 +2,7 @@ import type { Match } from "./types.js";
 import { addLog, alivePlayers, heroEntity, playerById, pushBanner } from "./world.js";
 import { beginPve } from "./modes/arena/phases/pve.js";
 import { beginHub } from "./modes/arena/phases/hub.js";
-import { dropDuel, duelLive } from "./modes/arena/phases/duel.js";
+import { dropDuel, duelLive, joinWave } from "./modes/arena/phases/duel.js";
 import { arenaQuiet, respawnHero, sendHome, sendToHub } from "./modes/arena/phases/move.js";
 
 export function setGodmode(match: Match, playerId: string, on?: boolean): boolean | null {
@@ -27,9 +27,12 @@ export function setDuels(match: Match, on?: boolean): boolean | null {
   if (!match.duelsEnabled) {
     const { pending, fighting } = duelLive(match);
     if (pending || fighting) {
-      dropDuel(match);
+      const side = fighting && !match.waveDone;
+      if (side) refundBets(match);
+      else dropDuel(match);
       addLog(match, "Duelos desligados");
-      if (fighting) {
+      if (side) joinWave(match);
+      else if (fighting) {
         if (match.waveDone) match.round += 1;
         beginPve(match);
       } else {
@@ -52,14 +55,25 @@ export function skipDuel(match: Match) {
   if (match.phase === "ended") return false;
   const { pending, fighting } = duelLive(match);
   if (!pending && !fighting) return false;
-  dropDuel(match);
+  const side = fighting && !match.waveDone;
+  if (side) refundBets(match);
+  else dropDuel(match);
   addLog(match, "Duelo pulado");
   pushBanner(match, { kind: "info", title: "Duelo pulado", detail: "Ninguém perde vida", life: 3.2 });
-  if (fighting) {
+  if (side) joinWave(match);
+  else if (fighting) {
     if (match.waveDone) match.round += 1;
     beginPve(match);
   }
   return true;
+}
+
+function refundBets(match: Match) {
+  for (const player of match.players) {
+    if (!player.bet) continue;
+    player.gold += player.bet.amount;
+    player.bet = null;
+  }
 }
 
 export function revivePlayer(

@@ -493,6 +493,43 @@ describe("simulação", () => {
     expect(skipDuel(match)).toBe(false);
   });
 
+  it("quem está fora do duelo já luta a próxima onda", () => {
+    const match = createMatch({
+      players: [
+        { id: "a", name: "Ana", isBot: false, heroId: "guerreiro" },
+        { id: "b", name: "Bia", isBot: false, heroId: "mago" },
+        { id: "c", name: "Caio", isBot: false, heroId: "arqueiro" },
+      ],
+      seed: 11,
+      config: { duelStartRound: 1, duelAnnounceSeconds: 0.05 },
+      data,
+    });
+    quietMatch(match);
+    tick(match);
+    const round = match.round;
+    for (const player of match.players) player.ready = true;
+    runTicks(match, 5);
+    expect(match.phase).toBe("duel");
+    expect(match.round).toBe(round + 1);
+    const pair = match.duel[0]!;
+    const bench = match.players.find((player) => player.id !== pair.a && player.id !== pair.b)!;
+    expect(bench.arenaId.startsWith("arena-")).toBe(true);
+    expect(match.spawns.some((job) => job.arenaId === bench.arenaId && job.left > 0)).toBe(true);
+    for (const id of [pair.a, pair.b]) {
+      const hero = match.entities.find((entity) => entity.playerId === id)!;
+      expect(hero.arenaId.startsWith("duel-")).toBe(true);
+    }
+    const creepId = stillCreep(match, bench.arenaId, 0, 0);
+    const loser = match.entities.find((entity) => entity.playerId === pair.a)!;
+    loser.invuln = 0;
+    dealDamage(match, { target: loser, amount: 99999 });
+    tick(match);
+    expect(match.phase).toBe("pve");
+    expect(match.round).toBe(round + 1);
+    expect(match.entities.find((entity) => entity.id === creepId)?.alive).toBe(true);
+    expect(match.arenas.some((arena) => arena.kind === "duel")).toBe(false);
+  });
+
   it("pular o duelo em curso não escolhe vencedor", () => {
     const match = createMatch({
       players: [

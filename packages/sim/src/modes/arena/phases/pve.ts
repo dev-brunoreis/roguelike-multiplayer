@@ -1,5 +1,5 @@
 import { flushDamage, spawnCreep } from "../../../spawn.js";
-import type { Match } from "../../../types.js";
+import type { Match, PlayerState } from "../../../types.js";
 import { addLog, alivePlayers, clearHazards, emit, pushBanner, syncWorld } from "../../../world.js";
 import { arenaQuiet, revive, sendHome } from "./move.js";
 import { checkWinner } from "../victory.js";
@@ -20,22 +20,15 @@ export function bossForRound(match: Match) {
   return due[0] ?? null;
 }
 
-export function beginPve(match: Match) {
-  if (match.phase === "ended") return;
-  flushDamage(match);
-  match.phase = "pve";
-  match.phaseTime = Math.min(180, match.config.pveSeconds + Math.max(0, match.round - 1) * 4);
-  match.spawns = [];
-  match.duel = [];
-  match.duelPending = false;
-  match.duelAnnounce = 0;
-  clearHazards(match);
-  match.bossArenas.clear();
-  match.bossAnnounced = false;
-  match.entities = match.entities.filter((entity) => entity.kind === "hero");
-  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
+export function waveBudget(match: Match) {
+  return Math.min(180, match.config.pveSeconds + Math.max(0, match.round - 1) * 4);
+}
+
+export function armPlayers(match: Match, players: PlayerState[]) {
   const wave = waveFor(match);
-  for (const player of match.players) {
+  const extra = 1 + Math.max(0, match.round - wave.round) * 0.38;
+  const haste = 1 + Math.max(0, match.round - 1) * 0.035;
+  for (const player of players) {
     player.ready = false;
     player.botActed = false;
     player.bet = null;
@@ -44,8 +37,6 @@ export function beginPve(match: Match) {
     if (player.eliminated) continue;
     sendHome(match, player);
     revive(match, player);
-    const extra = 1 + Math.max(0, match.round - wave.round) * 0.38;
-    const haste = 1 + Math.max(0, match.round - 1) * 0.035;
     for (const group of wave.spawns) {
       match.spawns.push({
         arenaId: player.arenaId,
@@ -56,6 +47,23 @@ export function beginPve(match: Match) {
       });
     }
   }
+}
+
+export function beginPve(match: Match) {
+  if (match.phase === "ended") return;
+  flushDamage(match);
+  match.phase = "pve";
+  match.phaseTime = waveBudget(match);
+  match.spawns = [];
+  match.duel = [];
+  match.duelPending = false;
+  match.duelAnnounce = 0;
+  clearHazards(match);
+  match.bossArenas.clear();
+  match.bossAnnounced = false;
+  match.entities = match.entities.filter((entity) => entity.kind === "hero");
+  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
+  armPlayers(match, match.players);
   syncWorld(match);
   addLog(match, `Onda ${match.round}`);
 }
@@ -92,7 +100,7 @@ function bossAlive(match: Match, arenaId: string) {
   return match.entities.some((entity) => entity.alive && entity.kind === "boss" && entity.arenaId === arenaId);
 }
 
-export function updatePve(match: Match, dt: number) {
+export function tickSpawns(match: Match, dt: number, skip: (playerId: string) => boolean) {
   const boss = bossForRound(match);
   for (const job of match.spawns) {
     if (job.left <= 0) continue;
@@ -104,8 +112,9 @@ export function updatePve(match: Match, dt: number) {
     job.left -= 1;
     spawnCreep(match, job.arenaId, job.creepId);
   }
+  let spawnedBoss = false;
   for (const player of alivePlayers(match)) {
-    if (player.waveClear) continue;
+    if (skip(player.id) || player.waveClear) continue;
     if (!arenaQuiet(match, player.arenaId)) continue;
     if (boss && !bossAlive(match, player.arenaId)) {
       if (!match.bossArenas.has(player.arenaId)) {
@@ -113,9 +122,9 @@ export function updatePve(match: Match, dt: number) {
         match.bossArenas.add(player.arenaId);
         if (!match.bossAnnounced) {
           match.bossAnnounced = true;
+          spawnedBoss = true;
           addLog(match, `Boss: ${boss.nome}`);
           pushBanner(match, { kind: "boss", title: boss.nome, detail: "O chefe entrou na arena", life: 4.5 });
-          match.phaseTime += match.config.bossSeconds;
         }
         continue;
       }
@@ -124,6 +133,11 @@ export function updatePve(match: Match, dt: number) {
     player.waveClear = true;
     addLog(match, `${player.name} limpou a arena`);
   }
+  return spawnedBoss;
+}
+
+export function updatePve(match: Match, dt: number) {
+  if (tickSpawns(match, dt, () => false)) match.phaseTime += match.config.bossSeconds;
   match.phaseTime = Math.max(0, match.phaseTime - dt);
   if (alivePlayers(match).every((player) => player.waveClear)) {
     endPve(match, true);

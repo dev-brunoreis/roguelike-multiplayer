@@ -16,7 +16,7 @@ function moodOf(phase: string, fighting: boolean, boss: boolean): Mood {
   if (phase === "ended") return "end";
   if (boss) return "boss";
   if (phase === "duel" && fighting) return "duel";
-  if (phase === "pve" || phase === "dungeon") return "wild";
+  if (phase === "pve" || phase === "dungeon" || phase === "duel") return "wild";
   return "calm";
 }
 

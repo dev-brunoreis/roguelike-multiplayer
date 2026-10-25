@@ -69,7 +69,7 @@ class MatchStore {
       paused: snap.paused,
       asking,
       humans: humans.length,
-      label: PHASE[snap.phase] ?? snap.phase,
+      label: snap.phase === "duel" && me && !me.inDuel && !me.eliminated ? "Onda" : (PHASE[snap.phase] ?? snap.phase),
       duelAnnounce: snap.duelAnnounce,
       duelCount: snap.duel.length,
     };
@@ -104,7 +104,7 @@ class MatchStore {
       && Math.round(this.boss.hp) === Math.round(boss.hp) && this.boss.marks.join(",") === boss.marks.join(",")
       ? this.boss
       : boss;
-    const waveWait = snap.phase === "pve" && !!me?.waveClear && !me.eliminated;
+    const waveWait = (snap.phase === "pve" || (snap.phase === "duel" && !!me && !me.inDuel)) && !!me?.waveClear && !me.eliminated;
     this.waveWait = this.waveWait === waveWait ? this.waveWait : waveWait;
     this.ended = snap.phase === "ended";
     this.winnerName = snap.winnerId ? (snap.players.find((player) => player.id === snap.winnerId)?.name ?? "") : "";

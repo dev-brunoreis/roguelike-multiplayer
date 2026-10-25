@@ -1,7 +1,7 @@
 import type { DuelPair, Match } from "../../../types.js";
 import { addLog, arenaById, clearHazards, emit, heroEntity, pushBanner, syncWorld } from "../../../world.js";
 import { checkWinner } from "../victory.js";
-import { beginPve } from "./pve.js";
+import { armPlayers, beginPve, tickSpawns, waveBudget } from "./pve.js";
 
 export function duelLive(match: Match) {
   const pending = (match.phase === "hub" || match.phase === "shop") && match.duelPending && match.duel.length > 0;
@@ -34,8 +34,39 @@ export function beginDuel(match: Match) {
     sendToDuel(match, pair.a, pair.arenaId, "red", 0.28);
     sendToDuel(match, pair.b, pair.arenaId, "blue", 0.72);
   });
+  const fighting = new Set(match.duel.flatMap((pair) => [pair.a, pair.b]));
+  const bench = match.players.some((player) => !player.eliminated && !fighting.has(player.id));
+  if (bench) {
+    if (match.waveDone) match.round += 1;
+    match.waveDone = false;
+    match.bossArenas.clear();
+    match.bossAnnounced = false;
+    armPlayers(match, match.players.filter((player) => !fighting.has(player.id)));
+    addLog(match, `Onda ${match.round} para quem está fora do duelo`);
+  }
   syncWorld(match);
   addLog(match, "Duelo!");
+}
+
+function stillDueling(match: Match, playerId: string) {
+  return match.duel.some((pair) => !pair.resolved && (pair.a === playerId || pair.b === playerId));
+}
+
+export function joinWave(match: Match) {
+  const ids = new Set(match.duel.flatMap((pair) => [pair.a, pair.b]));
+  const duelArenas = new Set(match.arenas.filter((arena) => arena.kind === "duel").map((arena) => arena.id));
+  match.duel = [];
+  match.duelPending = false;
+  match.duelAnnounce = 0;
+  match.projectiles = match.projectiles.filter((shot) => !duelArenas.has(shot.arenaId));
+  match.zones = match.zones.filter((zone) => !duelArenas.has(zone.arenaId));
+  match.warnings = match.warnings.filter((warning) => !duelArenas.has(warning.arenaId));
+  match.volleys = match.volleys.filter((volley) => !duelArenas.has(volley.arenaId));
+  match.arenas = match.arenas.filter((arena) => arena.kind !== "duel");
+  armPlayers(match, match.players.filter((player) => ids.has(player.id)));
+  match.phase = "pve";
+  match.phaseTime = waveBudget(match) + (match.bossAnnounced ? match.config.bossSeconds : 0);
+  syncWorld(match);
 }
 
 function placeDuelArena(match: Match, arenaId: string, slot: number) {
@@ -71,6 +102,7 @@ function sendToDuel(match: Match, playerId: string, arenaId: string, team: strin
 }
 
 export function updateDuel(match: Match, dt: number) {
+  if (!match.waveDone) tickSpawns(match, dt, (playerId) => stillDueling(match, playerId));
   for (const pair of match.duel) {
     if (pair.resolved) continue;
     const a = match.players.find((player) => player.id === pair.a);
@@ -86,8 +118,11 @@ export function updateDuel(match: Match, dt: number) {
     }
     checkWinner(match);
     if (match.phase !== "ended") {
-      match.round += 1;
-      beginPve(match);
+      if (!match.waveDone) joinWave(match);
+      else {
+        match.round += 1;
+        beginPve(match);
+      }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { isFighter } from "./queries.js";
 import type { Match, PlayerState } from "./types.js";
 import { addLog, emit, heroEntity, pushBanner } from "./world.js";
 
@@ -16,14 +17,15 @@ export function loseLife(match: Match, player: PlayerState) {
     return;
   }
   addLog(match, `${player.name} morreu`);
-  if (match.phase !== "duel") {
+  const dueling = match.phase === "duel" && isFighter(match, player.id);
+  if (!dueling) {
     pushBanner(match, {
       kind: "death",
       title: `${player.name} morreu`,
       detail: player.lives === 1 ? "Resta 1 vida" : `Restam ${player.lives} vidas`,
     });
   }
-  if (match.phase === "pve") player.respawnIn = match.config.respawnSeconds;
+  if (match.phase === "pve" || (match.phase === "duel" && !dueling)) player.respawnIn = match.config.respawnSeconds;
 }
 
 export function eliminate(match: Match, player: PlayerState, reason: string) {
