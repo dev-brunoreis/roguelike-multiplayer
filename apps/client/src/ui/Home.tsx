@@ -64,7 +64,10 @@ export function Home({
             <p className="eyebrow">entrada</p>
             <h1>Caos</h1>
           </div>
-          <button className="btn ghost" onClick={onLogout}>Sair</button>
+          <span className="row">
+            {import.meta.env.DEV ? <a className="btn ghost" href="/lab">Lab</a> : null}
+            <button className="btn ghost" onClick={onLogout}>Sair</button>
+          </span>
         </header>
         <p className="muted">Cria uma sala e espera o pessoal, ou entra numa que já está aberta.</p>
         <SoundMix />

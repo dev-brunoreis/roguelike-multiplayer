@@ -6,4 +6,5 @@ data/*.sqlite-*
 .env
 *.log
 .vite
+.lab/
 .eslintcache

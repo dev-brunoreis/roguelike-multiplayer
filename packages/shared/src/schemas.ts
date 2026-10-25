@@ -356,6 +356,19 @@ export const actorsVisualSchema = z.object({
   views: z.record(z.string(), actorViewSchema),
 });
 
+export const labVisualSchema = z.object({
+  arenaSize: z.number().positive(),
+  caster: z.object({ x: z.number(), y: z.number() }),
+  dummies: z.array(z.object({ x: z.number(), y: z.number() })).min(1),
+  creep: z.object({ x: z.number(), y: z.number() }),
+  previewSeconds: z.number().positive(),
+  dummyCreep: z.string().min(1),
+  presets: z.array(z.object({
+    id: z.string().min(1),
+    zoom: z.number().positive(),
+  })).default([]),
+});
+
 export type AbilityLevel = z.infer<typeof abilityLevelSchema>;
 export type ActionDef = z.infer<typeof actionSchema>;
 export type SpellDef = z.infer<typeof spellSchema>;
@@ -377,6 +390,7 @@ export type VfxVisual = z.infer<typeof vfxVisualSchema>;
 export type ActorKindVisual = z.infer<typeof actorKindSchema>;
 export type ActorViewVisual = z.infer<typeof actorViewSchema>;
 export type ActorsVisual = z.infer<typeof actorsVisualSchema>;
+export type LabVisual = z.infer<typeof labVisualSchema>;
 export type ClientInputMessage = z.infer<typeof clientInputSchema>;
 export type PickMessage = z.infer<typeof pickSchema>;
 export type PauseMessage = z.infer<typeof pauseSchema>;

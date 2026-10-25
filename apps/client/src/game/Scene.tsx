@@ -1,8 +1,8 @@
 import type { ArenaSnap, PortalSnap, Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { Plane, Raycaster, Vector2, Vector3 } from "three";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
+import { OrthographicCamera as OrthoCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
 import { arenaInView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
 import { CAMERA_ZOOM } from "./glyphs.js";
 import { setWorldAim } from "./input.js";
@@ -11,24 +11,37 @@ import { forgetMotion, motionAt, resetMotion } from "./motion.js";
 import { VfxField } from "./VfxField.js";
 import { DeathLayer, EntityPuppet, FloatLayer, HpLayer, resetPoses } from "./views.js";
 
+export interface SceneView {
+  x: number;
+  z: number;
+  zoom: number;
+}
+
 export const Scene = memo(function Scene({
   snapRef,
   indexRef,
   watchId,
   shakeRef,
+  view = null,
+  preserve = false,
+  children = null,
 }: {
   snapRef: MutableRefObject<Snapshot | null>;
   indexRef: MutableRefObject<SnapIndex>;
   watchId: string | null;
   shakeRef: MutableRefObject<number>;
+  view?: SceneView | null;
+  preserve?: boolean;
+  children?: ReactNode;
 }) {
   return (
-    <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
+    <Canvas className="scene" flat dpr={1} gl={{ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: preserve }}>
       <color attach="background" args={["#0e0c0a"]} />
       <fog attach="fog" args={["#0e0c0a", 72, 168]} />
-      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={CAMERA_ZOOM} near={-120} far={420} />
+      <OrthographicCamera makeDefault position={[18, 22, 18]} zoom={view?.zoom ?? CAMERA_ZOOM} near={-120} far={420} />
       <AimCursor snapRef={snapRef} watchId={watchId} />
-      <World snapRef={snapRef} indexRef={indexRef} watchId={watchId} shakeRef={shakeRef} />
+      <World snapRef={snapRef} indexRef={indexRef} watchId={watchId} shakeRef={shakeRef} view={view} />
+      {children}
     </Canvas>
   );
 });
@@ -71,11 +84,13 @@ function World({
   indexRef,
   watchId,
   shakeRef,
+  view,
 }: {
   snapRef: MutableRefObject<Snapshot | null>;
   indexRef: MutableRefObject<SnapIndex>;
   watchId: string | null;
   shakeRef: MutableRefObject<number>;
+  view: SceneView | null;
 }) {
   const camera = useThree((state) => state.camera);
   const follow = useRef({ x: 0, z: 0, ready: false });
@@ -123,8 +138,14 @@ function World({
     const j = shakeRef.current;
     const jx = (Math.random() - 0.5) * j * 0.28;
     const jz = (Math.random() - 0.5) * j * 0.28;
-    camera.position.set(follow.current.x + 16 + jx, 20, follow.current.z + 16 + jz);
-    camera.lookAt(follow.current.x, 0, follow.current.z);
+    const focusX = view ? view.x : follow.current.x;
+    const focusZ = view ? view.z : follow.current.z;
+    if (view && camera instanceof OrthoCamera) {
+      camera.zoom = view.zoom;
+      camera.updateProjectionMatrix();
+    }
+    camera.position.set(focusX + 16 + jx, 20, focusZ + 16 + jz);
+    camera.lookAt(focusX, 0, focusZ);
     camera.updateMatrixWorld();
     fitView(camera, state.gl);
 

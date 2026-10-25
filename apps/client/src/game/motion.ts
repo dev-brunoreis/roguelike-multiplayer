@@ -18,6 +18,8 @@ interface Clock {
 }
 
 const tracks = new Map<number, Sample[]>();
+let lockedDelay: number | null = null;
+
 const clock: Clock = {
   tick: 0,
   at: 0,
@@ -29,15 +31,22 @@ const clock: Clock = {
   ready: false,
 };
 
+export function setMotionDelay(delay: number | null) {
+  lockedDelay = delay;
+  if (delay != null) clock.delay = delay;
+}
+
 export function resetMotion() {
   tracks.clear();
   clock.ready = false;
   clock.jitter = 0;
-  clock.delay = 0.2;
+  clock.delay = lockedDelay ?? 0.2;
 }
 
 export function noteSnapshot(tick: number, tickRate: number, now: number) {
-  if (clock.ready) {
+  if (lockedDelay != null) {
+    clock.delay = lockedDelay;
+  } else if (clock.ready) {
     const gap = now - clock.prevAt;
     const expected = Math.max(0.001, (tick - clock.prevTick) / tickRate);
     const jitter = Math.abs(gap - expected);

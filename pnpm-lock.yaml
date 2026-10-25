@@ -29,9 +29,15 @@ importers:
 
   apps/client:
     dependencies:
+      '@game/game-data':
+        specifier: workspace:*
+        version: link:../../packages/game-data
       '@game/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@game/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
       '@react-three/drei':
         specifier: ^10.7.4
         version: 10.7.9(@react-three/fiber@9.8.2(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(three@0.180.0))(@types/react@19.3.0)(@types/three@0.180.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(three@0.180.0)

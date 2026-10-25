@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./debug": "./src/debug.ts"
+    "./debug": "./src/debug.ts",
+    "./lab": "./src/lab.ts"
   },
   "dependencies": {
     "@game/game-data": "workspace:*",

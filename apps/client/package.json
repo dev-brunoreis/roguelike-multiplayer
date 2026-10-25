@@ -9,7 +9,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@game/game-data": "workspace:*",
     "@game/shared": "workspace:*",
+    "@game/sim": "workspace:*",
     "@react-three/drei": "^10.7.4",
     "@react-three/fiber": "^9.3.0",
     "colyseus.js": "^0.16.22",

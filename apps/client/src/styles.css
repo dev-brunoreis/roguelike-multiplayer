@@ -94,6 +94,29 @@ input[type="text"], input[type="password"], input[type="number"] {
 .settings select { background: #1c1914; border: 1px solid #3a3228; padding: 6px; width: 100%; }
 .check { grid-column: 1 / -1; grid-template-columns: auto 1fr; align-items: center; }
 
+.lab { height: 100%; display: grid; grid-template-columns: 220px minmax(0, 1fr) 320px; background: #12110e; }
+.lab-side, .lab-editor { overflow: auto; padding: 12px; display: grid; align-content: start; gap: 8px; }
+.lab-side { border-right: 1px solid #3a3228; }
+.lab-editor { border-left: 1px solid #3a3228; }
+.lab-group { display: grid; gap: 4px; }
+.lab-group h2 { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a39886; margin: 8px 0 0; }
+.lab-group button, .lab-editor select, .lab-editor textarea, .lab-editor input[type="text"] {
+  text-align: left; background: #14120f; border: 1px solid #3a3228; color: inherit; padding: 6px 8px; cursor: pointer;
+}
+.lab-group button.on { border-color: #e07a3d; color: #f3ecdf; }
+.lab-stage { position: relative; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto auto; }
+.lab-stage .scene { width: 100%; height: 100%; }
+.lab-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: #1c1914; border-top: 1px solid #3a3228; }
+.lab-bar label, .lab-check { display: flex; gap: 6px; align-items: center; color: #d9d0c3; font-size: 13px; }
+.lab-num { display: flex; gap: 6px; align-items: center; }
+.lab-num input[type="number"] { width: 88px; }
+.lab-editor fieldset { border: 1px solid #3a3228; margin: 0; display: grid; gap: 8px; }
+.lab-editor label { font-size: 13px; }
+.lab-editor label.bad { color: #ff8d7a; }
+.lab-editor small { color: #ff8d7a; }
+.lab-raw { min-height: 240px; width: 100%; font-family: ui-monospace, monospace; font-size: 12px; }
+.lab-toast { position: absolute; left: 12px; top: 12px; margin: 0; background: #1c1914; border: 1px solid #6e2420; padding: 8px 10px; max-width: 420px; }
+.lab-strip { position: absolute; right: 12px; bottom: 108px; max-width: min(640px, 70%); border: 1px solid #3a3228; background: #0e0c0a; }
 .match { height: 100%; position: relative; overflow: hidden; }
 .match::after {
   content: "";

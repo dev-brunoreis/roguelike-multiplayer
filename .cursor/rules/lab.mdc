@@ -1,0 +1,23 @@
+---
+description: Laboratório visual /lab, URL reproduzível, window.__lab e captura
+globs: apps/client/src/lab/**/*,packages/game-data/data/visual/**/*
+alwaysApply: false
+---
+
+# Laboratório
+
+Em dev, `/lab` roda o `sim` no navegador (modo `lab`, sem Colyseus) e desenha com a mesma `Scene` da partida. O botão Lab na entrada só aparece em dev.
+
+A URL reproduz a cena: `/lab?sel=ability:chuva_meteoros&level=3&speed=0.5&t=1.2&paused=1&overlay=1&zoom=26&phase=0`. `sel` é `hero:`, `creep:`, `boss:`, `ability:` ou `vfx:`, ou o nome do arquivo (`abilities.json`). `?strip=8` gera a grade e grava em `.lab/shots/`.
+
+`window.__lab`:
+
+- `select("ability:flecha")`
+- `set("visual/vfx.json/defs/0/wide", 1.2)` ou `set("color", "#fff")` na entrada aberta
+- `cast()`, `seek(t)`, `shot("nome")`, `measure()`
+
+`measure()` devolve raio de jogo, alcance e o retângulo desenhado de cada entidade, zona e efeito.
+
+Ctrl+S grava o rascunho. O plugin (`apps/client/vite/labData.ts`, só `serve`) aceita `POST /__lab/save` para arquivos de `packages/game-data/data` e `POST /__lab/shot` para `.lab/shots/<nome>.png`. Salvar valida com Zod. Se o disco mudar com rascunho aberto, o lab avisa em vez de cobrir.
+
+Números de gameplay (dano, cooldown, alcance, raio de acerto) não mudam numa passada visual. Tamanho de folha, fps, cor e o id de `vfx` ficam no JSON.

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Simulação
 
-`createMatch` + `tick` em `src/match.ts`. O modo `arena` fica em `src/modes/arena/`. O modo `masmorra` fica em `src/modes/dungeon/`. Tick fixo, `dt = 1 / tickRate`. `tick` devolve só `PersistEvent`. Visual (log, banner, float, fx) passa por `present.ts`. `isFighter` fica em `queries.ts`.
+`createMatch` + `tick` em `src/match.ts`. O modo `arena` fica em `src/modes/arena/`. O modo `masmorra` fica em `src/modes/dungeon/`. O modo `lab` fica em `src/modes/lab/` e a API (`labSpawn`, `labCast`, `labClear`, `labSetLevel`, `labForcePhase`) sai por `@game/sim/lab`. Não entra no lobby. Tick fixo, `dt = 1 / tickRate`. `tick` devolve só `PersistEvent`. Visual (log, banner, float, fx) passa por `present.ts`. `isFighter` fica em `queries.ts`.
 
 Ordem: se a pausa estiver fechada (todo humano vivo pediu), o tick volta sem avançar o tempo. Senão: bots, cooldowns, respawn, escolha de carta, `mode.update`, `mode.checkEnd`. Na arena, combate se a fase for pve ou duelo, só movimento no salão (`hub`), transição de fase, vitória do último vivo. A onda só fecha quando o último vivo limpa. Carta de nível espera o salão. Na masmorra a carta abre na hora, o herói cai e um aliado levanta, e a vitória é o chefe morto.
 

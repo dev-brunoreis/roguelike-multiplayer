@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ComponentType } from "react";
 import { api, ServerDown } from "../net.js";
 import { unlockAudio } from "../audio.js";
 import { Home } from "./Home.js";
@@ -10,7 +10,27 @@ const TOKEN = "caos.token";
 const SHADOW_KEY = "caos.shadow";
 const SERVER_DOWN = "O servidor caiu. Você foi desconectado.";
 
+function LabGate() {
+  const [Screen, setScreen] = useState<ComponentType | null>(null);
+  useEffect(() => {
+    let live = true;
+    void import("../lab/LabScreen.js").then((mod) => {
+      if (live) setScreen(() => mod.LabScreen);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!Screen) return <main className="screen"><p>Abrindo o lab...</p></main>;
+  return <Screen />;
+}
+
 export function App() {
+  if (import.meta.env.DEV && window.location.pathname === "/lab") return <LabGate />;
+  return <GameApp />;
+}
+
+function GameApp() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN));
   const [user, setUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
