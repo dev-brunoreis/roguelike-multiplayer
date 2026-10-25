@@ -45,6 +45,7 @@ export type SimEvent =
     color: string;
     arenaId: string;
     life?: number;
+    vfx?: string;
   };
 
 const PERSIST = new Set<SimEvent["type"]>([

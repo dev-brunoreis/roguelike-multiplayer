@@ -27,7 +27,7 @@ export function updateBanner(match: Match, dt: number) {
 
 export function emitFx(
   match: Match,
-  fx: { kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; life?: number },
+  fx: { kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; life?: number; vfx?: string },
 ) {
   emit(match, { type: "fx", ...fx });
 }

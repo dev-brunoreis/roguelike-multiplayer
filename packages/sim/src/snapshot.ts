@@ -195,6 +195,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       color: item.color,
       arenaId: item.arenaId,
       t: Math.min(1, (match.time - item.born) / Math.max(0.05, item.life)),
+      vfx: item.vfx,
     })),
     floats: match.floats.slice(-40),
     duel: match.duel.map((pair) => ({ ...pair })),
@@ -436,6 +437,7 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
       color: item.color,
       arena: arenas.get(item.arenaId) ?? 0,
       t: q(Math.min(1, (match.time - item.born) / Math.max(0.05, item.life))),
+      vfx: item.vfx,
     })),
     floats: match.floats.filter((item) => seen.has(item.arenaId)).slice(-40).map((item) => ({
       id: item.id,

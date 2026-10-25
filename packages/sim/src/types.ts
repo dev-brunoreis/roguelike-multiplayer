@@ -385,7 +385,7 @@ export interface Match {
   playersById: Map<string, PlayerState>;
   arenasById: Map<string, Arena>;
   floats: FloatEvent[];
-  fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number }[];
+  fx: { id: number; kind: "ring" | "slash" | "cone" | "flash" | "bolt"; x: number; y: number; x2?: number; y2?: number; radius: number; color: string; arenaId: string; born: number; life: number; vfx: string }[];
   bossAnnounced: boolean;
   paused: boolean;
   dungeon: DungeonState | null;

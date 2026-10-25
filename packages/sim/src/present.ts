@@ -43,6 +43,7 @@ export function present(match: Match, event: SimEvent) {
       arenaId: event.arenaId,
       born: match.time,
       life: event.life ?? 0.38,
+      vfx: event.vfx ?? "",
     });
   }
 }

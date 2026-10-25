@@ -117,6 +117,7 @@ export interface FxSnap {
   color: string;
   arenaId: string;
   t: number;
+  vfx: string;
 }
 
 export interface ArenaSnap {
@@ -431,6 +432,7 @@ export interface WireFx {
   color: string;
   arena: number;
   t: number;
+  vfx: string;
 }
 
 export interface WireFloat {

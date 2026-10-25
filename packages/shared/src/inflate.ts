@@ -172,6 +172,7 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
       color: item.color,
       arenaId: arena.id,
       t: item.t,
+      vfx: item.vfx ?? "",
     }];
   });
   const floats: FloatEvent[] = wire.floats.flatMap((item) => {
