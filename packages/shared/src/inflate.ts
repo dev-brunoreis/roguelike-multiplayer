@@ -216,6 +216,7 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
     announce: wire.announce,
     mode: meta.mode,
     portals: meta.portals,
+    obstacles: meta.obstacles,
     dungeon: wire.dungeon
       ? {
         sealed: wire.dungeon.sealed.flatMap((index) => {
@@ -228,6 +229,7 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
         }),
         objective: wire.dungeon.objective,
         result: wire.dungeon.result,
+        cellSize: meta.cellSize,
       }
       : null,
   };

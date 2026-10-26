@@ -68,6 +68,9 @@ export function emptySkill(): SkillState {
     payload: 0,
     payloadRadius: 0,
     crit: false,
+    mood: "",
+    stuck: 0,
+    focus: 0,
   };
 }
 
@@ -98,6 +101,9 @@ export function syncWorld(match: Match) {
   }
   for (const id of match.statuses.keys()) {
     if (!match.entitiesById.has(id)) match.statuses.delete(id);
+  }
+  for (const id of match.paths.keys()) {
+    if (!match.entitiesById.has(id)) match.paths.delete(id);
   }
 }
 

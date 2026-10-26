@@ -206,6 +206,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
       y: portal.y,
       to: portal.toArenaId,
     })),
+    obstacles: obstacleSnap(match),
     boss: bossSnap(match, youId),
     dungeon: dungeonSnap(match),
   };
@@ -233,6 +234,20 @@ function bossSnap(match: Match, watchId: string) {
   };
 }
 
+function obstacleSnap(match: Match) {
+  const list: Snapshot["obstacles"] = [];
+  for (const items of match.obstacles.values()) {
+    for (const item of items) {
+      if (item.shape === "circle") {
+        list.push({ arenaId: item.arenaId, shape: "circle", x: q(item.x), y: q(item.y), r: q(item.r) });
+      } else {
+        list.push({ arenaId: item.arenaId, shape: "box", x: q(item.x), y: q(item.y), w: q(item.w), h: q(item.h) });
+      }
+    }
+  }
+  return list;
+}
+
 function dungeonSnap(match: Match) {
   const state = match.dungeon;
   if (!state) return null;
@@ -251,6 +266,7 @@ function dungeonSnap(match: Match) {
     revealed: [...state.revealed],
     objective,
     result: state.result,
+    cellSize: match.data.dungeon.cellSize,
   };
 }
 
@@ -277,6 +293,8 @@ export function buildMeta(match: Match, seq = 1): MatchMeta {
       y: q(portal.y),
       to: portal.toArenaId,
     })),
+    obstacles: obstacleSnap(match),
+    cellSize: match.data.dungeon.cellSize,
     arenas: match.arenas.map((arena) => ({
       id: arena.id,
       x: q(arena.x),

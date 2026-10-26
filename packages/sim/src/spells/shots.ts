@@ -1,4 +1,5 @@
 import { dealDamage } from "../damage.js";
+import { blocked, insideAny, obstaclesOf } from "../obstacles.js";
 import type { Match, Projectile, Volley } from "../types.js";
 import { dist, entityById, playerById } from "../world.js";
 import { applyStatus } from "./status.js";
@@ -155,8 +156,14 @@ export function tickShots(match: Match, dt: number) {
       shot.vx = Math.cos(angle) * speed;
       shot.vy = Math.sin(angle) * speed;
     }
+    const walls = obstaclesOf(match, shot.arenaId);
+    const prev = { x: shot.x, y: shot.y };
     shot.x += shot.vx * dt;
     shot.y += shot.vy * dt;
+    if (walls.length > 0 && (blocked(walls, prev, shot, shot.radius) || insideAny(walls, shot, shot.radius))) {
+      shot.ttl = 0;
+      continue;
+    }
     shot.travel += Math.hypot(shot.vx, shot.vy) * dt;
     if (shot.returns && !shot.returning && shot.range > 0 && shot.travel >= shot.range) {
       shot.vx *= -1;

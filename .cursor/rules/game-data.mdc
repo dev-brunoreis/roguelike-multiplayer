@@ -14,7 +14,7 @@ alwaysApply: false
 - Creep corpo a corpo leva `attackWindup`: tempo parado antes do dano. Atirador fica em `0`.
 - `skill` no creep é opcional e usa o mesmo `cast` da habilidade. `cooldown` fica no objeto; os números ficam na ação. `skills` é a rotação. `phases` troca essa rotação por `hpBelow` e pode trazer `speedMul`.
 - `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`, `bossSeconds`), `stunImmuneSeconds`, `maxShotsPerArena`, `hubSize`, `aimSlack` e `version`.
-- `dungeon.json` manda salas, portais, coleira, reviver, escala por profundidade e os encontros da masmorra. `aggro` no creep é opcional.
+- `dungeon.json` manda salas, portais, coleira, reviver, escala por profundidade, encontros e `layouts` de obstáculo (coordenadas em fração da sala). `navCell`, `repathSeconds`, `callRadius`, `giveUpSeconds`, `returnSpeedMul` e `flankRadius` ficam aí. `aggro` no creep é opcional.
 - A oferta de carta usa o `weight` do JSON. Não existe stat de sorte.
 - Não duplique esses números no servidor ou no cliente.
 - `visual/vfx.json`, `visual/actors.json` e `visual/lab.json` são do cliente. O servidor não carrega essa pasta. Folha, fps, tamanho e a arena do lab ficam aí, com schema em `schemas.ts`.

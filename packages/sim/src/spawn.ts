@@ -1,3 +1,4 @@
+import { insideAny, obstaclesOf, openPoint } from "./obstacles.js";
 import type { Match } from "./types.js";
 import { emit } from "./world.js";
 import { arenaById, creepById, emptySkill, roundScale } from "./world.js";
@@ -13,8 +14,14 @@ export function spawnCreep(
   if (!def || !arena) return;
   const scale = at?.scale ?? roundScale(match);
   const pad = 2;
-  const x = at?.x ?? arena.x + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
-  const y = at?.y ?? arena.y + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
+  const rawX = at?.x ?? arena.x + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
+  const rawY = at?.y ?? arena.y + pad + match.rng.next() * Math.max(1, arena.size - pad * 2);
+  const walls = obstaclesOf(match, arenaId);
+  const open = insideAny(walls, { x: rawX, y: rawY }, def.radius + 0.15)
+    ? openPoint(walls, arena, { x: rawX, y: rawY }, def.radius + 0.15)
+    : { x: rawX, y: rawY };
+  const x = open.x;
+  const y = open.y;
   match.entities.push({
     id: match.nextId++,
     kind: def.kind,

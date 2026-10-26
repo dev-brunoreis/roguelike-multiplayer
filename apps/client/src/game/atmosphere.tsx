@@ -5,9 +5,9 @@ const floors = new Map<string, CanvasTextureType>();
 let voidTex: CanvasTextureType | null = null;
 
 function paintFloor(ctx: CanvasRenderingContext2D, kind: string) {
-  const base = kind === "hub" ? "#3d4a38" : kind === "duel" ? "#3a241c" : kind === "boss" ? "#4a2424" : kind === "room" ? "#3a3348" : "#4a3c2e";
-  const light = kind === "hub" ? "#52664a" : kind === "duel" ? "#5a3428" : kind === "boss" ? "#6a3834" : kind === "room" ? "#514868" : "#5c4b3a";
-  const dark = kind === "hub" ? "#2c382a" : kind === "duel" ? "#241612" : kind === "boss" ? "#2a1414" : kind === "room" ? "#241e30" : "#32281e";
+  const base = kind === "hub" ? "#3d4a38" : kind === "duel" ? "#3a241c" : kind === "boss" ? "#4a2424" : kind === "room" ? "#3a3348" : kind === "cave" ? "#2a2434" : "#4a3c2e";
+  const light = kind === "hub" ? "#52664a" : kind === "duel" ? "#5a3428" : kind === "boss" ? "#6a3834" : kind === "room" ? "#514868" : kind === "cave" ? "#3a3248" : "#5c4b3a";
+  const dark = kind === "hub" ? "#2c382a" : kind === "duel" ? "#241612" : kind === "boss" ? "#2a1414" : kind === "room" ? "#241e30" : kind === "cave" ? "#1a1622" : "#32281e";
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, 64, 64);
   for (let y = 0; y < 64; y += 8) {
@@ -45,6 +45,12 @@ function paintFloor(ctx: CanvasRenderingContext2D, kind: string) {
     ctx.lineTo(58, 52);
     ctx.stroke();
   }
+  if (kind === "cave") {
+    ctx.fillStyle = "#221c2c";
+    ctx.fillRect(6, 18, 8, 4);
+    ctx.fillRect(36, 8, 6, 5);
+    ctx.fillRect(20, 44, 10, 3);
+  }
   if (kind === "pve" || kind === "room") {
     ctx.fillStyle = kind === "room" ? "#3c3450" : "#3f5134";
     ctx.fillRect(12, 8, 4, 3);
@@ -78,7 +84,7 @@ function textureFrom(paint: (ctx: CanvasRenderingContext2D) => void, repeat: num
 }
 
 export function floorTexture(kind: string) {
-  const key = kind === "hub" || kind === "duel" || kind === "room" || kind === "boss" ? kind : "pve";
+  const key = kind === "hub" || kind === "duel" || kind === "room" || kind === "boss" || kind === "cave" ? kind : "pve";
   const cached = floors.get(key);
   if (cached) return cached;
   const tex = textureFrom((ctx) => paintFloor(ctx, key), key === "hub" ? 5 : 4);
@@ -129,7 +135,7 @@ function layout(id: string, size: number, kind: string): Bit[] {
   const rand = mulberry32(hash(`${kind}:${id}`));
   const bits: Bit[] = [];
   const span = size / 2 - 1.15;
-  const count = kind === "hub" ? 8 : 11;
+  const count = kind === "hub" ? 8 : kind === "room" ? 0 : 11;
   const rock = kind === "duel" ? "#4a3028" : kind === "hub" ? "#5c564c" : "#6b5846";
   const wood = kind === "duel" ? "#3a2218" : "#4a3424";
   for (let i = 0; i < count; i += 1) {

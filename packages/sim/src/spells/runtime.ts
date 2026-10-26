@@ -1,5 +1,6 @@
 import type { SpellDef } from "@game/shared";
 import { dealDamage } from "../damage.js";
+import { obstaclesOf, pushOut } from "../obstacles.js";
 import type { Entity, Match, Zone } from "../types.js";
 import { creepById, dist, emitFx, entityById, playerById, skillOf } from "../world.js";
 import { popBurst, runAction } from "./actions.js";
@@ -56,6 +57,7 @@ function tickDash(match: Match, creep: Entity, dt: number) {
   state.left = Math.max(0, state.left - dt);
   creep.x += state.vx * dt * scale;
   creep.y += state.vy * dt * scale;
+  pushOut(creep, obstaclesOf(match, creep.arenaId));
   if (!state.hit) {
     for (const hero of match.entities) {
       if (!hero.alive || hero.team === creep.team || hero.arenaId !== creep.arenaId) continue;

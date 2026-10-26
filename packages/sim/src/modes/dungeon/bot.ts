@@ -1,5 +1,6 @@
 import { pickCard } from "../../actions.js";
 import { steer } from "../../bots.js";
+import { faceWalk } from "../../nav.js";
 import { registerBot } from "../../registry.js";
 import type { Match, PlayerState } from "../../types.js";
 import { dist, heroEntity } from "../../world.js";
@@ -55,21 +56,6 @@ function nearestGoal(match: Match, from: string) {
   return { room: best, hop: bestHop };
 }
 
-function moveToward(player: PlayerState, from: { x: number; y: number }, to: { x: number; y: number }, stop: number) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const gap = Math.hypot(dx, dy) || 1;
-  if (gap <= stop) {
-    player.inputX = 0;
-    player.inputY = 0;
-    return;
-  }
-  player.inputX = dx / gap;
-  player.inputY = dy / gap;
-  player.aimX = to.x;
-  player.aimY = to.y;
-}
-
 registerBot("coop", (match, player) => {
   pickOffer(match, player);
   const entity = heroEntity(match, player);
@@ -85,7 +71,7 @@ registerBot("coop", (match, player) => {
   });
   if (downed) {
     const body = heroEntity(match, downed);
-    if (body) moveToward(player, entity, body, match.data.dungeon.reviveRadius * 0.7);
+    if (body) faceWalk(match, player, entity, body, match.data.dungeon.reviveRadius * 0.7);
     return;
   }
   const enemies = match.entities.some((other) => other.alive && other.kind !== "hero" && other.arenaId === entity.arenaId);
@@ -97,7 +83,7 @@ registerBot("coop", (match, player) => {
   if (!goal.hop) {
     const human = match.players.find((ally) => !ally.isBot && !ally.eliminated && ally.arenaId === entity.arenaId);
     const body = human ? heroEntity(match, human) : undefined;
-    if (body && dist(entity, body) > 2.2) moveToward(player, entity, body, 1.6);
+    if (body && dist(entity, body) > 2.2) faceWalk(match, player, entity, body, 1.6);
     else {
       player.inputX = 0;
       player.inputY = 0;
@@ -110,5 +96,5 @@ registerBot("coop", (match, player) => {
     player.inputY = 0;
     return;
   }
-  moveToward(player, entity, portal, 0.2);
+  faceWalk(match, player, entity, portal, 0.2);
 });

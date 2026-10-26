@@ -9,6 +9,7 @@ export const DungeonHud = memo(function DungeonHud() {
   return (
     <section className="hud dungeon">
       <strong>{dungeon.objective}</strong>
+      <span>Roda o mouse para aproximar</span>
     </section>
   );
 });

@@ -1,4 +1,6 @@
 import { simulateCombat } from "../../combat.js";
+import { navReady } from "../../nav.js";
+import { insideAny, materializeLayout, obstaclesOf, openPoint } from "../../obstacles.js";
 import { registerMode } from "../../registry.js";
 import { spawnCreep } from "../../spawn.js";
 import type { Arena, DungeonPortal, DungeonState, GameMode, Match, PlayerState } from "../../types.js";
@@ -30,8 +32,12 @@ function placeParty(match: Match, arenaId: string) {
     player.arenaId = arenaId;
     if (!entity) return;
     entity.arenaId = arenaId;
-    entity.x = center.x + Math.cos(angle) * 1.4;
-    entity.y = center.y + Math.sin(angle) * 1.4;
+    const spot = openPoint(obstaclesOf(match, arenaId), arena, {
+      x: center.x + Math.cos(angle) * 1.4,
+      y: center.y + Math.sin(angle) * 1.4,
+    }, entity.radius + 0.1);
+    entity.x = spot.x;
+    entity.y = spot.y;
     entity.team = "player";
   });
 }
@@ -75,8 +81,8 @@ function linkPortals(match: Match, aId: string, bId: string, index: number): Dun
     x: bx - dx * (b.size / 2 - inset),
     y: by - dy * (b.size / 2 - inset),
   };
-  const aLand = landInside(aPortal, a, land);
-  const bLand = landInside(bPortal, b, land);
+  const aLand = openPoint(obstaclesOf(match, aId), a, landInside(aPortal, a, land), 0.6);
+  const bLand = openPoint(obstaclesOf(match, bId), b, landInside(bPortal, b, land), 0.6);
   return [
     {
       id: `portal-${index}-a`,
@@ -129,14 +135,16 @@ function groupsFor(match: Match, role: DungeonState["rooms"][number]["role"], de
 function farPoint(match: Match, arenaId: string, anchors: { x: number; y: number }[]) {
   const arena = arenaById(match, arenaId);
   if (!arena) return { x: 0, y: 0 };
+  const walls = obstaclesOf(match, arenaId);
   const pad = 2.2;
-  let best = arenaCenter(arena);
+  let best = openPoint(walls, arena, arenaCenter(arena), 0.7);
   let bestScore = -1;
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 24; i += 1) {
     const spot = {
       x: arena.x + pad + match.rng.next() * Math.max(1, arena.size - pad * 2),
       y: arena.y + pad + match.rng.next() * Math.max(1, arena.size - pad * 2),
     };
+    if (insideAny(walls, spot, 0.8)) continue;
     const score = anchors.length === 0 ? 1 : Math.min(...anchors.map((anchor) => dist(anchor, spot)));
     if (score > bestScore) {
       best = spot;
@@ -144,6 +152,16 @@ function farPoint(match: Match, arenaId: string, anchors: { x: number; y: number
     }
   }
   return best;
+}
+
+function dressRoom(match: Match, arena: Arena) {
+  const def = match.data.dungeon;
+  const role = arena.role ?? "fight";
+  const pool = def.layouts.filter((layout) => layout.roles.includes(role));
+  const layout = pool.length > 0 ? match.rng.pick(pool) : { id: "open", obstacles: [] };
+  const list = materializeLayout(arena, layout);
+  match.obstacles.set(arena.id, list);
+  navReady(match, arena, list);
 }
 
 function armRoom(match: Match, roomId: string) {
@@ -279,6 +297,7 @@ export const dungeonMode: GameMode = {
         role: room.role,
         armed: room.role === "entrance",
       });
+      dressRoom(match, match.arenas[match.arenas.length - 1]!);
     }
     generated.links.forEach((link, index) => {
       state.portals.push(...linkPortals(match, link.a, link.b, index));

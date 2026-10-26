@@ -1,6 +1,8 @@
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace, Texture } from "three";
 
 export const CAMERA_ZOOM = 22;
+export const ZOOM_MIN = 12;
+export const ZOOM_MAX = 40;
 
 const LABEL_W = 256;
 const LABEL_H = 56;

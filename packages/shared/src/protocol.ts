@@ -138,11 +138,16 @@ export interface PortalSnap {
   to: string;
 }
 
+export type ObstacleSnap =
+  | { arenaId: string; shape: "circle"; x: number; y: number; r: number }
+  | { arenaId: string; shape: "box"; x: number; y: number; w: number; h: number };
+
 export interface DungeonSnap {
   sealed: string[];
   revealed: string[];
   objective: string;
   result: "win" | "lose" | null;
+  cellSize: number;
 }
 
 export interface DuelPairSnap {
@@ -219,6 +224,7 @@ export interface Snapshot {
   announce: AnnounceSnap | null;
   mode: GameModeId;
   portals: PortalSnap[];
+  obstacles: ObstacleSnap[];
   dungeon: DungeonSnap | null;
 }
 
@@ -311,6 +317,8 @@ export interface MatchMeta {
   mode: GameModeId;
   arenas: ArenaSnap[];
   portals: PortalSnap[];
+  obstacles: ObstacleSnap[];
+  cellSize: number;
   creeps: MetaCreep[];
   abilities: MetaAbility[];
   cards: MetaCard[];

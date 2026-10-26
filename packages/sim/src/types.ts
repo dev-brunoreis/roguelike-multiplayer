@@ -87,6 +87,31 @@ export interface SkillState {
   payload: number;
   payloadRadius: number;
   crit: boolean;
+  mood: "" | "idle" | "chase" | "return";
+  stuck: number;
+  focus: number;
+}
+
+export type Obstacle =
+  | { id: string; arenaId: string; shape: "circle"; x: number; y: number; r: number }
+  | { id: string; arenaId: string; shape: "box"; x: number; y: number; w: number; h: number };
+
+export interface NavGrid {
+  arenaId: string;
+  originX: number;
+  originY: number;
+  cell: number;
+  cols: number;
+  rows: number;
+  walk: Uint8Array;
+}
+
+export interface PathCache {
+  points: { x: number; y: number }[];
+  cursor: number;
+  goalX: number;
+  goalY: number;
+  until: number;
 }
 
 export interface Projectile {
@@ -389,6 +414,9 @@ export interface Match {
   bossAnnounced: boolean;
   paused: boolean;
   dungeon: DungeonState | null;
+  obstacles: Map<string, Obstacle[]>;
+  navs: Map<string, NavGrid>;
+  paths: Map<number, PathCache>;
 }
 
 export interface AbilityContext {

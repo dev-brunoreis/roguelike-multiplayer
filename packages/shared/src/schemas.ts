@@ -190,6 +190,28 @@ export const dungeonSpawnSchema = z.object({
   count: z.number().int().positive(),
 });
 
+export const dungeonObstacleSchema = z.discriminatedUnion("shape", [
+  z.object({
+    shape: z.literal("circle"),
+    x: z.number(),
+    y: z.number(),
+    r: z.number().positive(),
+  }),
+  z.object({
+    shape: z.literal("box"),
+    x: z.number(),
+    y: z.number(),
+    w: z.number().positive(),
+    h: z.number().positive(),
+  }),
+]);
+
+export const dungeonLayoutSchema = z.object({
+  id: z.string().min(1),
+  roles: z.array(z.enum(["entrance", "fight", "rest", "elite", "boss"])).min(1),
+  obstacles: z.array(dungeonObstacleSchema),
+});
+
 export const dungeonSchema = z.object({
   roomsMin: z.number().int().min(3),
   roomsMax: z.number().int().min(3),
@@ -207,6 +229,13 @@ export const dungeonSchema = z.object({
   reviveHpPct: z.number().positive().max(1),
   depthHp: z.number().nonnegative(),
   depthDamage: z.number().nonnegative(),
+  navCell: z.number().positive(),
+  repathSeconds: z.number().positive(),
+  callRadius: z.number().positive(),
+  giveUpSeconds: z.number().positive(),
+  returnSpeedMul: z.number().positive(),
+  flankRadius: z.number().nonnegative(),
+  layouts: z.array(dungeonLayoutSchema).min(1),
   encounters: z.array(z.object({
     depth: z.number().int().nonnegative(),
     spawns: z.array(dungeonSpawnSchema).min(1),

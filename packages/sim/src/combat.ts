@@ -1,3 +1,4 @@
+import { resolveObstacles } from "./obstacles.js";
 import { getCreepBehavior } from "./registry.js";
 import type { Entity, Match } from "./types.js";
 import {
@@ -25,6 +26,7 @@ export function simulateMove(match: Match, dt: number) {
   moveHeroes(match, dt);
   separate(match);
   clampAll(match);
+  resolveObstacles(match);
 }
 
 export function simulateCombat(match: Match, dt: number) {
@@ -32,6 +34,7 @@ export function simulateCombat(match: Match, dt: number) {
   moveCreeps(match, dt);
   separate(match);
   clampAll(match);
+  resolveObstacles(match);
   castAbilities(match);
   tickShots(match, dt);
   tickZones(match, dt);

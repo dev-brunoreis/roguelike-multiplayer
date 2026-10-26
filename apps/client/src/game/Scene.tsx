@@ -1,10 +1,10 @@
-import type { ArenaSnap, PortalSnap, Snapshot } from "@game/shared/protocol";
+import type { ArenaSnap, ObstacleSnap, PortalSnap, Snapshot } from "@game/shared/protocol";
 import { OrthographicCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { OrthographicCamera as OrthoCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
 import { arenaInView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
-import { CAMERA_ZOOM } from "./glyphs.js";
+import { CAMERA_ZOOM, ZOOM_MAX, ZOOM_MIN } from "./glyphs.js";
 import { setWorldAim } from "./input.js";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion } from "./motion.js";
@@ -93,6 +93,8 @@ function World({
   view: SceneView | null;
 }) {
   const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+  const zoomRef = useRef(readZoom());
   const follow = useRef({ x: 0, z: 0, ready: false });
   const focusMem = useRef({ x: 0, z: 0, ready: false });
   const [visible, setVisible] = useState<{ arenas: string[]; entities: number[] }>({ arenas: [], entities: [] });
@@ -106,6 +108,19 @@ function World({
       resetPoses();
     };
   }, []);
+
+  useEffect(() => {
+    if (view) return;
+    const el = gl.domElement;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomRef.current - event.deltaY * 0.012));
+      zoomRef.current = next;
+      writeZoom(next);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [gl, view]);
 
   useFrame((state, delta) => {
     const snap = snapRef.current;
@@ -140,8 +155,8 @@ function World({
     const jz = (Math.random() - 0.5) * j * 0.28;
     const focusX = view ? view.x : follow.current.x;
     const focusZ = view ? view.z : follow.current.z;
-    if (view && camera instanceof OrthoCamera) {
-      camera.zoom = view.zoom;
+    if (camera instanceof OrthoCamera) {
+      camera.zoom = view?.zoom ?? zoomRef.current;
       camera.updateProjectionMatrix();
     }
     camera.position.set(focusX + 16 + jx, 20, focusZ + 16 + jz);
@@ -170,13 +185,15 @@ function World({
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
         <planeGeometry args={[voidSpan(snap), voidSpan(snap)]} />
-        <meshBasicMaterial map={voidTexture()} color="#141210" dispose={null} />
+        <meshBasicMaterial map={voidTexture()} color={snap?.dungeon ? "#121018" : "#141210"} dispose={null} />
       </mesh>
       <Drift />
+      <CaveBed snap={snap} shown={visible.arenas} />
       {visible.arenas.map((id) => {
         const arena = snap?.arenas.find((item) => item.id === id);
         return arena ? <ArenaPad key={id} arena={arena} /> : null;
       })}
+      <ObstacleLayer snap={snap} shown={visible.arenas} />
       <PortalLayer snap={snap} shown={visible.arenas} />
       {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} indexRef={indexRef} />)}
       <DeathLayer snapRef={snapRef} />
@@ -184,6 +201,68 @@ function World({
       <HpLayer ids={visible.entities} indexRef={indexRef} snapRef={snapRef} />
       <VfxField snapRef={snapRef} />
     </>
+  );
+}
+
+function readZoom() {
+  if (typeof window === "undefined") return CAMERA_ZOOM;
+  const raw = Number(window.localStorage.getItem("caos-zoom"));
+  if (!Number.isFinite(raw)) return CAMERA_ZOOM;
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, raw));
+}
+
+function writeZoom(value: number) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("caos-zoom", String(Math.round(value * 10) / 10));
+}
+
+function CaveBed({ snap, shown }: { snap: Snapshot | null; shown: string[] }) {
+  if (!snap?.dungeon) return null;
+  const cell = snap.dungeon.cellSize;
+  const open = new Set(shown);
+  const map = floorTexture("cave");
+  return (
+    <>
+      {snap.arenas.filter((arena) => open.has(arena.id)).map((arena) => {
+        const cx = arena.x + cell / 2;
+        const cz = arena.y + cell / 2;
+        return (
+          <mesh key={`cave-${arena.id}`} rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.04, cz]}>
+            <planeGeometry args={[cell + 1.2, cell + 1.2]} />
+            <meshBasicMaterial map={map} color="#8a8496" dispose={null} />
+          </mesh>
+        );
+      })}
+    </>
+  );
+}
+
+function ObstacleLayer({ snap, shown }: { snap: Snapshot | null; shown: string[] }) {
+  if (!snap) return null;
+  const open = new Set(shown);
+  return (
+    <>
+      {snap.obstacles.filter((item) => open.has(item.arenaId)).map((item, index) => (
+        <ObstacleMark key={`${item.arenaId}:${index}`} item={item} />
+      ))}
+    </>
+  );
+}
+
+function ObstacleMark({ item }: { item: ObstacleSnap }) {
+  if (item.shape === "circle") {
+    return (
+      <mesh position={[item.x, item.r * 0.85, item.y]}>
+        <cylinderGeometry args={[item.r, item.r * 1.08, item.r * 1.7, 8]} />
+        <meshBasicMaterial color="#6a5c52" />
+      </mesh>
+    );
+  }
+  return (
+    <mesh position={[item.x, Math.min(item.w, item.h) * 0.55, item.y]}>
+      <boxGeometry args={[item.w, Math.min(item.w, item.h) * 1.1, item.h]} />
+      <meshBasicMaterial color="#5c5048" />
+    </mesh>
   );
 }
 
