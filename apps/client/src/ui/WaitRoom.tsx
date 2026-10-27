@@ -156,26 +156,34 @@ export function WaitRoom({
           {host ? null : <p className="muted">Só o host muda isso.</p>}
           <div className="settings">
             <label>Modo
-              <select disabled={!host} value={state?.config.mode ?? "arena"} onChange={(event) => sendConfig({ mode: event.target.value === "masmorra" ? "masmorra" : "arena" })}>
+              <select disabled={!host} value={state?.config.mode ?? "arena"} onChange={(event) => {
+                const mode = event.target.value === "masmorra" ? "masmorra" : event.target.value === "abismo" ? "abismo" : "arena";
+                sendConfig(mode === "abismo" ? { mode, fillWithBots: false } : { mode });
+              }}>
                 <option value="arena">Arena</option>
                 <option value="masmorra">Masmorra</option>
+                <option value="abismo">Abismo</option>
               </select>
             </label>
             <label>Lugares
-              <input disabled={!host} type="number" min={state?.config.mode === "masmorra" ? 1 : 2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
+              <input disabled={!host} type="number" min={state?.config.mode === "masmorra" || state?.config.mode === "abismo" ? 1 : 2} max={8} value={state?.config.slots ?? 4} onChange={(event) => sendConfig({ slots: Number(event.target.value) })} />
             </label>
-            {state?.config.mode === "masmorra" ? null : (
+            {state?.config.mode === "masmorra" || state?.config.mode === "abismo" ? null : (
               <label>Vidas
                 <input disabled={!host} type="number" min={1} max={9} value={state?.config.lives ?? 3} onChange={(event) => sendConfig({ lives: Number(event.target.value) })} />
               </label>
             )}
-            <label>Cartas por nível
-              <input disabled={!host} type="number" min={2} max={8} value={state?.config.cardsPerLevelUp ?? 5} onChange={(event) => sendConfig({ cardsPerLevelUp: Number(event.target.value) })} />
-            </label>
-            <label className="check">
-              <input disabled={!host} type="checkbox" checked={state?.config.fillWithBots ?? true} onChange={(event) => sendConfig({ fillWithBots: event.target.checked })} />
-              Preencher com bots
-            </label>
+            {state?.config.mode === "abismo" ? null : (
+              <label>Cartas por nível
+                <input disabled={!host} type="number" min={2} max={8} value={state?.config.cardsPerLevelUp ?? 5} onChange={(event) => sendConfig({ cardsPerLevelUp: Number(event.target.value) })} />
+              </label>
+            )}
+            {state?.config.mode === "abismo" ? null : (
+              <label className="check">
+                <input disabled={!host} type="checkbox" checked={state?.config.fillWithBots ?? true} onChange={(event) => sendConfig({ fillWithBots: event.target.checked })} />
+                Preencher com bots
+              </label>
+            )}
           </div>
           {state?.error ? <p className="error">{state.error}</p> : null}
           {host ? <button className="btn primary" onClick={() => roomRef.current?.send("start")}>Começar</button> : <p className="muted">Esperando o host começar.</p>}

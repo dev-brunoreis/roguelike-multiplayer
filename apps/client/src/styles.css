@@ -169,6 +169,16 @@ input[type="text"], input[type="password"], input[type="number"] {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 .hud.dungeon span { color: #c4b8a4; letter-spacing: 0; font-size: 12px; }
+.hud.abyss-map {
+  top: 36px; right: 12px; width: 168px;
+  background: #1c1914cc; border: 1px solid #3a3228; padding: 8px;
+  display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+}
+.hud.abyss-map strong { color: #e6c15a; letter-spacing: 0.04em; }
+.hud.abyss-map span { color: #c4b8a4; font-size: 12px; }
+.hud.abyss-map canvas {
+  width: 152px; height: 152px; image-rendering: pixelated; background: #07060a;
+}
 .xp { width: 90px; height: 8px; background: #2a241c; display: inline-block; }
 .xp i { display: block; height: 100%; background: #e07a3d; }
 .hud.side {

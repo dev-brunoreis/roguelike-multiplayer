@@ -12,12 +12,13 @@ export function useSlice<T>(pick: () => T) {
 export const PhaseBar = memo(function PhaseBar() {
   const phase = useSlice(() => matchStore.phase);
   const me = useSlice(() => matchStore.me);
+  const explore = useSlice(() => matchStore.snap?.mode === "abismo");
   if (!phase) return null;
   return (
     <header className="hud top">
       <div>
-        <strong>{phase.phase === "dungeon" ? phase.label : `${phase.label} ${phase.round}`}</strong>
-        {me ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
+        <strong>{phase.phase === "dungeon" || explore ? phase.label : `${phase.label} ${phase.round}`}</strong>
+        {me && !explore ? <span className="xp"><i style={{ width: `${Math.min(100, (me.xp / me.xpNext) * 100)}%` }} /></span> : null}
         {phase.paused ? <em className="flag">pausado</em> : null}
         {!phase.paused && phase.asking > 0 ? <em className="flag">{phase.asking}/{phase.humans} pausa</em> : null}
       </div>

@@ -69,7 +69,9 @@ class MatchStore {
       paused: snap.paused,
       asking,
       humans: humans.length,
-      label: snap.phase === "duel" && me && !me.inDuel && !me.eliminated ? "Onda" : (PHASE[snap.phase] ?? snap.phase),
+      label: snap.mode === "abismo" && snap.abyss
+        ? snap.abyss.nome
+        : snap.phase === "duel" && me && !me.inDuel && !me.eliminated ? "Onda" : (PHASE[snap.phase] ?? snap.phase),
       duelAnnounce: snap.duelAnnounce,
       duelCount: snap.duel.length,
     };
@@ -79,6 +81,7 @@ class MatchStore {
       && this.phase.paused === phase.paused && this.phase.asking === phase.asking && this.phase.humans === phase.humans
       && Math.ceil(this.phase.duelAnnounce) === Math.ceil(phase.duelAnnounce)
       && this.phase.duelCount === phase.duelCount
+      && this.phase.label === phase.label
       ? this.phase
       : phase;
     const board = [...snap.players].sort((a, b) => Number(b.eliminated || b.lives <= 0) - Number(a.eliminated || a.lives <= 0));

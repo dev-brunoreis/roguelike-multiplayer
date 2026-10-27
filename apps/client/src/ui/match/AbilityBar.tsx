@@ -5,6 +5,8 @@ import { useSlice } from "./PhaseBar.js";
 
 export const AbilityBar = memo(function AbilityBar() {
   const me = useSlice(() => matchStore.me);
+  const explore = useSlice(() => matchStore.snap?.mode === "abismo");
+  if (explore) return null;
   return (
     <footer className="hud abilities">
       {me?.abilities.map((ability, index) => {

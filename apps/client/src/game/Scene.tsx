@@ -6,6 +6,7 @@ import { OrthographicCamera as OrthoCamera, Plane, Raycaster, Vector2, Vector3 }
 import { arenaInView, renderStats, setViewRect, type SnapIndex } from "./frame.js";
 import { CAMERA_ZOOM, ZOOM_MAX, ZOOM_MIN } from "./glyphs.js";
 import { setWorldAim } from "./input.js";
+import { AbyssField } from "./AbyssMap.js";
 import { ArenaDressing, floorTexture, moteField, moteTexture, voidTexture, type MoteField } from "./atmosphere.js";
 import { forgetMotion, motionAt, resetMotion } from "./motion.js";
 import { VfxField } from "./VfxField.js";
@@ -185,16 +186,20 @@ function World({
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
         <planeGeometry args={[voidSpan(snap), voidSpan(snap)]} />
-        <meshBasicMaterial map={voidTexture()} color={snap?.dungeon ? "#121018" : "#141210"} dispose={null} />
+        <meshBasicMaterial map={voidTexture()} color={snap?.mode === "abismo" ? "#07060a" : snap?.dungeon ? "#121018" : "#141210"} dispose={null} />
       </mesh>
-      <Drift />
-      <CaveBed snap={snap} shown={visible.arenas} />
-      {visible.arenas.map((id) => {
-        const arena = snap?.arenas.find((item) => item.id === id);
-        return arena ? <ArenaPad key={id} arena={arena} /> : null;
-      })}
-      <ObstacleLayer snap={snap} shown={visible.arenas} />
-      <PortalLayer snap={snap} shown={visible.arenas} />
+      {snap?.mode === "abismo" ? <AbyssField snapRef={snapRef} /> : (
+        <>
+          <Drift />
+          <CaveBed snap={snap} shown={visible.arenas} />
+          {visible.arenas.map((id) => {
+            const arena = snap?.arenas.find((item) => item.id === id);
+            return arena ? <ArenaPad key={id} arena={arena} /> : null;
+          })}
+          <ObstacleLayer snap={snap} shown={visible.arenas} />
+          <PortalLayer snap={snap} shown={visible.arenas} />
+        </>
+      )}
       {visible.entities.map((id) => <EntityPuppet key={id} id={id} snapRef={snapRef} indexRef={indexRef} />)}
       <DeathLayer snapRef={snapRef} />
       <FloatLayer snapRef={snapRef} />

@@ -5,6 +5,7 @@ import { Scene } from "../../game/Scene.js";
 import { cameraMove, clearMove, isTypingTarget, worldAim } from "../../game/input.js";
 import { mergeChat, TextChat } from "../TextChat.js";
 import { AbilityBar } from "./AbilityBar.js";
+import { AbyssHud } from "./AbyssHud.js";
 import { Banner } from "./Banner.js";
 import { BossBar } from "./BossBar.js";
 import { DungeonHud } from "./DungeonHud.js";
@@ -150,6 +151,7 @@ export function MatchScreen({ token, roomId, onLeave, onDown }: { token: string;
         <Banner />
       </div>
       <Board watchId={watchId} onWatch={setWatch} />
+      <AbyssHud />
       <AbilityBar />
       <MatchLog />
       <TextChat inputRef={chatRef} lines={chat} youId={matchStore.youId} onSend={(text) => send("chat", { text })} />
