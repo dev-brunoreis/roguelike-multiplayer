@@ -94,7 +94,8 @@ export interface SkillState {
 
 export type Obstacle =
   | { id: string; arenaId: string; shape: "circle"; x: number; y: number; r: number }
-  | { id: string; arenaId: string; shape: "box"; x: number; y: number; w: number; h: number };
+  | { id: string; arenaId: string; shape: "box"; x: number; y: number; w: number; h: number }
+  | { id: string; arenaId: string; shape: "grid"; tileSize: number; tiles: Uint8Array; n: number; skin: number; open: number };
 
 export interface NavGrid {
   arenaId: string;

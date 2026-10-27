@@ -92,6 +92,92 @@ export function floorTexture(kind: string) {
   return tex;
 }
 
+const abyssSurfaces = new Map<string, CanvasTextureType>();
+
+function mixHex(hex: string, toward: number, t: number) {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const ch = (shift: number) => {
+    const value = (n >> shift) & 255;
+    return Math.max(0, Math.min(255, Math.round(value + (toward - value) * t)));
+  };
+  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+
+function paintAbyss(ctx: CanvasRenderingContext2D, layer: "floor" | "wall" | "pit", kind: string, palette: string) {
+  const darken = layer === "wall" ? 0.28 : layer === "pit" ? 0.62 : 0.08;
+  const base = mixHex(palette, 0, darken);
+  const light = mixHex(palette, 255, layer === "pit" ? 0.08 : 0.22);
+  const dark = mixHex(palette, 0, layer === "pit" ? 0.45 : 0.38);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 64, 64);
+  const step = layer === "wall" ? 16 : 8;
+  for (let y = 0; y < 64; y += step) {
+    for (let x = 0; x < 64; x += step) {
+      const n = (x * 13 + y * 17) % 11;
+      ctx.fillStyle = n < 3 ? dark : n > 8 ? light : base;
+      ctx.fillRect(x + 1, y + 1, step - 2, step - 2);
+    }
+  }
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 64; i += step) {
+    ctx.beginPath();
+    ctx.moveTo(i + 0.5, 0);
+    ctx.lineTo(i + 0.5, 64);
+    ctx.moveTo(0, i + 0.5);
+    ctx.lineTo(64, i + 0.5);
+    ctx.stroke();
+  }
+  if (layer === "pit") {
+    ctx.fillStyle = dark;
+    for (let y = 6; y < 64; y += 10) ctx.fillRect(0, y, 64, 2);
+    return;
+  }
+  if (kind === "galeria") {
+    ctx.strokeStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(8, 4);
+    ctx.lineTo(18, 30);
+    ctx.lineTo(12, 60);
+    ctx.moveTo(40, 2);
+    ctx.lineTo(48, 28);
+    ctx.lineTo(36, 62);
+    ctx.stroke();
+  }
+  if (kind === "cisterna") {
+    ctx.fillStyle = light;
+    for (let y = 10; y < 64; y += 14) ctx.fillRect(4, y, 56, 1);
+  }
+  if (kind === "ossuario") {
+    ctx.fillStyle = light;
+    ctx.fillRect(10, 14, 6, 3);
+    ctx.fillRect(36, 40, 8, 3);
+    ctx.fillRect(22, 8, 3, 6);
+    ctx.fillRect(48, 20, 3, 5);
+  }
+  if (kind === "coracao") {
+    ctx.fillStyle = light;
+    ctx.fillRect(12, 18, 3, 3);
+    ctx.fillRect(44, 12, 2, 2);
+    ctx.fillRect(28, 46, 3, 2);
+    ctx.fillRect(50, 36, 2, 3);
+  }
+  if (layer === "wall" && kind === "limiar") {
+    ctx.fillStyle = dark;
+    ctx.fillRect(4, 20, 2, 8);
+    ctx.fillRect(34, 6, 2, 10);
+  }
+}
+
+export function abyssSurface(layer: "floor" | "wall" | "pit", kind: string, palette: string) {
+  const key = `${layer}:${kind}:${palette}`;
+  const cached = abyssSurfaces.get(key);
+  if (cached) return cached;
+  const tex = textureFrom((ctx) => paintAbyss(ctx, layer, kind, palette), 1);
+  abyssSurfaces.set(key, tex);
+  return tex;
+}
+
 export function voidTexture() {
   if (voidTex) return voidTex;
   voidTex = textureFrom((ctx) => {

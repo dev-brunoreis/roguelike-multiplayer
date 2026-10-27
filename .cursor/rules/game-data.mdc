@@ -15,7 +15,7 @@ alwaysApply: false
 - `skill` no creep é opcional e usa o mesmo `cast` da habilidade. `cooldown` fica no objeto; os números ficam na ação. `skills` é a rotação. `phases` troca essa rotação por `hpBelow` e pode trazer `speedMul`.
 - `match.json` manda vidas, `cardsPerLevelUp`, `maxAbilities`, tempos (`hubSeconds`, `cardPickSeconds`, `pveSeconds`, `bossSeconds`), `stunImmuneSeconds`, `maxShotsPerArena`, `hubSize`, `aimSlack` e `version`.
 - `dungeon.json` manda salas, portais, coleira, reviver, escala por profundidade, encontros e `layouts` de obstáculo (coordenadas em fração da sala). `navCell`, `repathSeconds`, `callRadius`, `giveUpSeconds`, `returnSpeedMul` e `flankRadius` ficam aí. `aggro` no creep é opcional.
-- `abyss.json` manda o tamanho da grade, o tile, o raio da névoa, o cooldown da escada e a lista de andares (id, nome, kind, paleta).
+- `abyss.json` manda o tamanho da grade, o tile, o raio da névoa, o cooldown da escada, a folga do corpo (`bodySkin`), a lista de andares (id, nome, kind, paleta) e os bichos de teste (`spawns`: andar, creep, quantidade).
 - A oferta de carta usa o `weight` do JSON. Não existe stat de sorte.
 - Não duplique esses números no servidor ou no cliente.
 - `visual/vfx.json`, `visual/actors.json` e `visual/lab.json` são do cliente. O servidor não carrega essa pasta. Folha, fps, tamanho e a arena do lab ficam aí, com schema em `schemas.ts`.

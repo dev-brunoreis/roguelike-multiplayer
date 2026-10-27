@@ -179,7 +179,7 @@ export interface AbyssSnap extends AbyssMeta {
   nome: string;
   objective: string;
   revealed: string;
-  result: "win" | null;
+  result: "win" | "lose" | null;
 }
 
 export interface DuelPairSnap {
@@ -505,7 +505,7 @@ export interface WireAbyss {
   nome: string;
   objective: string;
   revealed: string;
-  result: "win" | null;
+  result: "win" | "lose" | null;
 }
 
 export interface WireSnapshot {

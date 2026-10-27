@@ -3,11 +3,20 @@
   "tileSize": 2,
   "vision": 11,
   "stairCooldown": 0.6,
+  "bodySkin": 0.22,
   "floors": [
     { "id": "limiar", "nome": "Limiar", "kind": "limiar", "palette": "#8d8474" },
     { "id": "galeria", "nome": "Galeria", "kind": "galeria", "palette": "#6e6458" },
     { "id": "cisterna", "nome": "Cisterna", "kind": "cisterna", "palette": "#3e4c52" },
     { "id": "ossuario", "nome": "Ossuário", "kind": "ossuario", "palette": "#9a9286" },
     { "id": "coracao", "nome": "Coração", "kind": "coracao", "palette": "#6a4038" }
+  ],
+  "spawns": [
+    { "floor": "limiar", "creepId": "slime", "count": 3 },
+    { "floor": "limiar", "creepId": "esqueleto", "count": 2 },
+    { "floor": "galeria", "creepId": "zumbi", "count": 3 },
+    { "floor": "cisterna", "creepId": "lodo", "count": 3 },
+    { "floor": "ossuario", "creepId": "esqueleto", "count": 3 },
+    { "floor": "coracao", "creepId": "bruto", "count": 1 }
   ]
 }

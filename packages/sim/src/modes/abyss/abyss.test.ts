@@ -1,6 +1,8 @@
 import { loadGameData } from "@game/game-data";
 import { describe, expect, it } from "vitest";
 import { buildWire, createMatch, runTicks, setInput, tick } from "../../index.js";
+import { blocked } from "../../obstacles.js";
+import { pushShot } from "../../spells/shots.js";
 import { heroEntity } from "../../world.js";
 import { floodFrom, generateAbyss, maskBit, TILE_FLOOR, TILE_WALL } from "./generate.js";
 import { abyssOf } from "./state.js";
@@ -70,11 +72,17 @@ describe("abismo", () => {
       }
     }
     expect(wall).toBeTruthy();
+    for (const other of match.entities) {
+      if (other.kind !== "hero") other.alive = false;
+    }
     entity.x = (wall!.x + 0.5) * state!.map.tileSize;
     entity.y = (wall!.y + 0.5) * state!.map.tileSize;
     setInput(match, player.id, 1, 0);
     runTicks(match, 30);
-    expect(entity.x + entity.radius).toBeLessThanOrEqual((wall!.x + 1) * state!.map.tileSize + 0.05);
+    const edge = (wall!.x + 1) * state!.map.tileSize;
+    const skin = data.abyss.bodySkin;
+    expect(entity.x + entity.radius + skin).toBeLessThanOrEqual(edge + 1e-3);
+    expect(entity.x + entity.radius + skin).toBeGreaterThan(edge - 0.28);
 
     const stair = state!.map.stairs.find((item) => item.floor === 0 && item.dir === "down");
     expect(stair).toBeTruthy();
@@ -114,5 +122,106 @@ describe("abismo", () => {
     expect(match.phase).toBe("ended");
     expect(state.result).toBe("win");
     expect(match.log.some((line) => line.includes("coração"))).toBe(true);
+  });
+
+  it("solta bichos que batem, tomam dano e param no muro", () => {
+    const match = createMatch({ players: party(1), seed: 4, data, mode: "abismo" });
+    const state = abyssOf(match)!;
+    const player = match.players[0]!;
+    const hero = heroEntity(match, player)!;
+    const home = state.map.floors[0]!.id;
+    const creeps = match.entities.filter((entity) => entity.kind !== "hero" && entity.arenaId === home);
+    expect(creeps.length).toBeGreaterThanOrEqual(3);
+    expect(creeps.every((creep) => creep.behavior === "abyss")).toBe(true);
+
+    const creep = creeps[0]!;
+    for (const other of creeps) {
+      if (other.id !== creep.id) other.alive = false;
+    }
+    hero.x = creep.x - 1.2;
+    hero.y = creep.y;
+    hero.facing = 0;
+    const heroHp = hero.hp;
+    const creepHp = creep.hp;
+    setInput(match, player.id, 0, 0);
+    runTicks(match, 24);
+    expect(creep.hp).toBeLessThan(creepHp);
+    expect(hero.hp).toBeLessThan(heroHp);
+
+    const n = state.map.tiles;
+    const floor = state.map.floors[0]!;
+    let wall: { x: number; y: number } | null = null;
+    for (let y = 1; y < n - 2 && !wall; y += 1) {
+      for (let x = 1; x < n - 2; x += 1) {
+        if (floor.tiles[y * n + x] === TILE_FLOOR && floor.tiles[y * n + x + 1] === TILE_WALL) {
+          wall = { x, y };
+          break;
+        }
+      }
+    }
+    expect(wall).toBeTruthy();
+    creep.alive = true;
+    creep.hp = creep.maxHp;
+    creep.x = (wall!.x + 0.5) * state.map.tileSize;
+    creep.y = (wall!.y + 0.5) * state.map.tileSize;
+    hero.x = (wall!.x + 1.5) * state.map.tileSize;
+    hero.y = creep.y;
+    hero.alive = true;
+    const edge = (wall!.x + 1) * state.map.tileSize;
+    runTicks(match, 20);
+    expect(creep.x + creep.radius + data.abyss.bodySkin).toBeLessThanOrEqual(edge + 1e-3);
+
+    const from = { x: creep.x, y: creep.y };
+    const into = { x: edge + 0.4, y: creep.y };
+    expect(blocked(match.obstacles.get(home) ?? [], from, into, 0.12)).toBe(true);
+    pushShot(match, {
+      x: (wall!.x + 0.5) * state.map.tileSize,
+      y: (wall!.y + 0.5) * state.map.tileSize,
+      vx: 16,
+      vy: 0,
+      radius: 0.12,
+      damage: 1,
+      crit: false,
+      arenaId: home,
+      team: "hero",
+      ownerId: player.id,
+      abilityId: "flecha",
+      color: "#fff",
+      ttl: 2,
+      vfx: "",
+      pierce: 0,
+      curve: 0,
+      returns: false,
+      originX: (wall!.x + 0.5) * state.map.tileSize,
+      originY: (wall!.y + 0.5) * state.map.tileSize,
+      range: 40,
+      status: "",
+      statusTime: 0,
+      statusValue: 0,
+      orbit: false,
+      angle: 0,
+      orbitRadius: 0,
+      spin: 0,
+    });
+    runTicks(match, 8);
+    expect(match.projectiles).toHaveLength(0);
+  });
+
+  it("a morte do grupo encerra a descida", () => {
+    const match = createMatch({ players: party(1), seed: 4, data, mode: "abismo" });
+    const player = match.players[0]!;
+    const hero = heroEntity(match, player)!;
+    const creep = match.entities.find((entity) => entity.behavior === "abyss")!;
+    for (const other of match.entities) {
+      if (other.kind !== "hero" && other.id !== creep.id) other.alive = false;
+    }
+    hero.x = creep.x - 1.2;
+    hero.y = creep.y;
+    hero.hp = 1;
+    setInput(match, player.id, 0, 0);
+    runTicks(match, 30);
+    expect(player.eliminated).toBe(true);
+    expect(match.phase).toBe("ended");
+    expect(abyssOf(match)?.result).toBe("lose");
   });
 });

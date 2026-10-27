@@ -1,7 +1,7 @@
 import type { Snapshot } from "@game/shared";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState, type MutableRefObject } from "react";
-import { Color, InstancedMesh, Object3D } from "three";
+import { Color, InstancedMesh, MeshBasicMaterial, Object3D } from "three";
 import {
   base64ToMask,
   generateAbyss,
@@ -12,6 +12,7 @@ import {
   type AbyssFloorDef,
   type AbyssMap,
 } from "@game/sim/abyss";
+import { abyssSurface } from "./atmosphere.js";
 
 const MARKS = 8;
 
@@ -49,8 +50,6 @@ function AbyssMeshes({ map, snapRef }: { map: AbyssMap; snapRef: MutableRefObjec
   const markRef = useRef<InstancedMesh>(null);
   const scratch = useMemo(() => new Object3D(), []);
   const color = useMemo(() => new Color(), []);
-  const lit = useMemo(() => new Color(), []);
-  const dim = useMemo(() => new Color(), []);
   const seen = useRef("");
   const floorMem = useRef(-1);
   const lists = useMemo(() => map.floors.map((floor) => packFloor(map.tiles, floor.tiles)), [map]);
@@ -77,11 +76,14 @@ function AbyssMeshes({ map, snapRef }: { map: AbyssMap; snapRef: MutableRefObjec
       lay(walls, pack.walls, map, mask, scratch, 0.85, false);
       layMarks(marks, map, info.floor, mask, scratch);
     }
+    paint(floors, abyssSurface("floor", grid.kind, grid.palette));
+    paint(pits, abyssSurface("pit", grid.kind, grid.palette));
+    paint(walls, abyssSurface("wall", grid.kind, grid.palette));
     const heroes = snapRef.current?.entities.filter((entity) => entity.kind === "hero") ?? [];
     const reach = map.vision * map.tileSize;
-    tint(floors, pack.floors, map, mask, heroes, reach, grid.palette, 0.42, 1, color, lit, dim);
-    tint(pits, pack.pits, map, mask, heroes, reach, "#102026", 0.45, 0.85, color, lit, dim);
-    tint(walls, pack.walls, map, mask, heroes, reach, grid.palette, 0.5, 0.9, color, lit, dim);
+    tint(floors, pack.floors, map, mask, heroes, reach, 0.22, 1, color);
+    tint(pits, pack.pits, map, mask, heroes, reach, 0.16, 0.72, color);
+    tint(walls, pack.walls, map, mask, heroes, reach, 0.28, 1, color);
     const pulse = 0.85 + Math.sin(state.clock.elapsedTime * 3) * 0.12;
     const heart = map.heart.floor === info.floor ? 1 : 0;
     if (marks.count > heart) {
@@ -93,9 +95,9 @@ function AbyssMeshes({ map, snapRef }: { map: AbyssMap; snapRef: MutableRefObjec
     }
     if (heart && maskBit(mask, map.heart.y * map.tiles + map.heart.x)) {
       const spot = world(map, map.heart.x, map.heart.y);
-      scratch.position.set(spot.x, 0.35, spot.y);
-      scratch.rotation.set(0, 0, 0);
-      scratch.scale.set(pulse, 0.4, pulse);
+      scratch.position.set(spot.x, 0.06, spot.y);
+      scratch.rotation.set(-Math.PI / 2, 0, 0);
+      scratch.scale.set(pulse, pulse, 1);
       scratch.updateMatrix();
       marks.setMatrixAt(marks.count - 1, scratch.matrix);
       marks.setColorAt(marks.count - 1, color.set("#e23b4a"));
@@ -108,18 +110,18 @@ function AbyssMeshes({ map, snapRef }: { map: AbyssMap; snapRef: MutableRefObjec
     <group>
       <instancedMesh ref={floorRef} args={[undefined, undefined, capacity]} frustumCulled={false}>
         <planeGeometry args={[size, size]} />
-        <meshBasicMaterial />
+        <meshBasicMaterial dispose={null} />
       </instancedMesh>
       <instancedMesh ref={pitRef} args={[undefined, undefined, capacity]} frustumCulled={false}>
         <planeGeometry args={[size, size]} />
-        <meshBasicMaterial />
+        <meshBasicMaterial dispose={null} />
       </instancedMesh>
       <instancedMesh ref={wallRef} args={[undefined, undefined, capacity]} frustumCulled={false}>
         <boxGeometry args={[size, 1.7, size]} />
-        <meshBasicMaterial />
+        <meshBasicMaterial dispose={null} />
       </instancedMesh>
       <instancedMesh ref={markRef} args={[undefined, undefined, MARKS]} frustumCulled={false}>
-        <boxGeometry args={[size * 0.72, 0.45, size * 0.72]} />
+        <planeGeometry args={[size * 0.62, size * 0.62]} />
         <meshBasicMaterial />
       </instancedMesh>
     </group>
@@ -180,14 +182,21 @@ function layMarks(mesh: InstancedMesh, map: AbyssMap, floor: number, mask: Uint8
     const mark = marks[index]!;
     const shown = maskBit(mask, mark.y * map.tiles + mark.x);
     const spot = world(map, mark.x, mark.y);
-    scratch.position.set(shown ? spot.x : 0, shown ? 0.32 : 0, shown ? spot.y : 0);
-    scratch.rotation.set(0, 0, 0);
-    const scale = shown ? (mark.heart ? 0.95 : 0.72) : 0;
-    scratch.scale.set(scale, shown ? 1 : 0, scale);
+    scratch.position.set(shown ? spot.x : 0, shown ? 0.06 : 0, shown ? spot.y : 0);
+    scratch.rotation.set(shown ? -Math.PI / 2 : 0, 0, 0);
+    const scale = shown ? (mark.heart ? 0.95 : 0.78) : 0;
+    scratch.scale.set(scale, scale, shown ? 1 : 0);
     scratch.updateMatrix();
     mesh.setMatrixAt(index, scratch.matrix);
   }
   mesh.instanceMatrix.needsUpdate = true;
+}
+
+function paint(mesh: InstancedMesh, map: ReturnType<typeof abyssSurface>) {
+  const material = mesh.material;
+  if (!(material instanceof MeshBasicMaterial) || material.map === map) return;
+  material.map = map;
+  material.needsUpdate = true;
 }
 
 function tint(
@@ -197,21 +206,19 @@ function tint(
   mask: Uint8Array,
   heroes: { x: number; y: number }[],
   reach: number,
-  palette: string,
   low: number,
   high: number,
   color: Color,
-  lit: Color,
-  dim: Color,
 ) {
-  dim.set(palette).multiplyScalar(low);
-  lit.set(palette).multiplyScalar(high);
   const n = map.tiles;
   for (let index = 0; index < cells.length; index += 1) {
     const cell = cells[index]!;
     if (!maskBit(mask, cell)) continue;
     const spot = world(map, cell % n, Math.floor(cell / n));
-    color.copy(dim).lerp(lit, glow(spot.x, spot.y, heroes, reach));
+    const light = glow(spot.x, spot.y, heroes, reach);
+    const jitter = ((cell * 17) % 7) / 90 - 0.03;
+    const gray = Math.max(0, Math.min(1, low + (high - low) * light + jitter));
+    color.setRGB(gray, gray, gray);
     mesh.setColorAt(index, color);
   }
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;

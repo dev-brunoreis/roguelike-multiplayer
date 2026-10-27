@@ -121,6 +121,11 @@ export function checkRefs(data: GameData) {
   for (const spawn of cited) {
     if (!creeps.has(spawn.creepId)) throw new Error(`Masmorra cita creep inexistente: ${spawn.creepId}`);
   }
+  const floors = new Set(data.abyss.floors.map((floor) => floor.id));
+  for (const spawn of data.abyss.spawns) {
+    if (!floors.has(spawn.floor)) throw new Error(`Abismo cita andar inexistente: ${spawn.floor}`);
+    if (!creeps.has(spawn.creepId)) throw new Error(`Abismo cita creep inexistente: ${spawn.creepId}`);
+  }
   if (data.dungeon.roomsMax < data.dungeon.roomsMin) {
     throw new Error("dungeon.json: roomsMax menor que roomsMin");
   }

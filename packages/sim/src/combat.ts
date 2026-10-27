@@ -29,12 +29,7 @@ export function simulateMove(match: Match, dt: number) {
   resolveObstacles(match);
 }
 
-export function simulateCombat(match: Match, dt: number) {
-  moveHeroes(match, dt);
-  moveCreeps(match, dt);
-  separate(match);
-  clampAll(match);
-  resolveObstacles(match);
+export function resolveCombat(match: Match, dt: number) {
   castAbilities(match);
   tickShots(match, dt);
   tickZones(match, dt);
@@ -42,6 +37,15 @@ export function simulateCombat(match: Match, dt: number) {
   tickTelegraphs(match, dt);
   tickWarnings(match);
   tickStatuses(match, dt);
+}
+
+export function simulateCombat(match: Match, dt: number) {
+  moveHeroes(match, dt);
+  moveCreeps(match, dt);
+  separate(match);
+  clampAll(match);
+  resolveObstacles(match);
+  resolveCombat(match, dt);
 }
 
 function moveHeroes(match: Match, dt: number) {

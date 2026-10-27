@@ -242,7 +242,7 @@ function obstacleSnap(match: Match) {
     for (const item of items) {
       if (item.shape === "circle") {
         list.push({ arenaId: item.arenaId, shape: "circle", x: q(item.x), y: q(item.y), r: q(item.r) });
-      } else {
+      } else if (item.shape === "box") {
         list.push({ arenaId: item.arenaId, shape: "box", x: q(item.x), y: q(item.y), w: q(item.w), h: q(item.h) });
       }
     }

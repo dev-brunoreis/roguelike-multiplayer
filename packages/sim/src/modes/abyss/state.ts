@@ -1,12 +1,21 @@
 import type { Match } from "../../types.js";
 import type { AbyssMap } from "./generate.js";
 
+export interface AbyssPath {
+  gx: number;
+  gy: number;
+  nx: number;
+  ny: number;
+  until: number;
+}
+
 export interface AbyssState {
   map: AbyssMap;
   revealed: Uint8Array[];
   seen: boolean[];
-  result: "win" | null;
+  result: "win" | "lose" | null;
   objective: string;
+  paths: Map<number, AbyssPath>;
 }
 
 const states = new WeakMap<Match, AbyssState>();

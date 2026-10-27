@@ -11,7 +11,7 @@ Roguelike multiplayer autoritativo. Servidor simula, cliente só renderiza. Cont
 - Dano, carta, ouro e vitória só mudam em `packages/sim`.
 - Número de jogo (dano, cooldown, vida, preço) vai no JSON, não espalhado no TS.
 - Plugin novo entra por registro: ação de magia, status, targeting, effect, creep, bot, modo ou `registerEntityView`.
-- Modo `arena` é a partida de ondas. Modo `masmorra` é o coop de salas geradas. Modo `abismo` é a descida: cinco andares contínuos, corredor, escada e névoa, só andar. Um modo não importa o outro.
+- Modo `arena` é a partida de ondas. Modo `masmorra` é o coop de salas geradas. Modo `abismo` é a descida: cinco andares contínuos, corredor, escada, névoa e bichos de teste que perseguem e batem. A vitória continua sendo o coração. Um modo não importa o outro.
 - Partida não continua no próximo login. Desconectar por 8s elimina.
 - Onda no quadrado de cada um; espera o último. Cartas, loja e aposta no salão central, sem dano.
 - Um duelo por vez. Banner no topo anuncia o par (10s), o vencedor, morte e desistência. Quem não luta segue a próxima onda no próprio quadrado. Espaço confirma Seguir. Esc abre o menu. A partida pausa quando todo humano vivo pede.

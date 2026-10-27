@@ -328,12 +328,20 @@ export const abyssFloorSchema = z.object({
   palette: z.string().min(4),
 });
 
+export const abyssSpawnSchema = z.object({
+  floor: z.string().min(1),
+  creepId: z.string().min(1),
+  count: z.number().int().min(1).max(12),
+});
+
 export const abyssSchema = z.object({
   tiles: z.number().int().min(32).max(160),
   tileSize: z.number().positive(),
   vision: z.number().int().min(3).max(40),
   stairCooldown: z.number().nonnegative(),
+  bodySkin: z.number().nonnegative(),
   floors: z.array(abyssFloorSchema).min(2),
+  spawns: z.array(abyssSpawnSchema),
 });
 
 export const matchOptionsSchema = z.object({
