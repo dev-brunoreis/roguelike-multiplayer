@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./debug": "./src/debug.ts",
-    "./lab": "./src/lab.ts"
+    "./lab": "./src/lab.ts",
+    "./abyss": "./src/modes/abyss/public.ts"
   },
   "dependencies": {
     "@game/game-data": "workspace:*",

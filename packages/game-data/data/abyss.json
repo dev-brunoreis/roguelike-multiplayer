@@ -1,0 +1,13 @@
+{
+  "tiles": 96,
+  "tileSize": 2,
+  "vision": 11,
+  "stairCooldown": 0.6,
+  "floors": [
+    { "id": "limiar", "nome": "Limiar", "kind": "limiar", "palette": "#8d8474" },
+    { "id": "galeria", "nome": "Galeria", "kind": "galeria", "palette": "#6e6458" },
+    { "id": "cisterna", "nome": "Cisterna", "kind": "cisterna", "palette": "#3e4c52" },
+    { "id": "ossuario", "nome": "Ossuário", "kind": "ossuario", "palette": "#9a9286" },
+    { "id": "coracao", "nome": "Coração", "kind": "coracao", "palette": "#6a4038" }
+  ]
+}

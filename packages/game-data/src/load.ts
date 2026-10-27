@@ -34,6 +34,7 @@ export function readGameFiles(dir = dataDir()): RawGameFiles {
     bosses: readJson(dir, "bosses.json"),
     synergies: readJson(dir, "synergies.json"),
     dungeon: readJson(dir, "dungeon.json"),
+    abyss: readJson(dir, "abyss.json"),
   };
 }
 

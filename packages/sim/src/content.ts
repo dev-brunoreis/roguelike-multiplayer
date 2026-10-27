@@ -1,5 +1,6 @@
 import "./modes/arena/index.js";
 import "./modes/dungeon/index.js";
+import "./modes/abyss/index.js";
 import "./modes/lab/index.js";
 import "./spells/index.js";
 import "./bots.js";

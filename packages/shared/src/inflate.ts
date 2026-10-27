@@ -232,5 +232,15 @@ export function inflate(meta: MatchMeta, wire: WireSnapshot): Snapshot {
         cellSize: meta.cellSize,
       }
       : null,
+    abyss: wire.abyss && meta.abyss
+      ? {
+        ...meta.abyss,
+        floor: wire.abyss.floor,
+        nome: wire.abyss.nome,
+        objective: wire.abyss.objective,
+        revealed: wire.abyss.revealed,
+        result: wire.abyss.result,
+      }
+      : null,
   };
 }

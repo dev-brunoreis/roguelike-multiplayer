@@ -5,6 +5,7 @@ import {
   bossSchema,
   cardSchema,
   creepSchema,
+  abyssSchema,
   dungeonSchema,
   heroSchema,
   labVisualSchema,
@@ -30,6 +31,7 @@ const FILE_SCHEMA = {
   "synergies.json": synergySchema.array(),
   "match.json": matchConfigSchema,
   "dungeon.json": dungeonSchema,
+  "abyss.json": abyssSchema,
   "visual/vfx.json": vfxVisualSchema,
   "visual/actors.json": actorsVisualSchema,
   "visual/lab.json": labVisualSchema,
@@ -46,6 +48,7 @@ function toRaw(files: Record<string, unknown>): RawGameFiles {
     bosses: files["bosses.json"],
     synergies: files["synergies.json"],
     dungeon: files["dungeon.json"],
+    abyss: files["abyss.json"],
   };
 }
 

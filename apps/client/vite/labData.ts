@@ -18,6 +18,7 @@ interface Validators {
     bosses: unknown;
     synergies: unknown;
     dungeon: unknown;
+    abyss: unknown;
   }) => unknown;
   vfx: ZodParse;
   actors: ZodParse;
@@ -58,6 +59,7 @@ const CORE = [
   "bosses.json",
   "synergies.json",
   "dungeon.json",
+  "abyss.json",
 ];
 
 const VISUAL = {
@@ -109,6 +111,7 @@ function validate(rel: string, content: unknown, tools: Validators) {
     bosses: raw["bosses.json"],
     synergies: raw["synergies.json"],
     dungeon: raw["dungeon.json"],
+    abyss: raw["abyss.json"],
   });
 }
 

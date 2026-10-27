@@ -3,6 +3,7 @@ import {
   bossSchema,
   cardSchema,
   creepSchema,
+  abyssSchema,
   dungeonSchema,
   heroSchema,
   matchConfigSchema,
@@ -12,6 +13,7 @@ import {
   type BossDef,
   type CardDef,
   type CreepDef,
+  type AbyssDef,
   type DungeonDef,
   type HeroDef,
   type MatchConfig,
@@ -30,6 +32,7 @@ export interface GameData {
   synergies: SynergyDef[];
   match: MatchConfig;
   dungeon: DungeonDef;
+  abyss: AbyssDef;
   byId: {
     heroes: Map<string, HeroDef>;
     abilities: Map<string, AbilityDef>;
@@ -48,6 +51,7 @@ export interface RawGameFiles {
   bosses: unknown;
   synergies: unknown;
   dungeon: unknown;
+  abyss: unknown;
 }
 
 interface Issue {
@@ -135,6 +139,7 @@ export function buildGameData(raw: RawGameFiles): GameData {
     synergies: parse("synergies.json", raw.synergies, synergySchema.array()),
     match,
     dungeon: parse("dungeon.json", raw.dungeon, dungeonSchema),
+    abyss: parse("abyss.json", raw.abyss, abyssSchema),
     byId: { heroes: new Map(), abilities: new Map(), cards: new Map(), creeps: new Map() },
   };
   data.byId = {

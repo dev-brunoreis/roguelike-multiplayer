@@ -6,6 +6,7 @@ import { formatSel } from "./select.js";
 const FILES = [
   "match.json",
   "dungeon.json",
+  "abyss.json",
   "cards.json",
   "waves.json",
   "bosses.json",

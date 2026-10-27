@@ -1,5 +1,5 @@
 export type Phase = "hub" | "pve" | "betting" | "duel" | "shop" | "dungeon" | "ended";
-export type GameModeId = "arena" | "masmorra";
+export type GameModeId = "arena" | "masmorra" | "abismo";
 
 export interface FloatEvent {
   id: number;
@@ -150,6 +150,38 @@ export interface DungeonSnap {
   cellSize: number;
 }
 
+export interface AbyssFloorMeta {
+  id: string;
+  nome: string;
+  kind: string;
+  palette: string;
+}
+
+export interface AbyssStairMeta {
+  floor: number;
+  x: number;
+  y: number;
+  dir: "up" | "down";
+}
+
+export interface AbyssMeta {
+  seed: number;
+  tiles: number;
+  tileSize: number;
+  vision: number;
+  floors: AbyssFloorMeta[];
+  stairs: AbyssStairMeta[];
+  heart: { floor: number; x: number; y: number };
+}
+
+export interface AbyssSnap extends AbyssMeta {
+  floor: number;
+  nome: string;
+  objective: string;
+  revealed: string;
+  result: "win" | null;
+}
+
 export interface DuelPairSnap {
   a: string;
   b: string;
@@ -226,6 +258,7 @@ export interface Snapshot {
   portals: PortalSnap[];
   obstacles: ObstacleSnap[];
   dungeon: DungeonSnap | null;
+  abyss: AbyssSnap | null;
 }
 
 export interface ChatLine {
@@ -323,6 +356,7 @@ export interface MatchMeta {
   abilities: MetaAbility[];
   cards: MetaCard[];
   roster: MetaPlayer[];
+  abyss: AbyssMeta | null;
 }
 
 export interface WireAbility {
@@ -466,6 +500,14 @@ export interface WireDungeon {
   result: "win" | "lose" | null;
 }
 
+export interface WireAbyss {
+  floor: number;
+  nome: string;
+  objective: string;
+  revealed: string;
+  result: "win" | null;
+}
+
 export interface WireSnapshot {
   tick: number;
   round: number;
@@ -487,4 +529,5 @@ export interface WireSnapshot {
   duelAnnounce: number;
   announce: AnnounceSnap | null;
   dungeon: WireDungeon | null;
+  abyss: WireAbyss | null;
 }

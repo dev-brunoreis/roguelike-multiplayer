@@ -76,7 +76,7 @@ export class MatchRoom extends Room {
     humans: Seat[];
     bots: Seat[];
     hostId?: string;
-    config?: { lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" };
+    config?: { lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" | "abismo" };
     seed?: number;
   }) {
     this.autoDispose = false;

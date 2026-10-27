@@ -155,7 +155,9 @@ export class LobbyRoom extends Room {
     if (!this.config.fillWithBots) slots = humans.length;
     slots = Math.max(slots, humans.length);
     slots = Math.min(8, slots);
-    const min = this.config.mode === "masmorra" ? 1 : 2;
+    const solo = this.config.mode === "masmorra" || this.config.mode === "abismo";
+    if (this.config.mode === "abismo") slots = humans.length;
+    const min = solo ? 1 : 2;
     if (slots < min) {
       this.error = min === 1 ? "Precisa de alguém na sala." : "Precisa de 2 lutadores. Chama alguém ou liga os bots.";
       this.push();
@@ -199,7 +201,7 @@ export function forgetSession<T extends { id: string }>(sessions: Map<string, T>
   return seats.filter((seat) => seat.id !== auth.id);
 }
 
-function strip(input: { slots?: number; fillWithBots?: boolean; lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" }): Partial<LobbyConfig> {
+function strip(input: { slots?: number; fillWithBots?: boolean; lives?: number; cardsPerLevelUp?: number; mode?: "arena" | "masmorra" | "abismo" }): Partial<LobbyConfig> {
   return {
     ...(input.slots !== undefined ? { slots: input.slots } : {}),
     ...(input.fillWithBots !== undefined ? { fillWithBots: input.fillWithBots } : {}),

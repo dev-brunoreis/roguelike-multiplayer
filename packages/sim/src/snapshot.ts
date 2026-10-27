@@ -1,4 +1,5 @@
-import type { AbilityView, CardView, MatchMeta, PlayerSnap, Snapshot, WirePlayer, WireSnapshot } from "@game/shared";
+import type { AbilityView, CardView, GameModeId, MatchMeta, PlayerSnap, Snapshot, WirePlayer, WireSnapshot } from "@game/shared";
+import { abyssMeta, abyssSnap, abyssWire } from "./modes/abyss/wire.js";
 import { isFighter } from "./queries.js";
 import { getMode } from "./registry.js";
 import type { Entity, Match, PlayerState } from "./types.js";
@@ -198,7 +199,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
     duel: match.duel.map((pair) => ({ ...pair })),
     duelAnnounce: Math.max(0, match.duelAnnounce),
     announce: match.banner && match.banner.left > 0 ? { ...match.banner } : null,
-    mode: match.mode === "masmorra" ? "masmorra" : "arena",
+    mode: modeId(match),
     portals: (match.dungeon?.portals ?? []).map((portal) => ({
       id: portal.id,
       arenaId: portal.arenaId,
@@ -209,6 +210,7 @@ export function buildSnapshot(match: Match, youId: string): Snapshot {
     obstacles: obstacleSnap(match),
     boss: bossSnap(match, youId),
     dungeon: dungeonSnap(match),
+    abyss: abyssSnap(match, youId),
   };
 }
 
@@ -285,7 +287,7 @@ export function buildMeta(match: Match, seq = 1): MatchMeta {
     seq,
     dataVersion: match.data.version,
     tickRate: match.config.tickRate,
-    mode: match.mode === "masmorra" ? "masmorra" : "arena",
+    mode: modeId(match),
     portals: (match.dungeon?.portals ?? []).map((portal) => ({
       id: portal.id,
       arenaId: portal.arenaId,
@@ -326,7 +328,13 @@ export function buildMeta(match: Match, seq = 1): MatchMeta {
       isBot: player.isBot,
       color: player.shadowColor,
     })),
+    abyss: abyssMeta(match),
   };
+}
+
+function modeId(match: Match): GameModeId {
+  if (match.mode === "masmorra" || match.mode === "abismo") return match.mode;
+  return "arena";
 }
 
 function arenaIndex(match: Match) {
@@ -471,6 +479,7 @@ export function buildCommon(match: Match, watchId: string): WireSnapshot {
     announce: match.banner && match.banner.left > 0 ? { ...match.banner, left: q(match.banner.left) } : null,
     boss: bossSnap(match, watchId),
     dungeon: wireDungeon(match, arenas),
+    abyss: abyssWire(match, watchId),
   };
 }
 

@@ -321,12 +321,27 @@ export const watchSchema = z.object({
   playerId: z.string().min(1),
 });
 
+export const abyssFloorSchema = z.object({
+  id: z.string().min(1),
+  nome: z.string().min(1),
+  kind: z.enum(["limiar", "galeria", "cisterna", "ossuario", "coracao"]),
+  palette: z.string().min(4),
+});
+
+export const abyssSchema = z.object({
+  tiles: z.number().int().min(32).max(160),
+  tileSize: z.number().positive(),
+  vision: z.number().int().min(3).max(40),
+  stairCooldown: z.number().nonnegative(),
+  floors: z.array(abyssFloorSchema).min(2),
+});
+
 export const matchOptionsSchema = z.object({
   slots: z.number().int().min(1).max(8).optional(),
   fillWithBots: z.boolean().optional(),
   lives: z.number().int().min(1).max(9).optional(),
   cardsPerLevelUp: z.number().int().min(2).max(8).optional(),
-  mode: z.enum(["arena", "masmorra"]).optional(),
+  mode: z.enum(["arena", "masmorra", "abismo"]).optional(),
 });
 
 export const vfxDefSchema = z.object({
@@ -407,6 +422,7 @@ export type CreepDef = z.infer<typeof creepSchema>;
 export type WaveDef = z.infer<typeof waveSchema>;
 export type BossDef = z.infer<typeof bossSchema>;
 export type DungeonDef = z.infer<typeof dungeonSchema>;
+export type AbyssDef = z.infer<typeof abyssSchema>;
 export type SynergyDef = z.infer<typeof synergySchema>;
 export type MatchConfig = z.infer<typeof matchConfigSchema>;
 export type MatchOptions = z.infer<typeof matchOptionsSchema>;
